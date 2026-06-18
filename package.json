@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "B站直播弹幕悬浮窗",
   "main": "src/main/main.js",
+  "author": "Sugaryfish",
   "private": true,
   "packageManager": "pnpm@11.8.0",
   "scripts": {
