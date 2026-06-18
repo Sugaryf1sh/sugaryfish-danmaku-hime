@@ -1,0 +1,28 @@
+appId: com.sugaryfish.danmaku-hime
+productName: Sugaryfish的弹幕姬
+copyright: Copyright 2026 Sugaryfish
+files:
+  - src/**/*
+  - assets/**/*
+  - README.md
+  - package.json
+extraMetadata:
+  main: src/main/main.js
+  name: danmaku-hime
+  productName: Sugaryfish的弹幕姬
+directories:
+  output: installer
+win:
+  icon: assets/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Sugaryfish的弹幕姬
+  artifactName: Sugaryfish的弹幕姬-Setup-${version}.${ext}

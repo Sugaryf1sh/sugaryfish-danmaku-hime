@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugaryfish的弹幕姬</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="titlebar">
+        <div class="brand">
+          <span class="mark"></span>
+          <div class="brand-copy">
+            <strong>弹幕姬</strong>
+            <span id="statusText">未连接</span>
+          </div>
+        </div>
+        <div class="window-actions">
+          <div class="help-menu">
+            <button class="icon-button help-trigger" type="button" aria-label="使用说明">
+              <span class="window-glyph" aria-hidden="true">
+                <span class="chk-bracket">[</span><span class="window-mark window-help-mark">注</span><span class="chk-bracket">]</span>
+              </span>
+            </button>
+            <div class="help-card" role="tooltip">
+              <strong>SESSDATA</strong>
+              <p><span>01</span>登录 B 站，打开直播页或主页。</p>
+              <p><span>02</span>按 F12，点顶部“应用（Application）”。</p>
+              <p><span>03</span>左侧点“存储（Storage）”下的“Cookie”。</p>
+              <p class="help-domains"><span>04</span><em>选择以下任意一项：</em><code>https://live.bilibili.com</code><code>https://www.bilibili.com</code></p>
+              <p><span>05</span>表格“名称（Name）”列找到 SESSDATA。</p>
+              <p><span>06</span>只复制“值（Value）”，粘贴到本窗口 SESSDATA。</p>
+            </div>
+          </div>
+          <button class="icon-button" id="themeToggle" title="切换暗色主题" aria-label="切换暗色主题" type="button">
+            <span class="window-glyph" aria-hidden="true">
+              <span class="chk-bracket">[</span><span class="window-mark window-theme-mark">◐</span><span class="chk-bracket">]</span>
+            </span>
+          </button>
+          <button class="icon-button" id="minimizeBtn" title="最小化" aria-label="最小化">
+            <span class="window-glyph" aria-hidden="true">
+              <span class="chk-bracket">[</span><span class="window-mark window-minus-mark">-</span><span class="chk-bracket">]</span>
+            </span>
+          </button>
+          <button class="icon-button" id="hideBtn" title="隐藏到托盘" aria-label="隐藏到托盘">
+            <span class="window-glyph" aria-hidden="true">
+              <span class="chk-bracket">[</span><span class="window-mark window-close-mark">x</span><span class="chk-bracket">]</span>
+            </span>
+          </button>
+        </div>
+      </header>
+
+      <section class="connect-panel">
+        <form id="connectForm" class="room-form">
+          <label for="roomInput">直播间</label>
+          <input id="roomInput" name="roomId" inputmode="numeric" autocomplete="off" placeholder="输入房间号">
+          <button id="connectBtn" type="submit">连接</button>
+        </form>
+        <div class="login-row">
+          <label for="sessdataInput">SESSDATA</label>
+          <div class="secret-field" id="sessdataField">
+            <input id="sessdataInput" type="password" autocomplete="off" spellcheck="false">
+            <button class="secret-mask" id="sessdataMask" type="button" title="编辑 SESSDATA">
+              <span id="sessdataSummary">未填写</span>
+            </button>
+          </div>
+          <button id="clearSessdataBtn" type="button">清空</button>
+        </div>
+      </section>
+
+      <section class="toolbar" aria-label="窗口设置">
+        <button class="toggle" id="settingsToggle" type="button" title="展开或收起设置">
+          <span>设置 ▾</span><kbd>Options</kbd>
+        </button>
+        <button class="toggle danger" id="disconnectBtn" type="button" title="断开连接" hidden>断开</button>
+      </section>
+
+      <section class="settings-panel" aria-label="设置详情">
+        <div class="setting-unit">
+          <div class="setting-switch-group">
+            <button class="toggle setting-switch active" id="topToggle" type="button" title="置顶窗口 Ctrl+Alt+T">
+              <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark">x</span><span class="chk-bracket">]</span></span> 置顶</span><kbd>Ctrl Alt T</kbd>
+            </button>
+          </div>
+          <div class="setting-param-group">
+            <label class="setting-control">
+              <span class="setting-label">透明度</span>
+              <output id="opacityValue">100%</output>
+              <div class="range-line">
+                <input id="opacityRange" type="range" min="35" max="100" step="1">
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="setting-unit">
+          <div class="setting-switch-group">
+            <button class="toggle setting-switch" id="throughToggle" type="button" title="鼠标穿透 Ctrl+Alt+J">
+              <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark"></span><span class="chk-bracket">]</span></span> 穿透</span><kbd>Ctrl Alt J</kbd>
+            </button>
+          </div>
+          <div class="setting-param-group">
+            <label class="setting-control">
+              <span class="setting-label">字号</span>
+              <output id="fontValue">15</output>
+              <div class="range-line">
+                <input id="fontRange" type="range" min="12" max="24" step="1">
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="setting-unit">
+          <div class="setting-switch-group">
+            <button class="toggle setting-switch" id="lockToggle" type="button" title="锁定窗口 Ctrl+Alt+L">
+              <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark"></span><span class="chk-bracket">]</span></span> 锁定</span><kbd>Ctrl Alt L</kbd>
+            </button>
+          </div>
+          <div class="setting-param-group">
+            <label class="setting-control">
+              <span class="setting-label">条数</span>
+              <output id="maxValue">80</output>
+              <div class="range-line">
+                <input id="maxRange" type="range" min="20" max="200" step="10">
+              </div>
+            </label>
+          </div>
+        </div>
+      </section>
+      <section class="feed-wrap">
+        <ol id="feed" class="feed" aria-live="polite"></ol>
+        <div id="emptyState" class="empty-state">
+          输入直播间号后连接，弹幕会实时出现在这里。
+        </div>
+      </section>
+      <div class="maker-watermark">Crafted by Sugaryfish</div>
+    </main>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>
