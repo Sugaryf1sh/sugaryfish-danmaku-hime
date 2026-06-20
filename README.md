@@ -58,7 +58,7 @@ corepack pnpm run installer:win
 构建结果默认输出到：
 
 - `release/Sugaryfish的弹幕姬-win32-x64/`
-- `installer/Sugaryfish的弹幕姬-Setup-1.1.0.exe`
+- `installer/Sugaryfish的弹幕姬-Setup-1.1.1.exe`
 
 ## SESSDATA
 

@@ -287,7 +287,7 @@ function applySettings(settings) {
   document.body.classList.toggle("is-click-through", Boolean(settings.clickThrough));
   document.body.classList.toggle("is-opaque", Number(settings.opacity) >= 100);
   updateSettingsToggleText();
-  els.feed.style.fontSize = `${settings.fontSize}px`;
+  els.feed.style.setProperty("--feed-font-size", `${settings.fontSize}px`);
   trimItems();
 }
 
