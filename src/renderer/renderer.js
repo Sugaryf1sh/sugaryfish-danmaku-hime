@@ -1,15 +1,35 @@
 const api = window.danmakuApp;
+const MEGA_GIFT_THRESHOLD = 100;
+const MEGA_GIFT_DURATION = 12000;
+const MEGA_GIFT_LEAVE_DELAY = 11500;
 
 const state = {
   settings: null,
   connected: false,
   roomText: "",
   popularityText: "",
+  popularityRaw: 0,
+  popularityTrend: "",
+  popularityTrendTimer: null,
+  statusFlashTimer: null,
+  statusPulseTimer: null,
+  startTime: Date.now(),
+  uptimeTimer: null,
+  hudDimTimer: null,
+  messageCount: 0,
+  isFeedHovered: false,
+  isFeedScrolledUp: false,
+  isMutatingFeed: false,
+  hasFeedScrollIntent: false,
+  newMessagesWhileLocked: 0,
   items: []
 };
 
 const els = {
   statusText: document.getElementById("statusText"),
+  appContainer: document.querySelector(".app-container"),
+  headerSection: document.querySelector(".header-section"),
+  statusDot: document.querySelector(".status-dot"),
   roomInput: document.getElementById("roomInput"),
   connectForm: document.getElementById("connectForm"),
   connectBtn: document.getElementById("connectBtn"),
@@ -28,8 +48,12 @@ const els = {
   sessdataInput: document.getElementById("sessdataInput"),
   sessdataMask: document.getElementById("sessdataMask"),
   sessdataSummary: document.getElementById("sessdataSummary"),
+  fetchSessdataBtn: document.getElementById("fetchSessdataBtn"),
   clearSessdataBtn: document.getElementById("clearSessdataBtn"),
+  megaGiftZone: document.getElementById("megaGiftZone"),
   feed: document.getElementById("feed"),
+  runTime: document.getElementById("run-time"),
+  msgCount: document.getElementById("msg-count"),
   themeToggle: document.getElementById("themeToggle"),
   minimizeBtn: document.getElementById("minimizeBtn"),
   hideBtn: document.getElementById("hideBtn")
@@ -40,11 +64,39 @@ init();
 async function init() {
   state.settings = await api.getSettings();
   applySettings(state.settings);
+  updateRuntimeDashboard();
+  state.uptimeTimer = setInterval(updateRuntimeDashboard, 60000);
   bindEvents();
   bindIpc();
 }
 
 function bindEvents() {
+  document.body.addEventListener("mouseenter", handleHudWake);
+  document.body.addEventListener("mouseleave", scheduleHudDim);
+  document.addEventListener("pointermove", handleHudPointerMove);
+  els.feed.addEventListener("mouseenter", handleFeedHoverStart);
+  els.feed.addEventListener("mouseleave", handleFeedHoverEnd);
+  els.feed.addEventListener("pointerover", syncInkFocus);
+  els.feed.addEventListener("pointermove", syncInkFocus);
+  els.feed.addEventListener("pointerout", (event) => {
+    if (!event.relatedTarget || !els.feed.contains(event.relatedTarget)) {
+      clearInkFocus();
+    }
+  });
+  document.addEventListener("pointermove", syncFeedHoverFromPointer);
+  document.addEventListener("mouseleave", handleFeedHoverEnd);
+  els.feed.addEventListener("wheel", () => {
+    state.hasFeedScrollIntent = true;
+  }, { passive: true });
+  els.feed.addEventListener("pointerdown", (event) => {
+    if (isPointerOnFeedScrollbar(event)) {
+      state.hasFeedScrollIntent = true;
+    }
+  });
+  els.feed.addEventListener("scroll", () => {
+    updateFeedScrollState();
+  });
+
   els.connectForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const roomId = els.roomInput.value.trim();
@@ -96,6 +148,7 @@ function bindEvents() {
     event.preventDefault();
     els.sessdataInput.blur();
   });
+  els.fetchSessdataBtn.addEventListener("click", handleSessdataFetch);
   els.clearSessdataBtn.addEventListener("click", () => {
     endSessdataEdit();
     updateSetting("sessdata", "");
@@ -135,7 +188,19 @@ function bindIpc() {
   });
 
   api.onPopularity((value) => {
+    const nextPopularity = Number(value) || 0;
+    const previousPopularity = state.popularityRaw;
+    state.popularityRaw = nextPopularity;
     state.popularityText = formatNumber(value);
+    state.popularityTrend = "";
+    if (previousPopularity > 0 && nextPopularity !== previousPopularity) {
+      state.popularityTrend = nextPopularity > previousPopularity ? "up" : "down";
+      clearTimeout(state.popularityTrendTimer);
+      state.popularityTrendTimer = setTimeout(() => {
+        state.popularityTrend = "";
+        renderHeaderStatus();
+      }, 1500);
+    }
     renderHeaderStatus();
   });
 
@@ -242,9 +307,28 @@ function renderSessdataSummary(value) {
   els.sessdataSummary.textContent = hasSecret ? "已保存" : "未填写";
 }
 
+async function handleSessdataFetch() {
+  endSessdataEdit();
+  const originalText = els.fetchSessdataBtn.textContent;
+  els.fetchSessdataBtn.disabled = true;
+  els.fetchSessdataBtn.textContent = "获取中";
+  flashStatus("请在弹出的 B 站窗口登录");
+
+  try {
+    await api.fetchSessdata();
+    flashStatus("SESSDATA 已保存");
+  } catch (error) {
+    flashStatus(error.message || "获取 SESSDATA 失败", 2400);
+  } finally {
+    els.fetchSessdataBtn.disabled = false;
+    els.fetchSessdataBtn.textContent = originalText;
+  }
+}
+
 function applyTheme(theme) {
   const dark = theme === "dark";
   document.body.classList.toggle("dark-theme", dark);
+  document.body.classList.toggle("light-theme", !dark);
   els.themeToggle.classList.toggle("active", dark);
   els.themeToggle.title = dark ? "切换浅色主题" : "切换暗色主题";
   els.themeToggle.setAttribute("aria-label", els.themeToggle.title);
@@ -267,47 +351,235 @@ function updateSettingsToggleText() {
   els.settingsToggle.querySelector("span").textContent = collapsed ? "设置 ▾" : "设置 ▴";
 }
 
+function appendUsernameRuns(target, value) {
+  const text = value || "匿名";
+  let buffer = "";
+  let currentType = "";
+
+  const flush = () => {
+    if (!buffer) return;
+    const span = document.createElement("span");
+    span.className = `user-run user-${currentType}`;
+    span.textContent = buffer;
+    target.append(span);
+    buffer = "";
+  };
+
+  for (const char of Array.from(text)) {
+    const type = /[\u2e80-\u9fff\uf900-\ufaff\u3000-\u303f\uff00-\uffef]/u.test(char) ? "cjk" : "latin";
+    if (currentType && type !== currentType) {
+      flush();
+    }
+    currentType = type;
+    buffer += char;
+  }
+
+  flush();
+}
+
+function appendContentRuns(target, value) {
+  const text = String(value || "");
+  const emojiPattern = /\p{Extended_Pictographic}/u;
+  const segments = typeof Intl !== "undefined" && Intl.Segmenter
+    ? Array.from(new Intl.Segmenter("zh-CN", { granularity: "grapheme" }).segment(text), (entry) => entry.segment)
+    : Array.from(text);
+
+  for (const segment of segments) {
+    if (!emojiPattern.test(segment)) {
+      target.append(document.createTextNode(segment));
+      continue;
+    }
+    const emoji = document.createElement("span");
+    emoji.className = "emoji";
+    emoji.textContent = segment;
+    target.append(emoji);
+  }
+}
+
+function getGraphemeLength(value) {
+  const text = String(value || "");
+  if (typeof Intl !== "undefined" && Intl.Segmenter) {
+    return Array.from(new Intl.Segmenter("zh-CN", { granularity: "grapheme" }).segment(text)).length;
+  }
+  return Array.from(text).length;
+}
+
 function appendItem(item) {
+  maybeShowMegaGiftBanner(item);
+  const shouldAutoScroll = shouldAutoScrollFeed();
+  state.isMutatingFeed = true;
   state.items.push(item);
   trimItems();
 
+  if (item.type === "gift" && tryStackGiftCombo(item)) {
+    finalizeAppendedItem(shouldAutoScroll);
+    return;
+  }
+
   const li = document.createElement("li");
-  li.className = `item ${item.type || "danmaku"}`;
+  const itemType = item.type || "danmaku";
+  li.className = `item danmaku-item is-entering ${itemType}`;
+  if (itemType !== "danmaku") {
+    li.classList.add(`is-${itemType}`);
+  }
   li.dataset.id = item.id;
 
   const tag = document.createElement("span");
-  tag.className = "tag";
+  tag.className = "tag danmaku-badge-text";
   tag.textContent = item.tag || "弹幕";
 
   const content = document.createElement("div");
-  content.className = "content";
+  content.className = "content danmaku-content-wrap";
 
   const meta = document.createElement("div");
   meta.className = "meta";
 
   const user = document.createElement("span");
-  user.className = "user";
-  user.textContent = item.user || "匿名";
-  user.title = item.user || "匿名";
+  user.className = "user danmaku-username";
+  const userName = item.user || "匿名";
+  if (getGraphemeLength(userName) > 14) {
+    user.classList.add("is-faded");
+  }
+  appendUsernameRuns(user, userName);
+  user.title = userName;
 
   const uid = document.createElement("span");
   uid.className = "uid";
   uid.textContent = item.uid ? `UID:${item.uid}` : "UID:--";
 
   const text = document.createElement("span");
-  text.className = "text";
-  text.textContent = item.price ? `${item.text} ¥${item.price}` : item.text;
+  text.className = "text danmaku-content";
+  appendContentRuns(text, item.price ? `${item.text} ¥${item.price}` : item.text);
 
   meta.append(user, uid);
-  content.append(meta, text);
+  if (itemType === "gift") {
+    li.dataset.giftUid = String(item.uid || "");
+    li.dataset.giftName = String(item.giftName || item.text || "");
+    content.classList.add("gift-content");
+    text.textContent = "";
+    appendContentRuns(text, item.giftName || item.text || "礼物");
+    const multiplier = document.createElement("span");
+    multiplier.className = "gift-multiplier";
+    multiplier.textContent = `x${Math.max(1, Number(item.giftCount || 1))}`;
+    content.append(user, text, multiplier);
+  } else {
+    content.append(meta, text);
+  }
   li.append(tag, content);
   els.feed.append(li);
+  requestAnimationFrame(() => {
+    li.classList.add("has-entered");
+  });
 
   while (els.feed.children.length > state.settings.maxItems) {
     els.feed.firstElementChild?.remove();
   }
 
-  els.feed.scrollTop = els.feed.scrollHeight;
+  finalizeAppendedItem(shouldAutoScroll);
+}
+
+function tryStackGiftCombo(item) {
+  const lastItem = els.feed.lastElementChild;
+  if (!(lastItem instanceof HTMLElement) || !lastItem.classList.contains("is-gift")) {
+    return false;
+  }
+  const incomingUid = String(item.uid || "");
+  const incomingGiftName = String(item.giftName || item.text || "");
+  if (lastItem.dataset.giftUid !== incomingUid || lastItem.dataset.giftName !== incomingGiftName) {
+    return false;
+  }
+  const multiplier = lastItem.querySelector(".gift-multiplier");
+  if (!(multiplier instanceof HTMLElement)) {
+    return false;
+  }
+  const currentCount = Number(multiplier.textContent.replace(/[^\d]/g, "")) || 1;
+  const nextCount = currentCount + Math.max(1, Number(item.giftCount || 1));
+  multiplier.textContent = `x${nextCount}`;
+  const lastStateItem = state.items[state.items.length - 1];
+  if (lastStateItem && lastStateItem.type === "gift" && String(lastStateItem.uid || "") === incomingUid) {
+    lastStateItem.giftCount = nextCount;
+  }
+  multiplier.classList.remove("pop-active");
+  void multiplier.offsetWidth;
+  multiplier.classList.add("pop-active");
+  window.setTimeout(() => {
+    multiplier.classList.remove("pop-active");
+  }, 200);
+  return true;
+}
+
+function finalizeAppendedItem(shouldAutoScroll) {
+  if (shouldAutoScroll) {
+    scrollFeedToBottom("smooth");
+    state.newMessagesWhileLocked = 0;
+  } else {
+    state.newMessagesWhileLocked += 1;
+  }
+  requestAnimationFrame(() => {
+    state.isMutatingFeed = false;
+    if (!state.isFeedHovered) {
+      updateFeedScrollState({ userInitiated: false });
+    }
+  });
+  state.messageCount += 1;
+  updateMessageCount();
+  triggerStatusPulse();
+}
+
+function maybeShowMegaGiftBanner(item) {
+  if (!isMegaGiftEvent(item) || !els.megaGiftZone) {
+    return;
+  }
+  const banner = document.createElement("div");
+  banner.className = "mega-gift-banner";
+
+  const meta = document.createElement("div");
+  meta.className = "mega-gift-meta";
+
+  const user = document.createElement("span");
+  user.className = "mega-gift-user";
+  user.textContent = item.user || "匿名";
+
+  const action = document.createElement("span");
+  action.className = "mega-gift-action";
+  action.textContent = buildMegaGiftAction(item);
+
+  const progress = document.createElement("div");
+  progress.className = "mega-gift-progress";
+
+  meta.append(user, action);
+  banner.append(meta, progress);
+  els.megaGiftZone.append(banner);
+
+  window.setTimeout(() => {
+    banner.classList.add("is-leaving");
+  }, MEGA_GIFT_LEAVE_DELAY);
+
+  window.setTimeout(() => {
+    banner.remove();
+  }, MEGA_GIFT_DURATION);
+}
+
+function isMegaGiftEvent(item) {
+  if (!item) {
+    return false;
+  }
+  if (item.type === "superchat") {
+    return true;
+  }
+  if (item.type === "gift") {
+    return Number(item.giftValue || 0) >= MEGA_GIFT_THRESHOLD;
+  }
+  return false;
+}
+
+function buildMegaGiftAction(item) {
+  if (item.type === "superchat") {
+    return `发送了醒目留言 ${item.price ? `¥${item.price}` : ""}`.trim();
+  }
+  const giftName = item.giftName || item.text || "礼物";
+  const giftCount = Math.max(1, Number(item.giftCount || 1));
+  return `赠送了 ${giftName} x${giftCount}`;
 }
 
 function trimItems() {
@@ -320,8 +592,194 @@ function trimItems() {
   }
 }
 
+function isFeedAtBottom() {
+  const threshold = 40;
+  return els.feed.scrollHeight - els.feed.scrollTop - els.feed.clientHeight <= threshold;
+}
+
+function updateFeedScrollState({ userInitiated = false } = {}) {
+  if (state.isMutatingFeed) {
+    return;
+  }
+  const atBottom = isFeedAtBottom();
+  if (atBottom) {
+    state.isFeedScrolledUp = false;
+    state.newMessagesWhileLocked = 0;
+    state.hasFeedScrollIntent = false;
+    return;
+  }
+  if (userInitiated || state.hasFeedScrollIntent) {
+    els.feed.style.removeProperty("--feed-bottom-pad");
+    state.isFeedScrolledUp = true;
+  }
+}
+
+function shouldAutoScrollFeed() {
+  return !state.isFeedHovered && !state.isFeedScrolledUp;
+}
+
+function scrollFeedToBottom(behavior = "auto") {
+  const targetTop = prepareBottomAlignedScrollTop();
+  els.feed.scrollTo({
+    top: targetTop,
+    behavior
+  });
+  if (behavior === "smooth") {
+    window.setTimeout(() => {
+      const settledTop = prepareBottomAlignedScrollTop();
+      if (Math.abs(els.feed.scrollTop - settledTop) > 1) {
+        els.feed.scrollTo({ top: settledTop, behavior: "auto" });
+      }
+    }, 360);
+  }
+}
+
+function prepareBottomAlignedScrollTop() {
+  els.feed.style.removeProperty("--feed-bottom-pad");
+  const rawTop = Math.max(0, els.feed.scrollHeight - els.feed.clientHeight);
+  const safetyTop = rawTop + 1;
+  const items = Array.from(els.feed.querySelectorAll(".danmaku-item"));
+  const cutIndex = items.findIndex((item) => {
+    const itemTop = item.offsetTop;
+    const itemBottom = itemTop + item.offsetHeight;
+    return itemTop < safetyTop && itemBottom > safetyTop;
+  });
+  if (cutIndex < 0) {
+    return rawTop;
+  }
+  const baseBottomPad = 24;
+  const maxExtraPad = 32;
+  const cutItem = items[cutIndex];
+  const upwardShift = rawTop - cutItem.offsetTop;
+  if (upwardShift > 0 && upwardShift <= baseBottomPad) {
+    return Math.max(0, cutItem.offsetTop);
+  }
+  const nextItem = items[cutIndex + 1];
+  if (!nextItem) {
+    return rawTop;
+  }
+  const extraPad = Math.min(Math.ceil(nextItem.offsetTop - rawTop), maxExtraPad);
+  if (extraPad <= 1) {
+    return rawTop;
+  }
+  els.feed.style.setProperty("--feed-bottom-pad", `${baseBottomPad + extraPad}px`);
+  return Math.max(0, els.feed.scrollHeight - els.feed.clientHeight);
+}
+
+function handleFeedHoverStart() {
+  state.isFeedHovered = true;
+  if (isFeedAtBottom()) {
+    state.isFeedScrolledUp = false;
+    state.hasFeedScrollIntent = false;
+  }
+}
+
+function handleFeedHoverEnd() {
+  clearInkFocus();
+  if (!state.isFeedHovered) {
+    return;
+  }
+  state.isFeedHovered = false;
+  if (!isFeedAtBottom() || state.newMessagesWhileLocked > 0) {
+    scrollFeedToBottom("smooth");
+  }
+  state.isFeedScrolledUp = false;
+  state.hasFeedScrollIntent = false;
+  state.newMessagesWhileLocked = 0;
+}
+
+function handleHudWake() {
+  clearTimeout(state.hudDimTimer);
+  state.hudDimTimer = null;
+  els.appContainer?.classList.remove("is-hud-dimmed");
+}
+
+function scheduleHudDim() {
+  clearTimeout(state.hudDimTimer);
+  state.hudDimTimer = setTimeout(() => {
+    updateHudCollapseOffset();
+    els.appContainer?.classList.add("is-hud-dimmed");
+  }, 5000);
+}
+
+function updateHudCollapseOffset() {
+  if (!els.appContainer || !els.headerSection) {
+    return;
+  }
+  const reserve = 20;
+  const measured = Math.max(45, Math.round(els.headerSection.offsetHeight - reserve));
+  els.appContainer.style.setProperty("--hud-collapse-offset", `${measured}px`);
+  els.appContainer.style.setProperty("--hud-dot-offset", `${measured + 1}px`);
+}
+
+function handleHudPointerMove(event) {
+  const rect = document.body.getBoundingClientRect();
+  const insideApp = event.clientX >= rect.left
+    && event.clientX <= rect.right
+    && event.clientY >= rect.top
+    && event.clientY <= rect.bottom;
+  if (insideApp) {
+    handleHudWake();
+  }
+}
+
+function syncInkFocus(event) {
+  const item = event.target instanceof Element ? event.target.closest(".danmaku-item") : null;
+  if (!item || !els.feed.contains(item)) {
+    clearInkFocus();
+    return;
+  }
+  if (item.classList.contains("is-focused")) {
+    els.feed.classList.add("is-ink-active");
+    return;
+  }
+  els.feed.querySelector(".danmaku-item.is-focused")?.classList.remove("is-focused");
+  item.classList.add("is-focused");
+  els.feed.classList.add("is-ink-active");
+}
+
+function clearInkFocus() {
+  els.feed.classList.remove("is-ink-active");
+  els.feed.querySelector(".danmaku-item.is-focused")?.classList.remove("is-focused");
+}
+
+function syncFeedHoverFromPointer(event) {
+  if (!state.isFeedHovered) {
+    return;
+  }
+  const rect = els.feed.getBoundingClientRect();
+  const insideFeed = event.clientX >= rect.left
+    && event.clientX <= rect.right
+    && event.clientY >= rect.top
+    && event.clientY <= rect.bottom;
+  if (!insideFeed) {
+    handleFeedHoverEnd();
+  }
+}
+
+function isPointerOnFeedScrollbar(event) {
+  const scrollbarWidth = els.feed.offsetWidth - els.feed.clientWidth;
+  if (scrollbarWidth <= 0) {
+    return false;
+  }
+  const rect = els.feed.getBoundingClientRect();
+  return event.clientX >= rect.right - scrollbarWidth - 2;
+}
+
 function setStatus(text) {
   els.statusText.textContent = text;
+}
+
+function flashStatus(text, duration = 1800) {
+  setStatus(text);
+  clearTimeout(state.statusFlashTimer);
+  state.statusFlashTimer = setTimeout(() => {
+    if (state.connected) {
+      renderHeaderStatus();
+      return;
+    }
+    setStatus("未连接");
+  }, duration);
 }
 
 function renderHeaderStatus() {
@@ -330,7 +788,36 @@ function renderHeaderStatus() {
   }
   const room = state.roomText || state.settings?.roomId || "";
   const popularity = state.popularityText || "0";
-  els.statusText.textContent = `已连接 ${room} / 人气 ${popularity}`;
+  const exactPopularity = formatFullNumber(state.popularityRaw);
+
+  els.statusText.replaceChildren();
+  els.statusText.append(document.createTextNode("已连接 "));
+
+  const roomValue = document.createElement("span");
+  roomValue.className = "status-data status-room";
+  roomValue.textContent = room;
+
+  els.statusText.append(roomValue, document.createTextNode(" / 人气 "));
+
+  const popularityWrap = document.createElement("span");
+  popularityWrap.className = "status-data popularity-inline";
+  popularityWrap.title = exactPopularity;
+
+  const shortValue = document.createElement("span");
+  shortValue.className = "popularity-short";
+  shortValue.textContent = popularity;
+
+  const fullValue = document.createElement("span");
+  fullValue.className = "popularity-full";
+  fullValue.textContent = exactPopularity;
+
+  const trend = document.createElement("span");
+  trend.className = `popularity-trend${state.popularityTrend ? ` is-${state.popularityTrend}` : ""}`;
+  trend.textContent = state.popularityTrend === "down" ? "↓" : "↑";
+  trend.setAttribute("aria-hidden", "true");
+
+  popularityWrap.append(shortValue, fullValue, trend);
+  els.statusText.append(popularityWrap);
 }
 
 function formatNumber(value) {
@@ -339,4 +826,37 @@ function formatNumber(value) {
     return `${(number / 10000).toFixed(1)}万`;
   }
   return String(number);
+}
+
+function formatFullNumber(value) {
+  return new Intl.NumberFormat("en-US").format(Number(value) || 0);
+}
+
+function updateRuntimeDashboard() {
+  if (!els.runTime) {
+    return;
+  }
+  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - state.startTime) / 60000));
+  const hours = Math.floor(elapsedMinutes / 60);
+  const minutes = elapsedMinutes % 60;
+  els.runTime.textContent = `${String(hours).padStart(2, "0")}H ${String(minutes).padStart(2, "0")}M`;
+}
+
+function updateMessageCount() {
+  if (els.msgCount) {
+    els.msgCount.textContent = String(state.messageCount);
+  }
+}
+
+function triggerStatusPulse() {
+  if (!els.statusDot) {
+    return;
+  }
+  els.statusDot.classList.remove("pulse-active");
+  void els.statusDot.offsetWidth;
+  els.statusDot.classList.add("pulse-active");
+  clearTimeout(state.statusPulseTimer);
+  state.statusPulseTimer = setTimeout(() => {
+    els.statusDot.classList.remove("pulse-active");
+  }, 650);
 }

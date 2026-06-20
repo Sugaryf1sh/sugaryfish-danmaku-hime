@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("danmakuApp", {
   getSettings: () => ipcRenderer.invoke("settings:get"),
   updateSettings: (patch) => ipcRenderer.invoke("settings:update", patch),
+  fetchSessdata: () => ipcRenderer.invoke("sessdata:fetch"),
   connect: (roomId) => ipcRenderer.invoke("danmaku:connect", roomId),
   disconnect: () => ipcRenderer.invoke("danmaku:disconnect"),
   minimize: () => ipcRenderer.invoke("window:minimize"),

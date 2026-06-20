@@ -58,7 +58,7 @@ copyFile(path.join(root, "README.md"), path.join(appDir, "README.md"));
 writeJson(path.join(appDir, "package.json"), {
   name: "danmaku-hime",
   productName,
-  version: "0.1.0",
+  version: "1.1.0",
   description: "B站直播弹幕悬浮窗",
   main: "src/main/main.js",
   private: true,

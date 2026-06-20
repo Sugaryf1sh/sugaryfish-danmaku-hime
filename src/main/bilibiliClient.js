@@ -29,6 +29,7 @@ class BilibiliDanmakuClient extends EventEmitter {
     this.roomId = null;
     this.realRoomId = null;
     this.heartbeatTimer = null;
+    this.popularityTimer = null;
     this.reconnectTimer = null;
     this.shouldReconnect = false;
     this.reconnectAttempts = 0;
@@ -53,8 +54,10 @@ class BilibiliDanmakuClient extends EventEmitter {
   disconnect(emitStatus = true) {
     this.shouldReconnect = false;
     clearInterval(this.heartbeatTimer);
+    clearInterval(this.popularityTimer);
     clearTimeout(this.reconnectTimer);
     this.heartbeatTimer = null;
+    this.popularityTimer = null;
     this.reconnectTimer = null;
 
     if (this.ws) {
@@ -109,7 +112,9 @@ class BilibiliDanmakuClient extends EventEmitter {
 
       this.ws.on("close", () => {
         clearInterval(this.heartbeatTimer);
+        clearInterval(this.popularityTimer);
         this.heartbeatTimer = null;
+        this.popularityTimer = null;
         if (this.shouldReconnect) {
           this.scheduleReconnect();
         } else {
@@ -159,6 +164,29 @@ class BilibiliDanmakuClient extends EventEmitter {
     this.sendPacket(OP_HEARTBEAT, "");
   }
 
+  startPopularityPolling() {
+    clearInterval(this.popularityTimer);
+    this.popularityTimer = null;
+
+    const refresh = async () => {
+      if (!this.realRoomId || !this.shouldReconnect) {
+        return;
+      }
+
+      try {
+        const popularity = await getRoomPopularity(this.realRoomId, this.cookie);
+        if (Number.isFinite(popularity)) {
+          this.emit("popularity", popularity);
+        }
+      } catch {
+        // Popularity is auxiliary UI data; keep danmaku connection stable if this API throttles.
+      }
+    };
+
+    refresh();
+    this.popularityTimer = setInterval(refresh, 15000);
+  }
+
   sendPacket(operation, payload) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       return;
@@ -181,11 +209,11 @@ class BilibiliDanmakuClient extends EventEmitter {
 
       if (operation === OP_AUTH_REPLY) {
         this.emit("status", { state: "connected", text: `已连接 ${this.realRoomId}` });
+        this.startPopularityPolling();
         continue;
       }
 
-      if (operation === OP_HEARTBEAT_REPLY && body.length >= 4) {
-        this.emit("popularity", body.readUInt32BE(0));
+      if (operation === OP_HEARTBEAT_REPLY) {
         continue;
       }
 
@@ -233,6 +261,17 @@ async function getDanmuInfo(realRoomId, cookie = "") {
     throw new Error(payload.message || "弹幕服务器信息获取失败");
   }
   return payload.data;
+}
+
+async function getRoomPopularity(realRoomId, cookie = "") {
+  const url = `${API_BASE}/room/v1/Room/get_info?room_id=${encodeURIComponent(realRoomId)}`;
+  const payload = await fetchJson(url, { cookie });
+  if (payload.code !== 0 || !payload.data) {
+    throw new Error(payload.message || "直播间人气获取失败");
+  }
+
+  const online = Number(payload.data.online);
+  return Number.isFinite(online) ? online : null;
 }
 
 async function signWbiQuery(params, cookie = "") {
@@ -374,6 +413,10 @@ function normalizeEvent(raw) {
 
   if (command === "SEND_GIFT") {
     const data = raw.data || {};
+    const giftCount = Number(data.num || 1);
+    const totalCoin = Number(data.total_coin || 0);
+    const unitPrice = Number(data.discount_price || data.price || 0);
+    const giftValue = totalCoin > 0 ? totalCoin / 1000 : unitPrice * giftCount;
     return {
       id: makeId(),
       type: "gift",
@@ -381,12 +424,19 @@ function normalizeEvent(raw) {
       time: now,
       user: data.uname || "匿名",
       uid: data.uid || data.sender_uid || "",
-      text: `${data.giftName || "礼物"} x${data.num || 1}`
+      giftName: data.giftName || "礼物",
+      giftCount,
+      giftValue,
+      text: data.giftName || "礼物"
     };
   }
 
   if (command === "COMBO_SEND") {
     const data = raw.data || {};
+    const giftCount = Number(data.combo_num || data.total_num || 1);
+    const totalCoin = Number(data.total_coin || 0);
+    const unitPrice = Number(data.discount_price || data.price || 0);
+    const giftValue = totalCoin > 0 ? totalCoin / 1000 : unitPrice * giftCount;
     return {
       id: makeId(),
       type: "gift",
@@ -394,7 +444,10 @@ function normalizeEvent(raw) {
       time: now,
       user: data.uname || "匿名",
       uid: data.uid || data.sender_uid || "",
-      text: `${data.gift_name || "礼物"} x${data.combo_num || data.total_num || 1}`
+      giftName: data.gift_name || "礼物",
+      giftCount,
+      giftValue,
+      text: data.gift_name || "礼物"
     };
   }
 

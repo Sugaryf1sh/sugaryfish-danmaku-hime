@@ -7,6 +7,8 @@ const { DEFAULT_SETTINGS } = require("../shared/defaults");
 const APP_NAME = "Sugaryfish的弹幕姬";
 
 let mainWindow = null;
+let sessdataLoginWindow = null;
+let sessdataFetchPromise = null;
 let tray = null;
 let settings = { ...DEFAULT_SETTINGS };
 const client = new BilibiliDanmakuClient();
@@ -53,7 +55,7 @@ function createWindow() {
     title: APP_NAME,
     icon: getIconPath(),
     alwaysOnTop: settings.alwaysOnTop,
-    hasShadow: false,
+    hasShadow: true,
     webPreferences: {
       preload: path.join(__dirname, "../preload/preload.js"),
       contextIsolation: true,
@@ -198,6 +200,12 @@ function applyWindowSettings(nextSettings) {
 ipcMain.handle("settings:get", () => settings);
 ipcMain.handle("settings:update", (_event, patch) => setSettings(patch));
 
+ipcMain.handle("sessdata:fetch", async () => {
+  const sessdata = await fetchSessdataFromBilibiliLogin();
+  setSettings({ sessdata });
+  return { ok: true };
+});
+
 ipcMain.handle("danmaku:connect", async (_event, roomId) => {
   await client.connect(roomId, { sessdata: settings.sessdata });
   setSettings({ roomId: String(roomId || "").trim() });
@@ -222,6 +230,118 @@ ipcMain.handle("window:quit", () => {
   app.isQuitting = true;
   app.quit();
 });
+
+function fetchSessdataFromBilibiliLogin() {
+  if (sessdataFetchPromise) {
+    if (sessdataLoginWindow && !sessdataLoginWindow.isDestroyed()) {
+      sessdataLoginWindow.show();
+      sessdataLoginWindow.focus();
+    }
+    return sessdataFetchPromise;
+  }
+
+  sessdataFetchPromise = new Promise((resolve, reject) => {
+    let done = false;
+    let timer = null;
+    let timeout = null;
+
+    sessdataLoginWindow = new BrowserWindow({
+      width: 980,
+      height: 720,
+      minWidth: 720,
+      minHeight: 560,
+      parent: mainWindow || undefined,
+      title: "获取 SESSDATA",
+      autoHideMenuBar: true,
+      show: false,
+      icon: getIconPath(),
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        partition: "persist:bilibili-login"
+      }
+    });
+
+    const loginWindow = sessdataLoginWindow;
+    loginWindow.webContents.setUserAgent(chromeLikeUserAgent());
+
+    const cleanup = () => {
+      clearInterval(timer);
+      clearTimeout(timeout);
+      timer = null;
+      timeout = null;
+      sessdataFetchPromise = null;
+      if (sessdataLoginWindow === loginWindow) {
+        sessdataLoginWindow = null;
+      }
+    };
+
+    const finish = (error, value) => {
+      if (done) return;
+      done = true;
+      cleanup();
+      if (!loginWindow.isDestroyed()) {
+        loginWindow.close();
+      }
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(value);
+    };
+
+    const readCookie = async () => {
+      if (done || loginWindow.isDestroyed()) return;
+      const cookies = await loginWindow.webContents.session.cookies.get({ name: "SESSDATA" });
+      const cookie = chooseSessdataCookie(cookies);
+      if (cookie?.value) {
+        finish(null, cookie.value);
+      }
+    };
+
+    loginWindow.once("ready-to-show", () => {
+      loginWindow.show();
+      loginWindow.focus();
+    });
+
+    loginWindow.on("closed", () => {
+      finish(new Error("已取消获取 SESSDATA"));
+    });
+
+    loginWindow.webContents.on("did-finish-load", () => {
+      readCookie().catch(() => {});
+    });
+
+    timer = setInterval(() => {
+      readCookie().catch(() => {});
+    }, 1000);
+
+    timeout = setTimeout(() => {
+      finish(new Error("获取超时，请确认已在 B 站登录"));
+    }, 5 * 60 * 1000);
+
+    loginWindow.loadURL("https://passport.bilibili.com/login").catch((error) => {
+      finish(new Error(error.message || "打开 B 站登录页失败"));
+    });
+  });
+
+  return sessdataFetchPromise;
+}
+
+function chooseSessdataCookie(cookies) {
+  const now = Date.now() / 1000;
+  return cookies
+    .filter((cookie) => {
+      const domain = String(cookie.domain || "").replace(/^\./, "");
+      const expires = Number(cookie.expirationDate || 0);
+      return domain.endsWith("bilibili.com") && (!expires || expires > now);
+    })
+    .sort((a, b) => Number(b.expirationDate || 0) - Number(a.expirationDate || 0))[0];
+}
+
+function chromeLikeUserAgent() {
+  return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+}
 
 function getIconPath() {
   return path.join(__dirname, "../../assets/icon.png");
