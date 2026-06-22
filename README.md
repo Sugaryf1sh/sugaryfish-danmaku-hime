@@ -66,8 +66,8 @@ corepack pnpm run update-package
 构建结果默认输出到：
 
 - `release/Sugaryfish的弹幕姬-win32-x64/`
-- `installer/Sugaryfish的弹幕姬-Setup-1.1.2.exe`
-- `updates/Sugaryfish的弹幕姬-App-1.1.2.zip`
+- `installer/Sugaryfish的弹幕姬-Setup-1.1.3.exe`
+- `updates/Sugaryfish-Danmaku-Hime-App-1.1.3.zip`
 - `updates/latest.json`
 
 ## Auto Update

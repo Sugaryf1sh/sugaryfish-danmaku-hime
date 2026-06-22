@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld("danmakuApp", {
   fetchSessdata: () => ipcRenderer.invoke("sessdata:fetch"),
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   consumeUpdateNotes: () => ipcRenderer.invoke("update:consume-notes"),
+  openExternal: (url) => ipcRenderer.invoke("shell:open-external", url),
+  writeClipboardText: (text) => ipcRenderer.invoke("clipboard:write-text", text),
   connect: (roomId) => ipcRenderer.invoke("danmaku:connect", roomId),
   disconnect: () => ipcRenderer.invoke("danmaku:disconnect"),
   minimize: () => ipcRenderer.invoke("window:minimize"),

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, globalShortcut, dialog, net, session } = require("electron");
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, globalShortcut, dialog, net, session, shell, clipboard } = require("electron");
 const { spawn } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
@@ -225,6 +225,18 @@ ipcMain.handle("settings:get", () => settings);
 ipcMain.handle("settings:update", (_event, patch) => setSettings(patch));
 ipcMain.handle("update:check", () => checkForUpdates({ silent: false, prompt: true }));
 ipcMain.handle("update:consume-notes", () => consumePendingUpdateNotes());
+ipcMain.handle("shell:open-external", (_event, url) => {
+  const href = String(url || "");
+  if (!/^https:\/\/github\.com\/Sugaryf1sh\/sugaryfish-danmaku-hime(?:[/?#].*)?$/i.test(href)) {
+    return { ok: false };
+  }
+  shell.openExternal(href);
+  return { ok: true };
+});
+ipcMain.handle("clipboard:write-text", (_event, text) => {
+  clipboard.writeText(String(text || ""));
+  return { ok: true };
+});
 
 ipcMain.handle("sessdata:fetch", async () => {
   const sessdata = await fetchSessdataFromBilibiliLogin();
@@ -1155,6 +1167,7 @@ function sanitizeSettings(value) {
     roomId: String(value.roomId || ""),
     alwaysOnTop: Boolean(value.alwaysOnTop),
     clickThrough: Boolean(value.clickThrough),
+    copyOnTagClick: Boolean(value.copyOnTagClick),
     locked: Boolean(value.locked),
     opacity: clampNumber(value.opacity, 35, 100, DEFAULT_SETTINGS.opacity),
     fontSize: clampNumber(value.fontSize, 12, 24, DEFAULT_SETTINGS.fontSize),

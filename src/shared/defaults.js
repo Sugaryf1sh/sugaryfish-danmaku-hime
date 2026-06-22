@@ -2,6 +2,7 @@ const DEFAULT_SETTINGS = {
   roomId: "",
   alwaysOnTop: true,
   clickThrough: false,
+  copyOnTagClick: false,
   locked: false,
   opacity: 100,
   fontSize: 15,

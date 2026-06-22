@@ -2,6 +2,8 @@ const api = window.danmakuApp;
 const MEGA_GIFT_THRESHOLD = 100;
 const MEGA_GIFT_DURATION = 12000;
 const MEGA_GIFT_LEAVE_DELAY = 11500;
+const UPDATE_IDLE_TEXT = "检查更新";
+const UPDATE_LATEST_TEXT = "已是最新版本";
 
 const state = {
   settings: null,
@@ -13,11 +15,14 @@ const state = {
   popularityTrendTimer: null,
   statusFlashTimer: null,
   statusPulseTimer: null,
+  statusModeTipTimer: null,
+  clickThroughWakeTimer: null,
+  clickThroughNoticeShown: false,
   startTime: Date.now(),
   uptimeTimer: null,
   hudDimTimer: null,
   messageCount: 0,
-  updateButtonText: "更新",
+  updateButtonText: UPDATE_IDLE_TEXT,
   isFeedHovered: false,
   isFeedScrolledUp: false,
   isMutatingFeed: false,
@@ -31,6 +36,7 @@ const els = {
   appContainer: document.querySelector(".app-container"),
   headerSection: document.querySelector(".header-section"),
   statusDot: document.querySelector(".status-dot"),
+  statusModeTip: document.getElementById("statusModeTip"),
   roomInput: document.getElementById("roomInput"),
   connectForm: document.getElementById("connectForm"),
   connectBtn: document.getElementById("connectBtn"),
@@ -39,6 +45,7 @@ const els = {
   topToggle: document.getElementById("topToggle"),
   throughToggle: document.getElementById("throughToggle"),
   lockToggle: document.getElementById("lockToggle"),
+  copyToggle: document.getElementById("copyToggle"),
   opacityRange: document.getElementById("opacityRange"),
   fontRange: document.getElementById("fontRange"),
   maxRange: document.getElementById("maxRange"),
@@ -52,6 +59,7 @@ const els = {
   fetchSessdataBtn: document.getElementById("fetchSessdataBtn"),
   clearSessdataBtn: document.getElementById("clearSessdataBtn"),
   updateBtn: document.getElementById("updateBtn"),
+  helpMenu: document.querySelector(".help-menu"),
   updateBanner: document.getElementById("updateBanner"),
   updateBannerTitle: document.getElementById("updateBannerTitle"),
   updateBannerBody: document.getElementById("updateBannerBody"),
@@ -81,6 +89,7 @@ function bindEvents() {
   document.body.addEventListener("mouseenter", handleHudWake);
   document.body.addEventListener("mouseleave", scheduleHudDim);
   document.addEventListener("pointermove", handleHudPointerMove);
+  document.addEventListener("mousemove", handleHudPointerMove);
   els.feed.addEventListener("mouseenter", handleFeedHoverStart);
   els.feed.addEventListener("mouseleave", handleFeedHoverEnd);
   els.feed.addEventListener("pointerover", syncInkFocus);
@@ -93,9 +102,15 @@ function bindEvents() {
   document.addEventListener("pointermove", syncFeedHoverFromPointer);
   document.addEventListener("mouseleave", handleFeedHoverEnd);
   els.feed.addEventListener("wheel", () => {
+    if (isClickThroughMode()) {
+      return;
+    }
     state.hasFeedScrollIntent = true;
   }, { passive: true });
   els.feed.addEventListener("pointerdown", (event) => {
+    if (isClickThroughMode()) {
+      return;
+    }
     if (isPointerOnFeedScrollbar(event)) {
       state.hasFeedScrollIntent = true;
     }
@@ -139,6 +154,7 @@ function bindEvents() {
   els.topToggle.addEventListener("click", () => updateSetting("alwaysOnTop", !state.settings.alwaysOnTop));
   els.throughToggle.addEventListener("click", () => updateSetting("clickThrough", !state.settings.clickThrough));
   els.lockToggle.addEventListener("click", () => updateSetting("locked", !state.settings.locked));
+  els.copyToggle.addEventListener("click", () => updateSetting("copyOnTagClick", !state.settings.copyOnTagClick));
   els.opacityRange.addEventListener("input", () => updateSetting("opacity", Number(els.opacityRange.value)));
   els.fontRange.addEventListener("input", () => updateSetting("fontSize", Number(els.fontRange.value)));
   els.maxRange.addEventListener("input", () => updateSetting("maxItems", Number(els.maxRange.value)));
@@ -157,6 +173,14 @@ function bindEvents() {
   });
   els.fetchSessdataBtn.addEventListener("click", handleSessdataFetch);
   els.updateBtn.addEventListener("click", handleUpdateCheck);
+  els.helpMenu?.addEventListener("mouseenter", resetUpdateButtonResult);
+  els.helpMenu?.addEventListener("focusin", resetUpdateButtonResult);
+  document.querySelectorAll("[data-external-url]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      api.openExternal?.(link.getAttribute("data-external-url"));
+    });
+  });
   els.updateBannerClose.addEventListener("click", hideUpdateBanner);
   els.clearSessdataBtn.addEventListener("click", () => {
     endSessdataEdit();
@@ -281,6 +305,7 @@ function clampToStep(value, min, max, step) {
 }
 
 function applySettings(settings) {
+  const wasClickThrough = document.body.classList.contains("is-click-through");
   els.roomInput.value = settings.roomId || els.roomInput.value || "";
   els.opacityRange.value = settings.opacity;
   els.fontRange.value = settings.fontSize;
@@ -297,9 +322,14 @@ function applySettings(settings) {
   updateToggleMark(els.throughToggle, settings.clickThrough);
   els.lockToggle.classList.toggle("active", Boolean(settings.locked));
   updateToggleMark(els.lockToggle, settings.locked);
+  els.copyToggle.classList.toggle("active", Boolean(settings.copyOnTagClick));
+  updateToggleMark(els.copyToggle, settings.copyOnTagClick);
   document.body.classList.toggle("is-locked", Boolean(settings.locked));
   document.body.classList.toggle("is-click-through", Boolean(settings.clickThrough));
+  document.body.classList.toggle("is-tag-copy-enabled", Boolean(settings.copyOnTagClick));
   document.body.classList.toggle("is-opaque", Number(settings.opacity) >= 100);
+  updateCopyHintTitles(Boolean(settings.copyOnTagClick));
+  syncClickThroughMode(Boolean(settings.clickThrough), wasClickThrough);
   updateSettingsToggleText();
   els.feed.style.setProperty("--feed-font-size", `${settings.fontSize}px`);
   trimItems();
@@ -345,12 +375,15 @@ async function handleUpdateCheck() {
     return;
   }
 
+  let keepResultText = false;
   els.updateBtn.disabled = true;
   setUpdateButtonText("检查中");
   try {
     const result = await api.checkForUpdates();
     if (result?.status === "no-update") {
       flashStatus("已是最新版", 2000);
+      setUpdateButtonText(UPDATE_LATEST_TEXT);
+      keepResultText = true;
     } else if (result?.status === "skipped") {
       flashStatus("已稍后更新", 1600);
     }
@@ -359,8 +392,19 @@ async function handleUpdateCheck() {
   } finally {
     if (!els.updateBtn.dataset.busy) {
       els.updateBtn.disabled = false;
-      setUpdateButtonText("更新");
+      if (!keepResultText) {
+        setUpdateButtonText(UPDATE_IDLE_TEXT);
+      }
     }
+  }
+}
+
+function resetUpdateButtonResult() {
+  if (!els.updateBtn || els.updateBtn.disabled || els.updateBtn.dataset.busy) {
+    return;
+  }
+  if (state.updateButtonText === UPDATE_LATEST_TEXT) {
+    setUpdateButtonText(UPDATE_IDLE_TEXT);
   }
 }
 
@@ -398,7 +442,7 @@ function handleUpdateStatus(status = {}) {
 
   delete els.updateBtn.dataset.busy;
   els.updateBtn.disabled = false;
-  setUpdateButtonText("更新");
+  setUpdateButtonText(UPDATE_IDLE_TEXT);
 
   if (status.state === "error" && status.message) {
     flashStatus(status.message, 3600);
@@ -508,7 +552,17 @@ function appendUsernameRuns(target, value) {
   flush();
 }
 
-function appendContentRuns(target, value) {
+function appendContentRuns(target, value, emotes = []) {
+  const text = String(value || "");
+  const emoteMap = buildEmoteMap(emotes);
+  if (emoteMap.size) {
+    appendContentRunsWithEmotes(target, text, emoteMap);
+    return;
+  }
+  appendPlainContentRuns(target, text);
+}
+
+function appendPlainContentRuns(target, value) {
   const text = String(value || "");
   const emojiPattern = /\p{Extended_Pictographic}/u;
   const segments = typeof Intl !== "undefined" && Intl.Segmenter
@@ -527,12 +581,123 @@ function appendContentRuns(target, value) {
   }
 }
 
+function appendContentRunsWithEmotes(target, text, emoteMap) {
+  const markers = Array.from(emoteMap.keys()).sort((a, b) => b.length - a.length);
+  let cursor = 0;
+
+  while (cursor < text.length) {
+    let matchedMarker = "";
+    for (const marker of markers) {
+      if (text.startsWith(marker, cursor)) {
+        matchedMarker = marker;
+        break;
+      }
+    }
+
+    if (!matchedMarker) {
+      const nextIndex = findNextMarkerIndex(text, markers, cursor + 1);
+      appendPlainContentRuns(target, text.slice(cursor, nextIndex));
+      cursor = nextIndex;
+      continue;
+    }
+
+    appendBilibiliEmote(target, matchedMarker, emoteMap.get(matchedMarker));
+    cursor += matchedMarker.length;
+  }
+}
+
+function appendBilibiliEmote(target, marker, emote) {
+  if (!isSafeImageUrl(emote?.url)) {
+    appendPlainContentRuns(target, marker);
+    return;
+  }
+
+  const image = document.createElement("img");
+  image.className = "emoji bilibili-emote";
+  image.src = emote.url;
+  image.alt = marker;
+  image.title = marker;
+  image.decoding = "async";
+  image.loading = "lazy";
+  image.referrerPolicy = "no-referrer";
+  image.draggable = false;
+  image.addEventListener("error", () => {
+    image.replaceWith(document.createTextNode(marker));
+  }, { once: true });
+  target.append(image);
+}
+
+function buildEmoteMap(emotes) {
+  const map = new Map();
+  if (!Array.isArray(emotes)) {
+    return map;
+  }
+
+  for (const emote of emotes) {
+    const marker = String(emote?.text || "").trim();
+    if (!/^\[[^\[\]\r\n]{1,40}\]$/.test(marker) || !isSafeImageUrl(emote?.url)) {
+      continue;
+    }
+    map.set(marker, {
+      url: emote.url,
+      width: Number(emote.width) || undefined,
+      height: Number(emote.height) || undefined
+    });
+  }
+  return map;
+}
+
+function findNextMarkerIndex(text, markers, start) {
+  let nextIndex = text.length;
+  for (const marker of markers) {
+    const index = text.indexOf(marker, start);
+    if (index !== -1 && index < nextIndex) {
+      nextIndex = index;
+    }
+  }
+  return nextIndex;
+}
+
+function isSafeImageUrl(value) {
+  try {
+    return new URL(String(value || "")).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function getGraphemeLength(value) {
   const text = String(value || "");
   if (typeof Intl !== "undefined" && Intl.Segmenter) {
     return Array.from(new Intl.Segmenter("zh-CN", { granularity: "grapheme" }).segment(text)).length;
   }
   return Array.from(text).length;
+}
+
+function createFansMedalElement(medal) {
+  const name = String(medal?.name || "").trim();
+  const level = Number.parseInt(medal?.level, 10);
+  if (!name || !Number.isFinite(level) || level <= 0) {
+    return null;
+  }
+
+  const element = document.createElement("span");
+  element.className = "fans-medal";
+  if (medal.active === false) {
+    element.classList.add("is-dimmed");
+  }
+  element.title = medal.anchor ? `${name} · LV${level} · ${medal.anchor}` : `${name} · LV${level}`;
+
+  const medalName = document.createElement("span");
+  medalName.className = "fans-medal-name";
+  medalName.textContent = name;
+
+  const medalLevel = document.createElement("span");
+  medalLevel.className = "fans-medal-level";
+  medalLevel.textContent = level;
+
+  element.append(medalName, medalLevel);
+  return element;
 }
 
 function appendItem(item) {
@@ -555,9 +720,18 @@ function appendItem(item) {
   }
   li.dataset.id = item.id;
 
+  const labelStack = document.createElement("div");
+  labelStack.className = "danmaku-label-stack";
+
   const tag = document.createElement("span");
   tag.className = "tag danmaku-badge-text";
   tag.textContent = item.tag || "弹幕";
+  labelStack.append(tag);
+
+  const medal = createFansMedalElement(item.medal);
+  if (medal) {
+    labelStack.append(medal);
+  }
 
   const content = document.createElement("div");
   content.className = "content danmaku-content-wrap";
@@ -580,7 +754,8 @@ function appendItem(item) {
 
   const text = document.createElement("span");
   text.className = "text danmaku-content";
-  appendContentRuns(text, item.price ? `${item.text} ¥${item.price}` : item.text);
+  const displayText = item.price ? `${item.text} ¥${item.price}` : item.text;
+  appendContentRuns(text, displayText, item.emotes);
 
   meta.append(user, uid);
   if (itemType === "gift") {
@@ -588,15 +763,20 @@ function appendItem(item) {
     li.dataset.giftName = String(item.giftName || item.text || "");
     content.classList.add("gift-content");
     text.textContent = "";
-    appendContentRuns(text, item.giftName || item.text || "礼物");
+    const giftText = item.giftName || item.text || "礼物";
+    appendContentRuns(text, giftText);
     const multiplier = document.createElement("span");
     multiplier.className = "gift-multiplier";
     multiplier.textContent = `x${Math.max(1, Number(item.giftCount || 1))}`;
-    content.append(user, text, multiplier);
+    meta.append(user);
+    content.append(meta, text, multiplier);
   } else {
     content.append(meta, text);
   }
-  li.append(tag, content);
+  li.dataset.copyText = buildCopyText(item, itemType);
+  li.title = state.settings?.copyOnTagClick ? "单击复制弹幕内容" : "";
+  li.addEventListener("click", handleItemCopyClick);
+  li.append(labelStack, content);
   els.feed.append(li);
   requestAnimationFrame(() => {
     li.classList.add("has-entered");
@@ -630,6 +810,7 @@ function tryStackGiftCombo(item) {
   if (lastStateItem && lastStateItem.type === "gift" && String(lastStateItem.uid || "") === incomingUid) {
     lastStateItem.giftCount = nextCount;
   }
+  lastItem.dataset.copyText = buildCopyText({ ...item, giftCount: nextCount }, "gift");
   multiplier.classList.remove("pop-active");
   void multiplier.offsetWidth;
   multiplier.classList.add("pop-active");
@@ -637,6 +818,64 @@ function tryStackGiftCombo(item) {
     multiplier.classList.remove("pop-active");
   }, 200);
   return true;
+}
+
+async function handleItemCopyClick(event) {
+  if (!state.settings?.copyOnTagClick || isClickThroughMode()) {
+    return;
+  }
+  const item = event.currentTarget;
+  if (!(item instanceof HTMLElement)) {
+    return;
+  }
+  const text = item?.dataset.copyText || "";
+  if (!text) {
+    return;
+  }
+  try {
+    await api.writeClipboardText?.(text);
+    showTagCopyToast(item);
+    flashStatus("已复制弹幕", 1100);
+  } catch {
+    flashStatus("复制失败", 1600);
+  }
+}
+
+function showTagCopyToast(item) {
+  if (!(item instanceof HTMLElement)) {
+    return;
+  }
+  item.querySelector(".copy-toast")?.remove();
+  const toast = document.createElement("span");
+  toast.className = "copy-toast";
+  toast.textContent = "已复制";
+  item.append(toast);
+  requestAnimationFrame(() => {
+    toast.classList.add("is-visible");
+  });
+  window.setTimeout(() => {
+    toast.classList.remove("is-visible");
+    window.setTimeout(() => toast.remove(), 220);
+  }, 900);
+}
+
+function buildCopyText(item, itemType) {
+  if (itemType === "gift") {
+    const giftName = item.giftName || item.text || "礼物";
+    const giftCount = Math.max(1, Number(item.giftCount || 1));
+    return `${giftName} x${giftCount}`;
+  }
+  if (itemType === "superchat") {
+    return `${item.text || ""}${item.price ? ` ¥${item.price}` : ""}`.trim();
+  }
+  return String(item.text || "").trim();
+}
+
+function updateCopyHintTitles(enabled) {
+  const title = enabled ? "单击复制弹幕内容" : "";
+  els.feed.querySelectorAll(".danmaku-item").forEach((item) => {
+    item.title = title;
+  });
 }
 
 function finalizeAppendedItem(shouldAutoScroll) {
@@ -732,6 +971,13 @@ function updateFeedScrollState({ userInitiated = false } = {}) {
   if (state.isMutatingFeed) {
     return;
   }
+  if (isClickThroughMode()) {
+    state.isFeedHovered = false;
+    state.isFeedScrolledUp = false;
+    state.hasFeedScrollIntent = false;
+    state.newMessagesWhileLocked = 0;
+    return;
+  }
   const atBottom = isFeedAtBottom();
   if (atBottom) {
     state.isFeedScrolledUp = false;
@@ -746,6 +992,9 @@ function updateFeedScrollState({ userInitiated = false } = {}) {
 }
 
 function shouldAutoScrollFeed() {
+  if (isClickThroughMode()) {
+    return true;
+  }
   return !state.isFeedHovered && !state.isFeedScrolledUp;
 }
 
@@ -778,8 +1027,9 @@ function prepareBottomAlignedScrollTop() {
   if (cutIndex < 0) {
     return rawTop;
   }
-  const baseBottomPad = 24;
-  const maxExtraPad = 32;
+  const dimmed = els.appContainer?.classList.contains("is-hud-dimmed");
+  const baseBottomPad = dimmed ? 10 : 24;
+  const maxExtraPad = dimmed ? 18 : 32;
   const cutItem = items[cutIndex];
   const upwardShift = rawTop - cutItem.offsetTop;
   if (upwardShift > 0 && upwardShift <= baseBottomPad) {
@@ -798,6 +1048,9 @@ function prepareBottomAlignedScrollTop() {
 }
 
 function handleFeedHoverStart() {
+  if (isClickThroughMode()) {
+    return;
+  }
   state.isFeedHovered = true;
   if (isFeedAtBottom()) {
     state.isFeedScrolledUp = false;
@@ -807,6 +1060,13 @@ function handleFeedHoverStart() {
 
 function handleFeedHoverEnd() {
   clearInkFocus();
+  if (isClickThroughMode()) {
+    state.isFeedHovered = false;
+    state.isFeedScrolledUp = false;
+    state.hasFeedScrollIntent = false;
+    state.newMessagesWhileLocked = 0;
+    return;
+  }
   if (!state.isFeedHovered) {
     return;
   }
@@ -820,6 +1080,9 @@ function handleFeedHoverEnd() {
 }
 
 function handleHudWake() {
+  if (isClickThroughMode()) {
+    return;
+  }
   clearTimeout(state.hudDimTimer);
   state.hudDimTimer = null;
   els.appContainer?.classList.remove("is-hud-dimmed");
@@ -830,6 +1093,10 @@ function scheduleHudDim() {
   state.hudDimTimer = setTimeout(() => {
     updateHudCollapseOffset();
     els.appContainer?.classList.add("is-hud-dimmed");
+    if (!isClickThroughMode()) {
+      state.clickThroughNoticeShown = false;
+      updateSetting("clickThrough", true);
+    }
   }, 5000);
 }
 
@@ -843,7 +1110,93 @@ function updateHudCollapseOffset() {
   els.appContainer.style.setProperty("--hud-dot-offset", `${measured + 1}px`);
 }
 
+function isClickThroughMode() {
+  return Boolean(state.settings?.clickThrough);
+}
+
+function syncClickThroughMode(enabled, wasEnabled) {
+  if (!enabled) {
+    clearTimeout(state.clickThroughWakeTimer);
+    state.clickThroughWakeTimer = null;
+    clearInkFocus();
+    if (wasEnabled) {
+      showStatusModeTip("已恢复交互", 1800);
+    }
+    return;
+  }
+
+  clearInkFocus();
+  state.isFeedHovered = false;
+  state.isFeedScrolledUp = false;
+  state.hasFeedScrollIntent = false;
+  state.newMessagesWhileLocked = 0;
+  if (!state.clickThroughNoticeShown || !wasEnabled) {
+    state.clickThroughNoticeShown = true;
+    showStatusModeTip("穿透中 · 停留红点 1 秒恢复", 4200);
+  }
+}
+
+function handleClickThroughWakePointer(event) {
+  if (!isPointerInStatusWakeZone(event)) {
+    clearTimeout(state.clickThroughWakeTimer);
+    state.clickThroughWakeTimer = null;
+    els.statusDot?.classList.remove("is-waking");
+    return;
+  }
+
+  if (state.clickThroughWakeTimer) {
+    return;
+  }
+
+  els.statusDot?.classList.add("is-waking");
+  showStatusModeTip("保持停留 · 正在恢复", 1100);
+  state.clickThroughWakeTimer = setTimeout(() => {
+    state.clickThroughWakeTimer = null;
+    els.statusDot?.classList.remove("is-waking");
+    updateSetting("clickThrough", false);
+  }, 800);
+}
+
+function isPointerInStatusWakeZone(event) {
+  if (!els.statusDot) {
+    return false;
+  }
+  const rect = els.statusDot.getBoundingClientRect();
+  const radius = 24;
+  const nearRenderedDot = event.clientX >= rect.left - radius
+    && event.clientX <= rect.right + radius
+    && event.clientY >= rect.top - radius
+    && event.clientY <= rect.bottom + radius;
+  if (nearRenderedDot) {
+    return true;
+  }
+
+  // While mouse events are forwarded through a transparent Electron window,
+  // native drag regions may lag behind the renderer state. Keep a small
+  // fixed top-left recovery zone so click-through can be restored immediately.
+  return event.clientX >= 8
+    && event.clientX <= 64
+    && event.clientY >= 6
+    && event.clientY <= 62;
+}
+
+function showStatusModeTip(text, duration = 3200) {
+  if (!els.statusModeTip) {
+    return;
+  }
+  els.statusModeTip.textContent = text;
+  els.statusModeTip.classList.add("is-visible");
+  clearTimeout(state.statusModeTipTimer);
+  state.statusModeTipTimer = setTimeout(() => {
+    els.statusModeTip.classList.remove("is-visible");
+  }, duration);
+}
+
 function handleHudPointerMove(event) {
+  if (isClickThroughMode()) {
+    handleClickThroughWakePointer(event);
+    return;
+  }
   const rect = document.body.getBoundingClientRect();
   const insideApp = event.clientX >= rect.left
     && event.clientX <= rect.right
@@ -855,6 +1208,10 @@ function handleHudPointerMove(event) {
 }
 
 function syncInkFocus(event) {
+  if (isClickThroughMode()) {
+    clearInkFocus();
+    return;
+  }
   const item = event.target instanceof Element ? event.target.closest(".danmaku-item") : null;
   if (!item || !els.feed.contains(item)) {
     clearInkFocus();
@@ -875,6 +1232,9 @@ function clearInkFocus() {
 }
 
 function syncFeedHoverFromPointer(event) {
+  if (isClickThroughMode()) {
+    return;
+  }
   if (!state.isFeedHovered) {
     return;
   }

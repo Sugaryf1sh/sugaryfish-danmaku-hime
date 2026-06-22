@@ -35,6 +35,9 @@ class BilibiliDanmakuClient extends EventEmitter {
     this.reconnectAttempts = 0;
     this.cookie = "";
     this.uid = 0;
+    this.roomEmotes = new Map();
+    this.emotePackageIndex = new Map();
+    this.emotePackagePromises = new Map();
   }
 
   async connect(roomId, options = {}) {
@@ -42,6 +45,9 @@ class BilibiliDanmakuClient extends EventEmitter {
     this.roomId = String(roomId || "").trim();
     this.cookie = buildCookie(options.sessdata);
     this.uid = 0;
+    this.roomEmotes = new Map();
+    this.emotePackageIndex = new Map();
+    this.emotePackagePromises = new Map();
     if (!/^\d+$/.test(this.roomId)) {
       throw new Error("请输入有效的数字直播间号");
     }
@@ -82,6 +88,11 @@ class BilibiliDanmakuClient extends EventEmitter {
       const realRoomId = await resolveRealRoomId(this.roomId, this.cookie);
       this.realRoomId = realRoomId;
       this.uid = await getLoginUid(this.cookie);
+
+      this.emit("status", { state: "connecting", text: "正在获取直播表情" });
+      const emoteResources = await getEmoticonResources(realRoomId, this.cookie);
+      this.roomEmotes = emoteResources.emotes;
+      this.emotePackageIndex = emoteResources.packageIndex;
 
       this.emit("status", { state: "connecting", text: "正在获取弹幕服务器" });
       const conf = await getDanmuInfo(realRoomId, this.cookie);
@@ -228,13 +239,65 @@ class BilibiliDanmakuClient extends EventEmitter {
       } else if (version === PROTOCOL_VERSION_NORMAL || version === 1) {
         const message = parseJsonBody(body);
         if (message) {
-          const normalized = normalizeEvent(message);
-          if (normalized) {
-            this.emit("event", normalized);
-          }
+          this.emitNormalizedEvent(message);
         }
       }
     }
+  }
+
+  async emitNormalizedEvent(message) {
+    try {
+      await this.ensureEmotesForMessage(message);
+      const normalized = normalizeEvent(message, this.roomEmotes);
+      if (normalized) {
+        this.emit("event", normalized);
+      }
+    } catch {
+      const normalized = normalizeEvent(message, this.roomEmotes);
+      if (normalized) {
+        this.emit("event", normalized);
+      }
+    }
+  }
+
+  async ensureEmotesForMessage(message) {
+    const command = String(message?.cmd || "").split(":")[0];
+    if (command !== "DANMU_MSG") {
+      return;
+    }
+
+    const text = String(message.info?.[1] || "");
+    const packageNames = getMissingEmotePackageNames(text, this.roomEmotes, this.emotePackageIndex);
+    if (!packageNames.length) {
+      return;
+    }
+
+    await Promise.all(packageNames.map((packageName) => this.loadEmotePackage(packageName)));
+  }
+
+  async loadEmotePackage(packageName) {
+    const packageId = this.emotePackageIndex.get(packageName);
+    if (!packageId) {
+      return;
+    }
+
+    const key = `${packageName}:${packageId}`;
+    if (this.emotePackagePromises.has(key)) {
+      return this.emotePackagePromises.get(key);
+    }
+
+    const promise = fetchEmotePackageMap(packageId, this.cookie)
+      .then((map) => {
+        mergeEmoticonMap(this.roomEmotes, map);
+      })
+      .catch(() => {
+        // Optional package loading should never interrupt danmaku delivery.
+      })
+      .finally(() => {
+        this.emotePackagePromises.delete(key);
+      });
+    this.emotePackagePromises.set(key, promise);
+    return promise;
   }
 }
 
@@ -272,6 +335,262 @@ async function getRoomPopularity(realRoomId, cookie = "") {
 
   const online = Number(payload.data.online);
   return Number.isFinite(online) ? online : null;
+}
+
+async function getEmoticonResources(realRoomId, cookie = "") {
+  const emotes = new Map();
+  const packageIndex = new Map();
+  const urls = [
+    `${API_BASE}/xlive/web-ucenter/v2/emoticon/GetEmoticons?platform=pc&room_id=${encodeURIComponent(realRoomId)}`,
+    `${API_BASE}/xlive/web-ucenter/v2/emoticon/GetEmoticons?business=reply&platform=pc&room_id=${encodeURIComponent(realRoomId)}`,
+    `${API_BASE}/xlive/web-ucenter/v2/emoticon/GetEmoticons?business=danmaku&platform=pc&room_id=${encodeURIComponent(realRoomId)}`,
+    "https://api.bilibili.com/x/emote/user/panel/web?business=reply",
+    "https://api.bilibili.com/x/emote/user/panel/web?business=dynamic",
+    "https://api.bilibili.com/x/emote/setting/panel?business=reply",
+    "https://api.bilibili.com/x/emote/setting/panel?business=dynamic"
+  ];
+
+  for (const url of urls) {
+    try {
+      const payload = await fetchJson(url, { cookie });
+      if (payload.code === 0 && payload.data) {
+        mergeEmoticonMap(emotes, buildRoomEmoticonMap(payload.data));
+        mergeEmoticonPackageIndex(packageIndex, buildEmoticonPackageIndex(payload.data));
+      }
+    } catch {
+      // Emoticons are optional. Keep the danmaku connection usable if this API changes.
+    }
+  }
+
+  return { emotes, packageIndex };
+}
+
+async function fetchEmotePackageMap(packageId, cookie = "") {
+  const urls = [
+    `https://api.bilibili.com/x/emote/package?business=reply&ids=${encodeURIComponent(packageId)}`,
+    `https://api.bilibili.com/x/emote/package?business=dynamic&ids=${encodeURIComponent(packageId)}`
+  ];
+
+  const map = new Map();
+  for (const url of urls) {
+    try {
+      const payload = await fetchJson(url, { cookie });
+      if (payload.code === 0 && payload.data) {
+        mergeEmoticonMap(map, buildRoomEmoticonMap(payload.data));
+      }
+    } catch {
+      // Try the next business scope.
+    }
+  }
+  return map;
+}
+
+function buildRoomEmoticonMap(data) {
+  const map = new Map();
+  const packages = [
+    ...asArray(data?.data),
+    ...asArray(data?.packages),
+    ...asArray(data?.user_panel_packages),
+    ...asArray(data?.all_packages),
+    ...asArray(data?.emoticons),
+    ...asArray(data?.emote),
+    ...asArray(data)
+  ];
+
+  for (const pkg of packages) {
+    if (!pkg || typeof pkg !== "object") {
+      continue;
+    }
+    const packageName = String(pkg.pkg_name || pkg.package_name || pkg.name || "").trim();
+    const items = [
+      ...asArray(pkg.emoticons),
+      ...asArray(pkg.emojis),
+      ...asArray(pkg.emote),
+      ...asArray(pkg.emotes),
+      ...asArray(pkg.data)
+    ];
+
+    for (const item of items) {
+      addRoomEmoticon(map, item, packageName);
+    }
+  }
+
+  collectNestedRoomEmoticons(map, data);
+  return map;
+}
+
+function mergeEmoticonMap(target, source) {
+  for (const [key, value] of source.entries()) {
+    if (!target.has(key)) {
+      target.set(key, value);
+    }
+  }
+}
+
+function buildEmoticonPackageIndex(data) {
+  const index = new Map();
+  collectEmoticonPackageIndex(index, data);
+  return index;
+}
+
+function collectEmoticonPackageIndex(index, node, depth = 0) {
+  if (node == null || depth > 5) {
+    return;
+  }
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      collectEmoticonPackageIndex(index, item, depth + 1);
+    }
+    return;
+  }
+
+  if (typeof node !== "object") {
+    return;
+  }
+
+  const id = node.id || node.package_id || node.pkg_id;
+  const name = String(node.text || node.pkg_name || node.package_name || node.name || "").trim();
+  if (id && name) {
+    for (const alias of buildPackageNameAliases(name)) {
+      if (!index.has(alias)) {
+        index.set(alias, id);
+      }
+    }
+  }
+
+  for (const [key, value] of Object.entries(node)) {
+    if (/package|panel|data|list/i.test(key)) {
+      collectEmoticonPackageIndex(index, value, depth + 1);
+    }
+  }
+}
+
+function mergeEmoticonPackageIndex(target, source) {
+  for (const [key, value] of source.entries()) {
+    if (!target.has(key)) {
+      target.set(key, value);
+    }
+  }
+}
+
+function buildPackageNameAliases(name) {
+  const cleanName = String(name || "").trim();
+  if (!cleanName) {
+    return [];
+  }
+
+  const aliases = new Set([cleanName]);
+  const costumeMatch = cleanName.match(/^(.+?)个性装扮(.+)$/);
+  if (costumeMatch) {
+    aliases.add(`${costumeMatch[1]}${costumeMatch[2]}`.trim());
+  }
+  const todayMatch = cleanName.match(/^(.+?)今天吃什么$/);
+  if (todayMatch) {
+    aliases.add(todayMatch[1].trim());
+  }
+  return Array.from(aliases);
+}
+
+function getMissingEmotePackageNames(messageText, emoteMap, packageIndex) {
+  const markers = String(messageText || "").match(EMOTE_MARKER_PATTERN) || [];
+  const names = new Set();
+  for (const marker of markers) {
+    if (emoteMap?.has(marker)) {
+      continue;
+    }
+    const inner = marker.slice(1, -1);
+    const separatorIndex = inner.lastIndexOf("_");
+    if (separatorIndex <= 0) {
+      continue;
+    }
+    const packageName = inner.slice(0, separatorIndex);
+    if (packageIndex?.has(packageName)) {
+      names.add(packageName);
+    }
+  }
+  return Array.from(names);
+}
+
+function collectNestedRoomEmoticons(map, node, packageName = "", depth = 0) {
+  if (node == null || depth > 5) {
+    return;
+  }
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      collectNestedRoomEmoticons(map, item, packageName, depth + 1);
+    }
+    return;
+  }
+
+  if (typeof node !== "object") {
+    return;
+  }
+
+  const nextPackageName = String(node.pkg_name || node.package_name || node.name || packageName || "").trim();
+  addRoomEmoticon(map, node, packageName);
+
+  for (const [key, value] of Object.entries(node)) {
+    if (/emot|emoji|package|data|list/i.test(key)) {
+      collectNestedRoomEmoticons(map, value, nextPackageName, depth + 1);
+    }
+  }
+}
+
+function addRoomEmoticon(map, item, packageName = "") {
+  if (!item || typeof item !== "object") {
+    return;
+  }
+  const url = normalizeImageUrl(pickImageUrl(item));
+  if (!url) {
+    return;
+  }
+
+  const rawNames = [
+    item.emoji,
+    item.emoticon_name,
+    item.emoji_name,
+    item.descript,
+    item.name,
+    item.text,
+    item.keyword,
+    item.phrase
+  ].map((value) => String(value || "").trim()).filter(Boolean);
+
+  for (const rawName of rawNames) {
+    const names = buildRoomEmoticonMarkers(rawName, packageName);
+    for (const name of names) {
+      if (!map.has(name)) {
+        map.set(name, {
+          text: name,
+          url,
+          width: pickNumber(item, ["width", "w", "img_width"]),
+          height: pickNumber(item, ["height", "h", "img_height"])
+        });
+      }
+    }
+  }
+}
+
+function buildRoomEmoticonMarkers(rawName, packageName = "") {
+  const cleanName = String(rawName || "").trim().replace(/^\[|\]$/g, "");
+  const cleanPackageName = String(packageName || "").trim().replace(/^\[|\]$/g, "");
+  const markers = new Set();
+  if (cleanName) {
+    markers.add(`[${cleanName}]`);
+  }
+  if (cleanPackageName && cleanName && !cleanName.startsWith(`${cleanPackageName}_`)) {
+    markers.add(`[${cleanPackageName}_${cleanName}]`);
+  }
+  return Array.from(markers);
+}
+
+function asArray(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  return value && typeof value === "object" ? [value] : [];
 }
 
 async function signWbiQuery(params, cookie = "") {
@@ -395,11 +714,12 @@ function parseJsonBody(body) {
   }
 }
 
-function normalizeEvent(raw) {
+function normalizeEvent(raw, roomEmotes = new Map()) {
   const command = String(raw.cmd || "").split(":")[0];
   const now = Date.now();
 
   if (command === "DANMU_MSG") {
+    const text = String(raw.info?.[1] || "");
     return {
       id: makeId(),
       type: "danmaku",
@@ -407,7 +727,9 @@ function normalizeEvent(raw) {
       time: now,
       user: raw.info?.[2]?.[1] || "匿名",
       uid: raw.info?.[2]?.[0] || "",
-      text: raw.info?.[1] || ""
+      text,
+      medal: extractFansMedal(raw),
+      emotes: extractDanmakuEmotes(raw, text, roomEmotes)
     };
   }
 
@@ -492,6 +814,301 @@ function normalizeEvent(raw) {
   }
 
   return null;
+}
+
+function extractFansMedal(raw) {
+  const candidates = [
+    raw.info?.[3],
+    raw.info?.[0]?.[16],
+    raw.info?.[0]?.[17],
+    raw.data?.fans_medal,
+    raw.data?.medal_info
+  ];
+
+  for (const candidate of candidates) {
+    const medal = normalizeFansMedal(candidate);
+    if (medal) {
+      return medal;
+    }
+  }
+
+  return null;
+}
+
+function normalizeFansMedal(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (Array.isArray(value)) {
+    const level = toPositiveInteger(value[0]);
+    const name = cleanMedalText(value[1]);
+    const anchor = cleanMedalText(value[2]);
+    const roomId = toPositiveInteger(value[3]);
+    const isActive = value[11] === undefined ? true : Boolean(Number(value[11]));
+    if (!level || !name) {
+      return null;
+    }
+    return { name, level, anchor, roomId, active: isActive };
+  }
+
+  if (typeof value === "object") {
+    const level = toPositiveInteger(value.medal_level || value.fans_medal_level || value.level);
+    const name = cleanMedalText(value.medal_name || value.fans_medal_name || value.name || value.medal);
+    const anchor = cleanMedalText(value.anchor_uname || value.anchor_name || value.target_name);
+    const roomId = toPositiveInteger(value.room_id || value.target_id);
+    const rawActive = value.is_lighted ?? value.light_status ?? value.active;
+    const isActive = rawActive === undefined ? true : Boolean(Number(rawActive));
+    if (!level || !name) {
+      return null;
+    }
+    return { name, level, anchor, roomId, active: isActive };
+  }
+
+  return null;
+}
+
+function cleanMedalText(value) {
+  return String(value || "").trim();
+}
+
+function toPositiveInteger(value) {
+  const number = Number.parseInt(value, 10);
+  return Number.isFinite(number) && number > 0 ? number : 0;
+}
+
+const EMOTE_MARKER_PATTERN = /\[[^\[\]\r\n]{1,40}\]/g;
+const EMOTE_CONTAINER_KEY_PATTERN = /^(emots?|emoticons?|emojis?|emoji_info|bulge_display)$/i;
+const EMOTE_URL_KEY_PATTERN = /^(url|uri|src|gif_url|webp_url|image_url|img_url)$/i;
+const EMOTE_TEXT_KEY_PATTERN = /^(text|name|keyword|phrase|emoji|emote|emoticon|emoticon_name|emoji_name|descript)$/i;
+
+function extractDanmakuEmotes(raw, messageText, roomEmotes = new Map()) {
+  const bracketTexts = new Set(String(messageText || "").match(EMOTE_MARKER_PATTERN) || []);
+  if (!bracketTexts.size) {
+    return [];
+  }
+
+  const emotes = new Map();
+
+  const addEmote = (markerValue, urlValue, source = {}) => {
+    const marker = normalizeEmoteMarker(markerValue, bracketTexts);
+    const url = normalizeImageUrl(urlValue);
+    if (!marker || !url) {
+      return;
+    }
+    if (emotes.has(marker)) {
+      return;
+    }
+    emotes.set(marker, {
+      text: marker,
+      url,
+      width: pickNumber(source, ["width", "w", "img_width"]),
+      height: pickNumber(source, ["height", "h", "img_height"])
+    });
+  };
+
+  for (const source of getDanmakuEmoteSources(raw)) {
+    inspectEmoteContainer(source, "", bracketTexts, addEmote);
+  }
+
+  if (roomEmotes?.size) {
+    for (const marker of bracketTexts) {
+      const roomEmote = roomEmotes.get(marker);
+      if (roomEmote && !emotes.has(marker)) {
+        addEmote(marker, roomEmote.url, roomEmote);
+      }
+    }
+  }
+
+  return Array.from(emotes.values());
+}
+
+function getDanmakuEmoteSources(raw) {
+  const sources = [];
+  const meta = Array.isArray(raw.info?.[0]) ? raw.info[0] : [];
+  collectEmoteSources(sources, meta[13]);
+  collectEmoteSources(sources, meta[14]);
+  collectEmoteSources(sources, meta[15]);
+  collectEmoteSources(sources, raw.data?.emots);
+  collectEmoteSources(sources, raw.data?.emoticons);
+  return sources;
+}
+
+function collectEmoteSources(sources, value, depth = 0) {
+  if (value == null || depth > 5) {
+    return;
+  }
+
+  const parsed = typeof value === "string" ? maybeParseJson(value) : value;
+  if (parsed == null || typeof parsed !== "object") {
+    return;
+  }
+
+  if (Array.isArray(parsed)) {
+    for (const item of parsed) {
+      collectEmoteSources(sources, item, depth + 1);
+    }
+    return;
+  }
+
+  if (hasBracketEmoteKey(parsed) || (pickEmoteMarker(parsed, "", new Set()) && pickImageUrl(parsed))) {
+    sources.push(parsed);
+  }
+
+  for (const [key, item] of Object.entries(parsed)) {
+    if (EMOTE_CONTAINER_KEY_PATTERN.test(key)) {
+      sources.push(item);
+      continue;
+    }
+    if (/^(extra|data)$/i.test(key) || /emot|emoji|bulge/i.test(key)) {
+      collectEmoteSources(sources, item, depth + 1);
+    }
+  }
+}
+
+function inspectEmoteContainer(node, keyHint, bracketTexts, addEmote, depth = 0) {
+  if (node == null || depth > 5) {
+    return;
+  }
+
+  const parsed = typeof node === "string" ? maybeParseJson(node) : node;
+  if (parsed == null || typeof parsed !== "object") {
+    if (isBracketMarker(keyHint) && looksLikeImageUrl(node)) {
+      addEmote(keyHint, node);
+    }
+    return;
+  }
+
+  if (Array.isArray(parsed)) {
+    for (const item of parsed) {
+      inspectEmoteContainer(item, keyHint, bracketTexts, addEmote, depth + 1);
+    }
+    return;
+  }
+
+  const directMarker = pickEmoteMarker(parsed, keyHint, bracketTexts);
+  const directUrl = pickImageUrl(parsed);
+  if (directMarker && directUrl) {
+    addEmote(directMarker, directUrl, parsed);
+  }
+
+  for (const [key, item] of Object.entries(parsed)) {
+    if (isBracketMarker(key)) {
+      if (typeof item === "string") {
+        addEmote(key, item);
+      } else {
+        inspectEmoteContainer(item, key, bracketTexts, addEmote, depth + 1);
+      }
+      continue;
+    }
+    if (EMOTE_CONTAINER_KEY_PATTERN.test(key)) {
+      inspectEmoteContainer(item, "", bracketTexts, addEmote, depth + 1);
+    }
+  }
+}
+
+function hasBracketEmoteKey(value) {
+  return Object.keys(value || {}).some((key) => isBracketMarker(key));
+}
+
+function pickImageUrl(value) {
+  for (const [key, item] of Object.entries(value || {})) {
+    if (typeof item === "string" && EMOTE_URL_KEY_PATTERN.test(key) && looksLikeImageUrl(item)) {
+      return item;
+    }
+  }
+  return "";
+}
+
+function pickEmoteMarker(value, keyHint, bracketTexts) {
+  const hinted = normalizeEmoteMarker(keyHint, bracketTexts);
+  if (hinted) {
+    return hinted;
+  }
+
+  for (const [key, item] of Object.entries(value || {})) {
+    if (typeof item !== "string") {
+      continue;
+    }
+    if (EMOTE_TEXT_KEY_PATTERN.test(key)) {
+      const marker = normalizeEmoteMarker(item, bracketTexts);
+      if (marker) {
+        return marker;
+      }
+    }
+  }
+
+  return "";
+}
+
+function normalizeEmoteMarker(value, bracketTexts) {
+  const text = String(value || "").trim();
+  if (!text) {
+    return "";
+  }
+  if (isBracketMarker(text) && (!bracketTexts.size || bracketTexts.has(text))) {
+    return text;
+  }
+  const wrapped = `[${text.replace(/^\[|\]$/g, "")}]`;
+  if (bracketTexts.has(wrapped)) {
+    return wrapped;
+  }
+  return "";
+}
+
+function isBracketMarker(value) {
+  return /^\[[^\[\]\r\n]{1,40}\]$/.test(String(value || "").trim());
+}
+
+function looksLikeImageUrl(value) {
+  return Boolean(normalizeImageUrl(value));
+}
+
+function normalizeImageUrl(value) {
+  let url = String(value || "").trim();
+  if (!url) {
+    return "";
+  }
+  if (url.startsWith("//")) {
+    url = `https:${url}`;
+  }
+  if (url.startsWith("http://")) {
+    url = url.replace(/^http:/i, "https:");
+  }
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") {
+      return "";
+    }
+    const path = parsed.pathname.toLowerCase();
+    const isImagePath = /\.(png|jpe?g|gif|webp|avif|svg)$/.test(path);
+    const isBiliCdn = /(^|\.)hdslb\.com$|(^|\.)biliimg\.com$/i.test(parsed.hostname);
+    return isImagePath || isBiliCdn ? parsed.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+function maybeParseJson(value) {
+  const text = String(value || "").trim();
+  if (!text || text.length > 6000 || !/^[\[{]/.test(text)) {
+    return null;
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function pickNumber(source, keys) {
+  for (const key of keys) {
+    const value = Number(source?.[key]);
+    if (Number.isFinite(value) && value > 0) {
+      return value;
+    }
+  }
+  return undefined;
 }
 
 function makeId() {

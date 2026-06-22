@@ -15,6 +15,7 @@
         </div>
         <button class="update-banner-close" id="updateBannerClose" type="button" aria-label="关闭更新说明">×</button>
       </div>
+      <span class="status-mode-tip" id="statusModeTip" aria-live="polite"></span>
       <section class="header-section">
         <div class="header-section-inner">
           <header class="titlebar">
@@ -31,13 +32,18 @@
                   <span aria-hidden="true">注</span>
                 </button>
                 <div class="help-card" role="tooltip">
-                  <strong>SESSDATA</strong>
-                  <p><span>01</span>登录 B 站，打开直播页或主页。</p>
-                  <p><span>02</span>按 F12，点顶部“应用（Application）”。</p>
-                  <p><span>03</span>左侧点“存储（Storage）”下的“Cookie”。</p>
-                  <p class="help-domains"><span>04</span><em>选择以下任意一项：</em><code>https://live.bilibili.com</code><code>https://www.bilibili.com</code></p>
-                  <p><span>05</span>表格“名称（Name）”列找到 SESSDATA。</p>
-                  <p><span>06</span>只复制“值（Value）”，粘贴到本窗口 SESSDATA。</p>
+                  <strong>使用说明</strong>
+                  <p><span>01</span>点击 SESSDATA 右侧“获取”。</p>
+                  <p><span>02</span>在弹出的 B 站窗口完成登录。</p>
+                  <p><span>03</span>窗口会自动读取并保存 SESSDATA，无需手动复制 Cookie。</p>
+                  <div class="help-divider"></div>
+                  <dl class="help-meta">
+                    <div><dt>项目</dt><dd><a href="https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime" data-external-url="https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime">GitHub</a></dd></div>
+                    <div><dt>版本</dt><dd>v1.1.3</dd></div>
+                    <div><dt>更新</dt><dd>2026-06-22</dd></div>
+                    <div><dt>联系</dt><dd>QQ 782654910</dd></div>
+                  </dl>
+                  <button class="help-update" id="updateBtn" type="button" title="检查更新">检查更新</button>
                 </div>
               </div>
               <button class="window-btn btn-theme" id="themeToggle" title="切换暗色主题" aria-label="切换暗色主题" type="button">
@@ -78,7 +84,6 @@
               <span class="options-title">设置 ▾</span><kbd class="options-sub">Options</kbd>
             </button>
             <div class="toolbar-actions">
-              <button class="toggle update-check" id="updateBtn" type="button" title="检查更新">更新</button>
               <button class="toggle danger" id="disconnectBtn" type="button" title="断开连接" hidden>断开</button>
             </div>
           </section>
@@ -86,12 +91,35 @@
           <section class="settings-panel" aria-label="设置详情">
             <div class="settings-panel-inner">
               <div class="setting-unit">
-                <div class="setting-switch-group">
+                <div class="setting-switch-group setting-top-switch">
                   <button class="toggle setting-switch active" id="topToggle" type="button" title="置顶窗口 Ctrl+Alt+T">
                     <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark">x</span><span class="chk-bracket">]</span></span> 置顶</span><kbd class="shortcut-key">Ctrl Alt T</kbd>
                   </button>
                 </div>
-                <div class="setting-param-group">
+              </div>
+              <div class="setting-unit">
+                <div class="setting-switch-group setting-through-switch">
+                  <button class="toggle setting-switch" id="throughToggle" type="button" title="鼠标穿透 Ctrl+Alt+J">
+                    <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark"></span><span class="chk-bracket">]</span></span> 穿透</span><kbd class="shortcut-key">Ctrl Alt J</kbd>
+                  </button>
+                </div>
+              </div>
+              <div class="setting-unit">
+                <div class="setting-switch-group setting-lock-switch">
+                  <button class="toggle setting-switch" id="lockToggle" type="button" title="锁定窗口 Ctrl+Alt+L">
+                    <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark"></span><span class="chk-bracket">]</span></span> 锁定</span><kbd class="shortcut-key">Ctrl Alt L</kbd>
+                  </button>
+                </div>
+              </div>
+              <div class="setting-unit compact-setting">
+                <div class="setting-switch-group setting-copy-switch">
+                  <button class="toggle setting-switch" id="copyToggle" type="button" title="单击弹幕复制内容">
+                    <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark"></span><span class="chk-bracket">]</span></span> 复制</span><kbd class="shortcut-key">单击弹幕</kbd>
+                  </button>
+                </div>
+              </div>
+              <div class="setting-param-row">
+                <div class="setting-param-group setting-opacity-param">
                   <label class="setting-control">
                     <span class="setting-label">透明度</span>
                     <output id="opacityValue">100%</output>
@@ -100,14 +128,7 @@
                     </div>
                   </label>
                 </div>
-              </div>
-              <div class="setting-unit">
-                <div class="setting-switch-group">
-                  <button class="toggle setting-switch" id="throughToggle" type="button" title="鼠标穿透 Ctrl+Alt+J">
-                    <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark"></span><span class="chk-bracket">]</span></span> 穿透</span><kbd class="shortcut-key">Ctrl Alt J</kbd>
-                  </button>
-                </div>
-                <div class="setting-param-group">
+                <div class="setting-param-group setting-font-param">
                   <label class="setting-control">
                     <span class="setting-label">字号</span>
                     <output id="fontValue">15</output>
@@ -116,14 +137,7 @@
                     </div>
                   </label>
                 </div>
-              </div>
-              <div class="setting-unit">
-                <div class="setting-switch-group">
-                  <button class="toggle setting-switch" id="lockToggle" type="button" title="锁定窗口 Ctrl+Alt+L">
-                    <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark"></span><span class="chk-bracket">]</span></span> 锁定</span><kbd class="shortcut-key">Ctrl Alt L</kbd>
-                  </button>
-                </div>
-                <div class="setting-param-group">
+                <div class="setting-param-group setting-max-param">
                   <label class="setting-control">
                     <span class="setting-label">条数</span>
                     <output id="maxValue">80</output>
