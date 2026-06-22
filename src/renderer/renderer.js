@@ -17,6 +17,8 @@ const state = {
   statusPulseTimer: null,
   statusModeTipTimer: null,
   updateBannerTimer: null,
+  updateNoticeInteractionActive: false,
+  updateNoticeRestoreClickThrough: null,
   clickThroughWakeTimer: null,
   clickThroughNoticeShown: false,
   startTime: Date.now(),
@@ -251,7 +253,10 @@ function bindIpc() {
   });
 }
 
-async function updateSetting(key, value) {
+async function updateSetting(key, value, options = {}) {
+  if (key === "clickThrough" && !options.system && state.updateNoticeInteractionActive) {
+    state.updateNoticeRestoreClickThrough = null;
+  }
   state.settings = await api.updateSettings({ [key]: value });
   applySettings(state.settings);
 }
@@ -541,7 +546,8 @@ async function consumeUpdateNotes() {
   try {
     const notes = await api.consumeUpdateNotes();
     if (notes) {
-      showUpdateBanner(formatUpdateNotice(notes));
+      await beginUpdateNoticeInteractionMode();
+      showUpdateBanner({ ...formatUpdateNotice(notes), updateNotice: true });
     }
   } catch {
     // Update notes are decorative; failures should not interrupt the live feed.
@@ -581,10 +587,14 @@ function showUpdateBanner(details) {
     body = "正在准备更新。",
     progress = null,
     sticky = false,
-    mode = ""
+    mode = "",
+    updateNotice = false
   } = details || {};
 
   clearTimeout(state.updateBannerTimer);
+  if (updateNotice) {
+    state.updateNoticeInteractionActive = true;
+  }
   els.updateBanner.classList.toggle("is-error", mode === "error");
   els.updateBanner.classList.toggle("is-progress", mode === "progress");
   els.updateBanner.classList.toggle("is-success", mode === "success");
@@ -612,6 +622,7 @@ function hideUpdateBanner() {
   }
   clearTimeout(state.updateBannerTimer);
   els.updateBanner.classList.remove("is-visible");
+  endUpdateNoticeInteractionMode();
   window.setTimeout(() => {
     if (!els.updateBanner.classList.contains("is-visible")) {
       els.updateBanner.hidden = true;
@@ -622,6 +633,32 @@ function hideUpdateBanner() {
       }
     }
   }, 260);
+}
+
+async function beginUpdateNoticeInteractionMode() {
+  if (state.updateNoticeInteractionActive) {
+    return;
+  }
+  clearTimeout(state.hudDimTimer);
+  state.hudDimTimer = null;
+  els.appContainer?.classList.remove("is-hud-dimmed");
+  state.updateNoticeInteractionActive = true;
+  state.updateNoticeRestoreClickThrough = Boolean(state.settings?.clickThrough);
+  if (state.updateNoticeRestoreClickThrough) {
+    await updateSetting("clickThrough", false, { system: true });
+  }
+}
+
+async function endUpdateNoticeInteractionMode() {
+  if (!state.updateNoticeInteractionActive) {
+    return;
+  }
+  const shouldRestore = state.updateNoticeRestoreClickThrough === true;
+  state.updateNoticeInteractionActive = false;
+  state.updateNoticeRestoreClickThrough = null;
+  if (shouldRestore && state.settings && !state.settings.clickThrough) {
+    await updateSetting("clickThrough", true, { system: true });
+  }
 }
 
 function applyTheme(theme) {
@@ -1272,6 +1309,9 @@ function handleHudWake() {
 function scheduleHudDim() {
   clearTimeout(state.hudDimTimer);
   state.hudDimTimer = setTimeout(() => {
+    if (state.updateNoticeInteractionActive) {
+      return;
+    }
     updateHudCollapseOffset();
     els.appContainer?.classList.add("is-hud-dimmed");
     if (!isClickThroughMode()) {

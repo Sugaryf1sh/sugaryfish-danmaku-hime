@@ -1,18 +1,18 @@
 {
-    "version":  "1.2.0",
-    "tag":  "v1.2.0",
-    "title":  "Sugaryfish的弹幕姬 1.2.0",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.2.0",
+    "version":  "1.2.1",
+    "tag":  "v1.2.1",
+    "title":  "Sugaryfish的弹幕姬 1.2.1",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.2.1",
     "features":  [
-                     "更新检查与确认期间会临时解除鼠标穿透，避免确认弹窗和更新提示无法点击。",
-                     "扩大更新提示关闭按钮的可点击范围，同时保持原有视觉风格。",
-                     "优化穿透恢复红点提示位置，避免提示标签遮住红点。"
+                     "修复更新完成后的说明标签被鼠标穿透挡住、无法关闭的问题。",
+                     "启动 10 秒后的自动检查更新改为排队与静默重试，避免被手动检查或网络波动覆盖。",
+                     "保持无更新时静默，只在发现新版或用户主动检查时打扰用户。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.2.0\n\n## 更新亮点\n\n- 更新检查与确认期间会临时解除鼠标穿透，避免确认弹窗和更新提示无法点击。\n- 扩大更新提示关闭按钮的可点击范围，同时保持原有视觉风格。\n- 优化穿透恢复红点提示位置，避免提示标签遮住红点。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.2.1\n\n- 修复更新完成后的说明标签被鼠标穿透挡住、无法关闭的问题。\n- 启动 10 秒后的自动检查更新改为排队与静默重试，避免被手动检查或网络波动覆盖。\n- 保持无更新时静默，只在发现新版或用户主动检查时打扰用户。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.2.0.zip",
-                    "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v1.2.0/updates/Sugaryfish-Danmaku-Hime-App-1.2.0.zip",
-                    "sha256":  "725333a46a0cac67eba594a951a68e3ad5235a673b41550b255e773f4d31368c"
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.2.1.zip",
+                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.2.1/updates/Sugaryfish-Danmaku-Hime-App-1.2.1.zip",
+                    "sha256":  "02f4f60f4a46bbc4d8709a1bcf2d15aa82ac5c9c6c371c47a26bd97a8219428c"
                 }
 }

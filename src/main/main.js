@@ -22,6 +22,8 @@ const UPDATE_MANIFEST_URLS = [
 const UPDATE_TIMEOUT_MS = 12000;
 const UPDATE_DOWNLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 const UPDATE_DOWNLOAD_STALL_MS = 45000;
+const STARTUP_AUTO_UPDATE_DELAY_MS = 10000;
+const STARTUP_AUTO_UPDATE_MAX_RETRY_MS = 120000;
 const UPDATE_MIRROR_PREFIXES = [
   "https://gh.llkk.cc/",
   "https://ghfast.top/",
@@ -34,6 +36,10 @@ let sessdataFetchPromise = null;
 let updateCheckPromise = null;
 let updateDownloadInProgress = false;
 let updateInteractionRestoreClickThrough = null;
+let startupAutoUpdateTimer = null;
+let startupAutoUpdateRunning = false;
+let startupAutoUpdateSatisfied = false;
+let startupAutoUpdateAttempts = 0;
 let tray = null;
 let settings = { ...DEFAULT_SETTINGS };
 const client = new BilibiliDanmakuClient();
@@ -395,11 +401,75 @@ function chromeLikeUserAgent() {
 }
 
 function scheduleAutoUpdateCheck() {
-  setTimeout(() => {
-    checkForUpdates({ silent: true, prompt: true }).catch((error) => {
+  queueStartupAutoUpdateCheck(STARTUP_AUTO_UPDATE_DELAY_MS);
+}
+
+function queueStartupAutoUpdateCheck(delayMs) {
+  if (startupAutoUpdateSatisfied) {
+    return;
+  }
+  clearTimeout(startupAutoUpdateTimer);
+  startupAutoUpdateTimer = setTimeout(() => {
+    runStartupAutoUpdateCheck().catch((error) => {
       console.warn(`自动检查更新失败：${error.message}`);
+      scheduleStartupAutoUpdateRetry();
     });
-  }, 8000);
+  }, delayMs);
+  startupAutoUpdateTimer.unref?.();
+}
+
+async function runStartupAutoUpdateCheck() {
+  if (startupAutoUpdateSatisfied || startupAutoUpdateRunning) {
+    return;
+  }
+
+  startupAutoUpdateRunning = true;
+  try {
+    if (updateDownloadInProgress) {
+      startupAutoUpdateSatisfied = true;
+      return;
+    }
+
+    if (updateCheckPromise) {
+      const activeResult = await updateCheckPromise.catch((error) => ({
+        status: "error",
+        message: error?.message || "检查更新失败"
+      }));
+      if (isStartupAutoUpdateSatisfied(activeResult)) {
+        startupAutoUpdateSatisfied = true;
+        return;
+      }
+    }
+
+    const result = await checkForUpdates({ silent: true, prompt: true });
+    if (isStartupAutoUpdateSatisfied(result)) {
+      startupAutoUpdateSatisfied = true;
+      return;
+    }
+
+    scheduleStartupAutoUpdateRetry();
+  } finally {
+    startupAutoUpdateRunning = false;
+  }
+}
+
+function scheduleStartupAutoUpdateRetry() {
+  if (startupAutoUpdateSatisfied) {
+    return;
+  }
+  startupAutoUpdateAttempts += 1;
+  const delay = Math.min(
+    STARTUP_AUTO_UPDATE_MAX_RETRY_MS,
+    15000 * Math.max(1, startupAutoUpdateAttempts)
+  );
+  queueStartupAutoUpdateCheck(delay);
+}
+
+function isStartupAutoUpdateSatisfied(result) {
+  if (updateDownloadInProgress) {
+    return true;
+  }
+  return ["no-update", "available", "skipped", "installing"].includes(result?.status);
 }
 
 async function checkForUpdates({ silent, prompt }) {
