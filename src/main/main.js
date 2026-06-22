@@ -223,7 +223,13 @@ function applyWindowSettings(nextSettings) {
 
 ipcMain.handle("settings:get", () => settings);
 ipcMain.handle("settings:update", (_event, patch) => setSettings(patch));
-ipcMain.handle("update:check", () => checkForUpdates({ silent: false, prompt: true }));
+ipcMain.handle("update:check", async () => {
+  try {
+    return await checkForUpdates({ silent: false, prompt: true });
+  } catch (error) {
+    return { status: "error", message: buildUpdateErrorMessage(error) };
+  }
+});
 ipcMain.handle("update:consume-notes", () => consumePendingUpdateNotes());
 ipcMain.handle("shell:open-external", (_event, url) => {
   const href = String(url || "");
@@ -854,7 +860,7 @@ async function downloadAndApplyUpdate(release) {
     const packagePath = path.join(updaterDir, safeFilename(release.package.name || `Sugaryfish的弹幕姬-App-${release.version}.zip`));
     const downloaded = await downloadFileWithFallback(release.package.url, packagePath, (progress, sourceLabel) => {
       notifyUpdateStatus({ state: "downloading", release, progress, sourceLabel });
-    });
+    }, release.package.sha256);
 
     const actualSha = await sha256File(downloaded);
     if (actualSha !== release.package.sha256) {
@@ -897,7 +903,7 @@ function isPathInside(child, parent) {
   return Boolean(relative) && !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
-async function downloadFileWithFallback(url, destination, onProgress) {
+async function downloadFileWithFallback(url, destination, onProgress, expectedSha256 = "") {
   const candidates = buildDownloadCandidates(url);
   const errors = [];
 
@@ -905,6 +911,14 @@ async function downloadFileWithFallback(url, destination, onProgress) {
     try {
       fs.rmSync(destination, { force: true });
       await downloadFile(candidate.url, destination, (progress) => onProgress(progress, candidate.label));
+      if (expectedSha256) {
+        const actualSha = await sha256File(destination);
+        if (actualSha !== expectedSha256) {
+          fs.rmSync(destination, { force: true });
+          errors.push(`${candidate.label}: SHA256 校验失败`);
+          continue;
+        }
+      }
       return destination;
     } catch (error) {
       errors.push(`${candidate.label}: ${error.message}`);
@@ -927,9 +941,13 @@ function buildDownloadCandidates(url) {
     candidates.push({ label: "CDN 备用", url: cdnUrl });
   }
 
-  if (isGitHubDownloadUrl(url)) {
+  const githubUrls = isGitHubDownloadUrl(url) ? [url] : buildGitHubRawAlternates(url);
+  for (const githubUrl of githubUrls) {
+    if (githubUrl !== url) {
+      candidates.push({ label: "GitHub 直连", url: githubUrl });
+    }
     for (const prefix of getMirrorPrefixes()) {
-      candidates.push({ label: "国内加速", url: joinMirrorPrefix(prefix, url) });
+      candidates.push({ label: "国内加速", url: joinMirrorPrefix(prefix, githubUrl) });
     }
   }
 
@@ -958,6 +976,26 @@ function buildJsDelivrAlternates(url) {
         next.hostname = candidateHost;
         return next.toString();
       });
+  } catch {
+    return [];
+  }
+}
+
+function buildGitHubRawAlternates(url) {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    if (!["cdn.jsdelivr.net", "fastly.jsdelivr.net", "gcore.jsdelivr.net"].includes(host)) {
+      return [];
+    }
+
+    const match = parsed.pathname.match(/^\/gh\/([^/]+)\/([^@/]+)@([^/]+)\/(.+)$/);
+    if (!match) {
+      return [];
+    }
+
+    const [, owner, repo, ref, filePath] = match;
+    return [`https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${filePath}`];
   } catch {
     return [];
   }
@@ -1154,6 +1192,9 @@ function notifyUpdateStatus(payload) {
 
 function buildUpdateErrorMessage(error) {
   const message = error?.message || "检查更新失败";
+  if (message.includes("已自动尝试国内 CDN")) {
+    return message;
+  }
   return `${message}。已自动尝试国内 CDN、直连和可校验的 GitHub 加速下载。`;
 }
 function getIconPath() {

@@ -386,9 +386,11 @@ async function handleUpdateCheck() {
       keepResultText = true;
     } else if (result?.status === "skipped") {
       flashStatus("已稍后更新", 1600);
+    } else if (result?.status === "error") {
+      flashStatus(formatUpdateError(result.message), 3200);
     }
   } catch (error) {
-    flashStatus(error.message || "检查更新失败", 3200);
+    flashStatus(formatUpdateError(error), 3200);
   } finally {
     if (!els.updateBtn.dataset.busy) {
       els.updateBtn.disabled = false;
@@ -445,8 +447,23 @@ function handleUpdateStatus(status = {}) {
   setUpdateButtonText(UPDATE_IDLE_TEXT);
 
   if (status.state === "error" && status.message) {
-    flashStatus(status.message, 3600);
+    flashStatus(formatUpdateError(status.message), 3600);
   }
+}
+
+function formatUpdateError(error) {
+  const raw = String(error?.message || error || "").trim();
+  const cleaned = raw
+    .replace(/^Error invoking remote method 'update:check':\s*/i, "")
+    .replace(/^Error:\s*/i, "")
+    .trim();
+  const text = cleaned || "检查更新失败，请稍后重试";
+
+  if (/^Error invoking remote method/i.test(raw)) {
+    return text === raw ? "检查更新失败，请稍后重试" : text;
+  }
+
+  return text.length > 38 ? `${text.slice(0, 36)}...` : text;
 }
 
 function setUpdateButtonText(text) {
