@@ -1330,7 +1330,7 @@ try {
 if (!$success) { exit 1 }
 `;
 
-  fs.writeFileSync(scriptPath, script, "utf8");
+  fs.writeFileSync(scriptPath, `\ufeff${script}`, "utf8");
   const powershellPath = getWindowsPowerShellPath();
   const child = spawn(powershellPath, [
     "-NoProfile",
