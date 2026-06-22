@@ -869,8 +869,8 @@ async function downloadAndApplyUpdate(release) {
     fs.mkdirSync(updaterDir, { recursive: true });
 
     const packagePath = path.join(updaterDir, safeFilename(release.package.name || `Sugaryfish的弹幕姬-App-${release.version}.zip`));
-    const downloaded = await downloadFileWithFallback(release.package.url, packagePath, (progress, sourceLabel) => {
-      notifyUpdateStatus({ state: "downloading", release, progress, sourceLabel });
+    const downloaded = await downloadFileWithFallback(release.package.url, packagePath, (progress, sourceLabel, receivedBytes = 0) => {
+      notifyUpdateStatus({ state: "downloading", release, progress, sourceLabel, receivedBytes });
     }, release.package.sha256);
 
     const actualSha = await sha256File(downloaded);
@@ -921,7 +921,8 @@ async function downloadFileWithFallback(url, destination, onProgress, expectedSh
   for (const candidate of candidates) {
     try {
       fs.rmSync(destination, { force: true });
-      await downloadFile(candidate.url, destination, (progress) => onProgress(progress, candidate.label));
+      onProgress(1, candidate.label, 0);
+      await downloadFile(candidate.url, destination, (progress, receivedBytes = 0) => onProgress(progress, candidate.label, receivedBytes));
       if (expectedSha256) {
         const actualSha = await sha256File(destination);
         if (actualSha !== expectedSha256) {
@@ -946,23 +947,36 @@ function buildDownloadCandidates(url) {
     candidates.push({ label: "自定义加速", url: joinMirrorPrefix(customPrefix, url) });
   }
 
-  candidates.push({ label: "CDN/直连", url });
+  if (isJsDelivrUrl(url)) {
+    candidates.push({ label: "CDN", url });
+  }
 
   for (const cdnUrl of buildJsDelivrAlternates(url)) {
-    candidates.push({ label: "CDN 备用", url: cdnUrl });
+    candidates.push({ label: "CDN", url: cdnUrl });
   }
 
   const githubUrls = isGitHubDownloadUrl(url) ? [url] : buildGitHubRawAlternates(url);
   for (const githubUrl of githubUrls) {
+    for (const prefix of getPreferredMirrorPrefixes()) {
+      candidates.push({ label: "国内加速", url: joinMirrorPrefix(prefix, githubUrl) });
+    }
     if (githubUrl !== url) {
       candidates.push({ label: "GitHub 直连", url: githubUrl });
     }
-    for (const prefix of getMirrorPrefixes()) {
+    for (const prefix of getMirrorPrefixes().filter((prefix) => !getPreferredMirrorPrefixes().includes(prefix))) {
       candidates.push({ label: "国内加速", url: joinMirrorPrefix(prefix, githubUrl) });
     }
   }
 
+  if (!isJsDelivrUrl(url)) {
+    candidates.push({ label: "原始源", url });
+  }
+
   return dedupeCandidates(candidates);
+}
+
+function getPreferredMirrorPrefixes() {
+  return ["https://ghproxy.net/"];
 }
 
 function getMirrorPrefixes() {
@@ -989,6 +1003,15 @@ function buildJsDelivrAlternates(url) {
       });
   } catch {
     return [];
+  }
+}
+
+function isJsDelivrUrl(url) {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return ["cdn.jsdelivr.net", "fastly.jsdelivr.net", "gcore.jsdelivr.net"].includes(host);
+  } catch {
+    return false;
   }
 }
 
@@ -1096,6 +1119,9 @@ function downloadFile(url, destination, onProgress, redirectsLeft = 5) {
         received += chunk.length;
         if (total > 0) {
           onProgress(Math.min(99, Math.round((received / total) * 100)));
+        } else {
+          const softProgress = Math.min(92, 3 + Math.floor(received / 32768));
+          onProgress(softProgress, received);
         }
       });
 

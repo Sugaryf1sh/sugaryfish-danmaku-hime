@@ -11,7 +11,7 @@
     "package":  {
                     "type":  "app-dir-zip",
                     "name":  "Sugaryfish-Danmaku-Hime-App-1.1.8.zip",
-                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/main/updates/Sugaryfish-Danmaku-Hime-App-1.1.8.zip",
-                    "sha256":  "c4d1104bd70c93d829adff2e67090def6fe531dc5bf7a592f9e4fb0c08d6a3d6"
+                    "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@main/updates/Sugaryfish-Danmaku-Hime-App-1.1.8.zip",
+                    "sha256":  "ecc5c23fcf3f9c8b620431f9341d612c2b116c7d1f1c4689a9ca842ee927b250"
                 }
 }
