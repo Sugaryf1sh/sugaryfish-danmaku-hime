@@ -7,3 +7,13 @@
 - 新增粉丝牌与等级显示：在弹幕标签下方展示紧凑灯牌，并适配 Light / Dark 主题。
 - 优化表情图片尺寸约束：自动压缩到弹幕行高内，避免大图撑开列表。
 - 修复表情误抓用户头像的问题，仅使用明确的表情映射或表情包明细。
+
+## 界面截图
+
+| 使用说明与版本信息 | 穿透恢复提示 |
+| --- | --- |
+| ![使用说明与版本信息](assets/screenshots/help-card-light.png) | ![穿透恢复提示](assets/screenshots/click-through-recover-tip.png) |
+
+| 单击复制与粉丝牌 | 全站表情渲染 |
+| --- | --- |
+| ![单击复制与粉丝牌](assets/screenshots/copy-and-fans-medal.png) | ![全站表情渲染](assets/screenshots/emote-rendering-light.png) |
