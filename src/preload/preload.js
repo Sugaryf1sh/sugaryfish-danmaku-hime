@@ -4,6 +4,8 @@ contextBridge.exposeInMainWorld("danmakuApp", {
   getSettings: () => ipcRenderer.invoke("settings:get"),
   updateSettings: (patch) => ipcRenderer.invoke("settings:update", patch),
   fetchSessdata: () => ipcRenderer.invoke("sessdata:fetch"),
+  checkForUpdates: () => ipcRenderer.invoke("update:check"),
+  consumeUpdateNotes: () => ipcRenderer.invoke("update:consume-notes"),
   connect: (roomId) => ipcRenderer.invoke("danmaku:connect", roomId),
   disconnect: () => ipcRenderer.invoke("danmaku:disconnect"),
   minimize: () => ipcRenderer.invoke("window:minimize"),
@@ -12,7 +14,8 @@ contextBridge.exposeInMainWorld("danmakuApp", {
   onSettingsChanged: (callback) => listen("settings:changed", callback),
   onStatus: (callback) => listen("danmaku:status", callback),
   onEvent: (callback) => listen("danmaku:event", callback),
-  onPopularity: (callback) => listen("danmaku:popularity", callback)
+  onPopularity: (callback) => listen("danmaku:popularity", callback),
+  onUpdateStatus: (callback) => listen("update:status", callback)
 });
 
 function listen(channel, callback) {

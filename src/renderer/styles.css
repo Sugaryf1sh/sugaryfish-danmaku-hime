@@ -228,6 +228,14 @@ body.light-theme .toggle.danger {
   letter-spacing: 0.05em !important;
 }
 
+body.light-theme .toggle.update-check {
+  color: #4a6b9c !important;
+  font-family: var(--font-ui) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.05em !important;
+}
+
 body.light-theme .uid {
   color: rgba(111, 106, 99, 0.48) !important;
   font-family: var(--font-ui) !important;
@@ -487,6 +495,104 @@ body,
   box-shadow: var(--window-shadow);
 }
 
+.update-banner {
+  position: absolute;
+  top: 10px;
+  left: 18px;
+  right: 18px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 38px;
+  padding: 9px 12px;
+  border-radius: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition:
+    opacity 260ms cubic-bezier(0.25, 1, 0.5, 1),
+    transform 260ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.update-banner.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.update-banner-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.update-banner strong,
+.update-banner span,
+.update-banner button {
+  font-family: var(--font-ui) !important;
+  letter-spacing: 0.04em !important;
+}
+
+.update-banner strong {
+  color: inherit !important;
+  font-size: 11px;
+  font-weight: 600 !important;
+  line-height: 1;
+}
+
+.update-banner span {
+  overflow: hidden;
+  color: inherit !important;
+  font-size: 10px;
+  font-weight: 400 !important;
+  line-height: 1.35;
+  opacity: 0.72;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.update-banner-close {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0.56;
+}
+
+.update-banner-close:hover {
+  opacity: 1;
+}
+
+body.light-theme .update-banner {
+  color: #3e3b38;
+  border: 1px solid rgba(90, 85, 80, 0.12);
+  background: #eee8dc;
+  box-shadow:
+    0 16px 38px rgba(54, 49, 43, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.58) inset;
+}
+
+body.dark-theme .update-banner {
+  color: #e4e4e7;
+  border: 1px solid rgba(123, 160, 192, 0.12);
+  background: #202023;
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.46),
+    0 0 18px rgba(123, 160, 192, 0.08);
+}
+
 .app-container {
   --hud-collapse-offset: 45px;
   --hud-dot-offset: 46px;
@@ -635,6 +741,10 @@ body.dark-theme.is-opaque .shell {
   -webkit-app-region: drag;
   overflow: visible;
   user-select: none;
+}
+
+body.is-locked .titlebar {
+  -webkit-app-region: no-drag;
 }
 
 .titlebar::after,
@@ -1469,6 +1579,17 @@ body.dark-theme .help-card * {
   color: var(--blue);
 }
 
+.toggle.update-check {
+  color: var(--blue);
+  min-width: 28px;
+  opacity: 0.76;
+}
+
+.toggle.update-check:hover {
+  color: var(--blue);
+  opacity: 1;
+}
+
 .login-actions > button:hover,
 .toggle.danger:hover {
   color: var(--accent-red);
@@ -1480,7 +1601,8 @@ body.dark-theme .help-card * {
 }
 
 body.dark-theme .icon-button:hover,
-body.dark-theme .room-form button:hover {
+body.dark-theme .room-form button:hover,
+body.dark-theme .toggle.update-check:hover {
   text-shadow: var(--text-glow-blue);
 }
 
@@ -1498,7 +1620,7 @@ body.dark-theme .login-actions > .sessdata-fetch:hover {
   flex-shrink: 0 !important;
   z-index: 8;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--action-col);
+  grid-template-columns: minmax(0, 1fr) auto;
   justify-content: stretch;
   align-items: start;
   gap: 18px;
@@ -1510,6 +1632,13 @@ body.dark-theme .login-actions > .sessdata-fetch:hover {
   justify-self: start;
   justify-items: start;
   text-align: left;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
 }
 
 #settingsToggle span {

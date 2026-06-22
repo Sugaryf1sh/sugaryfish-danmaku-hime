@@ -3,6 +3,7 @@ const path = require("path");
 const { execFileSync } = require("child_process");
 
 const root = path.resolve(__dirname, "..");
+const packageInfo = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 const releaseRoot = path.join(root, "release");
 const productName = "Sugaryfish的弹幕姬";
 const outDir = path.join(releaseRoot, `${productName}-win32-x64`);
@@ -58,7 +59,7 @@ copyFile(path.join(root, "README.md"), path.join(appDir, "README.md"));
 writeJson(path.join(appDir, "package.json"), {
   name: "danmaku-hime",
   productName,
-  version: "1.1.1",
+  version: packageInfo.version,
   description: "B站直播弹幕悬浮窗",
   main: "src/main/main.js",
   private: true,

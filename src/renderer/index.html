@@ -8,6 +8,13 @@
   </head>
   <body>
     <main class="shell app-container">
+      <div class="update-banner" id="updateBanner" hidden>
+        <div class="update-banner-copy">
+          <strong id="updateBannerTitle">已更新</strong>
+          <span id="updateBannerBody">新特性已准备好。</span>
+        </div>
+        <button class="update-banner-close" id="updateBannerClose" type="button" aria-label="关闭更新说明">×</button>
+      </div>
       <section class="header-section">
         <div class="header-section-inner">
           <header class="titlebar">
@@ -70,7 +77,10 @@
             <button class="toggle" id="settingsToggle" type="button" title="展开或收起设置">
               <span class="options-title">设置 ▾</span><kbd class="options-sub">Options</kbd>
             </button>
-            <button class="toggle danger" id="disconnectBtn" type="button" title="断开连接" hidden>断开</button>
+            <div class="toolbar-actions">
+              <button class="toggle update-check" id="updateBtn" type="button" title="检查更新">更新</button>
+              <button class="toggle danger" id="disconnectBtn" type="button" title="断开连接" hidden>断开</button>
+            </div>
           </section>
 
           <section class="settings-panel" aria-label="设置详情">

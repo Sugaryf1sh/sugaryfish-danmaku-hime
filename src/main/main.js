@@ -1,14 +1,35 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, globalShortcut } = require("electron");
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, globalShortcut, dialog, net, session } = require("electron");
+const { spawn } = require("child_process");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { BilibiliDanmakuClient } = require("./bilibiliClient");
 const { DEFAULT_SETTINGS } = require("../shared/defaults");
 
 const APP_NAME = "Sugaryfish的弹幕姬";
+const UPDATE_REPO_OWNER = "Sugaryf1sh";
+const UPDATE_REPO_NAME = "sugaryfish-danmaku-hime";
+const UPDATE_API_URL = `https://api.github.com/repos/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}/releases/latest`;
+const UPDATE_MANIFEST_URLS = [
+  `https://cdn.jsdelivr.net/gh/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}@main/updates/latest.json`,
+  `https://fastly.jsdelivr.net/gh/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}@main/updates/latest.json`,
+  `https://gcore.jsdelivr.net/gh/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}@main/updates/latest.json`,
+  `https://raw.githubusercontent.com/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}/main/updates/latest.json`
+];
+const UPDATE_TIMEOUT_MS = 12000;
+const UPDATE_DOWNLOAD_TIMEOUT_MS = 10 * 60 * 1000;
+const UPDATE_DOWNLOAD_STALL_MS = 45000;
+const UPDATE_MIRROR_PREFIXES = [
+  "https://gh.llkk.cc/",
+  "https://ghfast.top/",
+  "https://ghproxy.net/"
+];
 
 let mainWindow = null;
 let sessdataLoginWindow = null;
 let sessdataFetchPromise = null;
+let updateCheckPromise = null;
+let updateDownloadInProgress = false;
 let tray = null;
 let settings = { ...DEFAULT_SETTINGS };
 const client = new BilibiliDanmakuClient();
@@ -33,6 +54,7 @@ app.whenReady().then(() => {
   createTray();
   bindClientEvents();
   registerShortcuts();
+  scheduleAutoUpdateCheck();
 });
 
 app.on("window-all-closed", () => {});
@@ -191,7 +213,9 @@ function applyWindowSettings(nextSettings) {
   if (!mainWindow) return;
 
   mainWindow.setAlwaysOnTop(Boolean(nextSettings.alwaysOnTop), "screen-saver");
-  mainWindow.setMovable(!nextSettings.locked);
+  // Keep the native window movable so frameless hover/leave behavior stays intact.
+  // The renderer disables drag regions when "locked" is enabled.
+  mainWindow.setMovable(true);
   mainWindow.setResizable(!nextSettings.locked);
   mainWindow.setOpacity(Math.max(0.35, Math.min(1, Number(nextSettings.opacity) / 100)));
   mainWindow.setIgnoreMouseEvents(Boolean(nextSettings.clickThrough), { forward: true });
@@ -199,6 +223,8 @@ function applyWindowSettings(nextSettings) {
 
 ipcMain.handle("settings:get", () => settings);
 ipcMain.handle("settings:update", (_event, patch) => setSettings(patch));
+ipcMain.handle("update:check", () => checkForUpdates({ silent: false, prompt: true }));
+ipcMain.handle("update:consume-notes", () => consumePendingUpdateNotes());
 
 ipcMain.handle("sessdata:fetch", async () => {
   const sessdata = await fetchSessdataFromBilibiliLogin();
@@ -343,6 +369,761 @@ function chromeLikeUserAgent() {
   return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 }
 
+function scheduleAutoUpdateCheck() {
+  setTimeout(() => {
+    checkForUpdates({ silent: true, prompt: true }).catch((error) => {
+      console.warn(`自动检查更新失败：${error.message}`);
+    });
+  }, 8000);
+}
+
+async function checkForUpdates({ silent, prompt }) {
+  if (updateCheckPromise) {
+    return updateCheckPromise;
+  }
+
+  updateCheckPromise = doCheckForUpdates({ silent, prompt }).finally(() => {
+    updateCheckPromise = null;
+  });
+
+  return updateCheckPromise;
+}
+
+async function doCheckForUpdates({ silent, prompt }) {
+  notifyUpdateStatus({ state: "checking" });
+
+  try {
+    await applyUpdateProxyFromEnvironment();
+    const release = await loadLatestUpdateInfo();
+    const currentVersion = app.getVersion();
+
+    if (!release || !isVersionGreater(release.version, currentVersion)) {
+      notifyUpdateStatus({ state: "idle" });
+      return { status: "no-update", currentVersion, latestVersion: release?.version || currentVersion };
+    }
+
+    notifyUpdateStatus({ state: "available", release });
+
+    if (!prompt) {
+      return { status: "available", release };
+    }
+
+    const accepted = await askUserToApplyUpdate(release, currentVersion);
+    if (!accepted) {
+      notifyUpdateStatus({ state: "idle" });
+      return { status: "skipped", release };
+    }
+
+    await downloadAndApplyUpdate(release);
+    return { status: "installing", release };
+  } catch (error) {
+    const message = buildUpdateErrorMessage(error);
+    notifyUpdateStatus({ state: "error", message });
+    if (!silent) {
+      throw new Error(message);
+    }
+    return { status: "error", message };
+  }
+}
+
+async function loadLatestUpdateInfo() {
+  const errors = [];
+
+  for (const url of getUpdateManifestUrls()) {
+    try {
+      const manifest = await requestJson(url, {
+        Accept: "application/json",
+        "User-Agent": `${APP_NAME}/${app.getVersion()}`
+      });
+      const release = normalizeManifestRelease(manifest, url);
+      if (release) {
+        return release;
+      }
+    } catch (error) {
+      errors.push(`${url}: ${error.message}`);
+    }
+  }
+
+  try {
+    const release = normalizeGitHubRelease(await requestJson(getUpdateApiUrl(), {
+      Accept: "application/vnd.github+json",
+      "User-Agent": `${APP_NAME}/${app.getVersion()}`
+    }));
+    if (release) {
+      return release;
+    }
+  } catch (error) {
+    errors.push(`GitHub API: ${error.message}`);
+  }
+
+  throw new Error(`无法获取更新信息，已尝试国内 CDN 与 GitHub。${errors.slice(-2).join("；")}`);
+}
+
+function getUpdateManifestUrls() {
+  const custom = String(process.env.DANMAKU_UPDATE_MANIFEST_URL || "")
+    .split(/[;,]/)
+    .map((url) => url.trim())
+    .filter(Boolean);
+  return [...custom, ...UPDATE_MANIFEST_URLS];
+}
+
+function getUpdateApiUrl() {
+  const apiBase = String(process.env.DANMAKU_GITHUB_API_BASE || "").trim().replace(/\/$/, "");
+  if (!apiBase) {
+    return UPDATE_API_URL;
+  }
+  return `${apiBase}/repos/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}/releases/latest`;
+}
+
+async function applyUpdateProxyFromEnvironment() {
+  const proxy = String(
+    process.env.DANMAKU_UPDATE_PROXY
+    || process.env.HTTPS_PROXY
+    || process.env.HTTP_PROXY
+    || process.env.ALL_PROXY
+    || ""
+  ).trim();
+
+  if (!proxy) {
+    return;
+  }
+
+  const proxyRules = normalizeProxyRules(proxy);
+  if (!proxyRules) {
+    return;
+  }
+
+  await session.defaultSession.setProxy({ proxyRules });
+}
+
+function normalizeProxyRules(value) {
+  try {
+    const parsed = new URL(value.includes("://") ? value : `http://${value}`);
+    const host = `${parsed.hostname}${parsed.port ? `:${parsed.port}` : ""}`;
+    if (!host) {
+      return "";
+    }
+    if (parsed.protocol.startsWith("socks")) {
+      return `socks=${host}`;
+    }
+    return `http=${host};https=${host}`;
+  } catch {
+    return value;
+  }
+}
+
+function requestJson(url, headers = {}) {
+  return requestText(url, { headers }).then((text) => JSON.parse(text));
+}
+
+function requestText(url, { headers = {}, timeout = UPDATE_TIMEOUT_MS, redirectsLeft = 5 } = {}) {
+  return new Promise((resolve, reject) => {
+    const request = net.request({ method: "GET", url });
+    const timer = setTimeout(() => {
+      request.abort();
+      reject(new Error("连接超时"));
+    }, timeout);
+
+    for (const [key, value] of Object.entries(headers)) {
+      request.setHeader(key, value);
+    }
+
+    request.on("response", (response) => {
+      const statusCode = Number(response.statusCode || 0);
+      const location = response.headers.location;
+      if ([301, 302, 303, 307, 308].includes(statusCode) && location && redirectsLeft > 0) {
+        clearTimeout(timer);
+        resolve(requestText(new URL(location, url).toString(), { headers, timeout, redirectsLeft: redirectsLeft - 1 }));
+        return;
+      }
+
+      const chunks = [];
+      response.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+      response.on("end", () => {
+        clearTimeout(timer);
+        const body = Buffer.concat(chunks).toString("utf8");
+        if (statusCode < 200 || statusCode >= 300) {
+          reject(new Error(`服务返回异常状态：${statusCode}`));
+          return;
+        }
+        resolve(body);
+      });
+      response.on("error", (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
+
+    request.on("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+
+    request.end();
+  });
+}
+
+function normalizeManifestRelease(data, sourceUrl) {
+  if (!data || data.draft || data.prerelease) {
+    return null;
+  }
+
+  const version = normalizeVersion(data.version || data.tag || data.tag_name || "");
+  const appPackage = normalizeUpdateAsset(data.package || data.appPackage || data.resourcePackage, `Sugaryfish的弹幕姬-App-${version}.zip`);
+  const installer = normalizeUpdateAsset(data.installer, `Sugaryfish的弹幕姬-Setup-${version}.exe`);
+
+  if (!version || (!appPackage && !installer)) {
+    return null;
+  }
+
+  const notes = String(data.notes || data.body || "").trim();
+  return {
+    version,
+    tag: data.tag || data.tag_name || `v${version}`,
+    title: data.title || data.name || `Sugaryfish 的弹幕姬 ${version}`,
+    notes,
+    features: normalizeFeatures(data.features, notes),
+    releaseUrl: data.releaseUrl || data.html_url || `https://github.com/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}/releases/tag/v${version}`,
+    package: appPackage,
+    installer,
+    sourceUrl,
+    publishedAt: data.publishedAt || data.published_at || ""
+  };
+}
+
+function normalizeUpdateAsset(asset, fallbackName) {
+  if (!asset) {
+    return null;
+  }
+
+  if (typeof asset === "string") {
+    return {
+      type: inferUpdateAssetType(asset),
+      name: basenameFromUrl(asset) || fallbackName,
+      url: asset,
+      sha256: ""
+    };
+  }
+
+  const url = String(asset.url || asset.downloadUrl || asset.browser_download_url || "").trim();
+  if (!url) {
+    return null;
+  }
+
+  return {
+    type: asset.type || inferUpdateAssetType(url),
+    name: asset.name || basenameFromUrl(url) || fallbackName,
+    url,
+    sha256: normalizeSha256(asset.sha256 || asset.digest || "")
+  };
+}
+
+function basenameFromUrl(value) {
+  try {
+    return decodeURIComponent(path.basename(new URL(value).pathname));
+  } catch {
+    return "";
+  }
+}
+
+function inferUpdateAssetType(value) {
+  const name = String(value || "").toLowerCase();
+  if (name.endsWith(".asar")) {
+    return "app-asar";
+  }
+  if (name.endsWith(".zip")) {
+    return "app-dir-zip";
+  }
+  if (name.endsWith(".exe")) {
+    return "installer";
+  }
+  return "app-dir-zip";
+}
+
+function normalizeGitHubRelease(data) {
+  if (!data || data.draft || data.prerelease) {
+    return null;
+  }
+
+  const version = normalizeVersion(data.tag_name || data.name || "");
+  const assets = Array.isArray(data.assets) ? data.assets : [];
+  const notes = String(data.body || "").trim();
+  const appPackageAsset = assets.find((asset) => {
+    const name = String(asset.name || "");
+    return name.endsWith(".zip") && name.includes(`App-${version}`);
+  }) || assets.find((asset) => {
+    const name = String(asset.name || "").toLowerCase();
+    return name.endsWith(".zip") && /app|resource|update/.test(name);
+  });
+  const installerAsset = assets.find((asset) => {
+    const name = String(asset.name || "");
+    return name.endsWith(".exe") && name.includes(`Setup-${version}`);
+  }) || assets.find((asset) => {
+    const name = String(asset.name || "");
+    return name.endsWith(".exe") && !name.endsWith(".blockmap");
+  });
+
+  if (!version || (!appPackageAsset && !installerAsset)) {
+    return null;
+  }
+
+  const appPackage = appPackageAsset ? {
+    type: inferUpdateAssetType(appPackageAsset.name),
+    name: appPackageAsset.name,
+    url: appPackageAsset.browser_download_url,
+    sha256: normalizeSha256(appPackageAsset.digest || parseNotesSha256(notes, appPackageAsset.name))
+  } : null;
+  const installer = installerAsset ? {
+    type: "installer",
+    name: installerAsset.name,
+    url: installerAsset.browser_download_url,
+    sha256: normalizeSha256(installerAsset.digest || parseNotesSha256(notes, installerAsset.name))
+  } : null;
+
+  return {
+    version,
+    tag: data.tag_name || `v${version}`,
+    title: data.name || `Sugaryfish 的弹幕姬 ${version}`,
+    notes,
+    features: extractReleaseFeatures(notes),
+    releaseUrl: data.html_url || `https://github.com/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}/releases/tag/v${version}`,
+    package: appPackage,
+    installer,
+    sourceUrl: data.html_url || "GitHub Release",
+    publishedAt: data.published_at || ""
+  };
+}
+
+function normalizeVersion(value) {
+  return String(value || "").trim().replace(/^v/i, "");
+}
+
+function normalizeSha256(value) {
+  const text = String(value || "").trim().replace(/^sha256:/i, "");
+  const match = text.match(/[a-f0-9]{64}/i);
+  return match ? match[0].toLowerCase() : "";
+}
+
+function parseNotesSha256(notes, assetName) {
+  const lines = String(notes || "").split(/\r?\n/);
+  const exactLine = lines.find((line) => assetName && line.includes(assetName) && /[a-f0-9]{64}/i.test(line));
+  const fallbackLine = lines.find((line) => /sha256/i.test(line) && /[a-f0-9]{64}/i.test(line));
+  return normalizeSha256(exactLine || fallbackLine || "");
+}
+
+function isVersionGreater(next, current) {
+  const nextParts = normalizeVersion(next).split(".").map((part) => Number.parseInt(part, 10) || 0);
+  const currentParts = normalizeVersion(current).split(".").map((part) => Number.parseInt(part, 10) || 0);
+  const length = Math.max(nextParts.length, currentParts.length);
+
+  for (let index = 0; index < length; index += 1) {
+    const a = nextParts[index] || 0;
+    const b = currentParts[index] || 0;
+    if (a > b) return true;
+    if (a < b) return false;
+  }
+
+  return false;
+}
+
+function normalizeFeatures(features, notes) {
+  if (Array.isArray(features)) {
+    return features.map((feature) => String(feature).trim()).filter(Boolean).slice(0, 6);
+  }
+  return extractReleaseFeatures(notes);
+}
+
+function extractReleaseFeatures(notes) {
+  const bullets = String(notes || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^[-*]\s+/.test(line))
+    .map((line) => line.replace(/^[-*]\s+/, "").trim())
+    .filter(Boolean)
+    .filter((line) => !/sha256/i.test(line));
+
+  if (bullets.length) {
+    return bullets.slice(0, 6);
+  }
+
+  return String(notes || "")
+    .split(/\r?\n{2,}/)
+    .map((line) => line.replace(/^#+\s*/, "").trim())
+    .filter(Boolean)
+    .filter((line) => !/sha256/i.test(line))
+    .slice(0, 4);
+}
+
+async function askUserToApplyUpdate(release, currentVersion) {
+  if (!release.package) {
+    await dialog.showMessageBox(mainWindow, {
+      type: "warning",
+      buttons: ["知道了"],
+      defaultId: 0,
+      title: "无法免安装更新",
+      message: `发现 ${release.version}，当前版本 ${currentVersion}`,
+      detail: "这个版本没有提供免安装资源包。为了避免重新安装，已停止自动更新。"
+    });
+    return false;
+  }
+
+  if (!release.package.sha256) {
+    await dialog.showMessageBox(mainWindow, {
+      type: "warning",
+      buttons: ["知道了"],
+      defaultId: 0,
+      title: "更新包缺少校验值",
+      message: `发现 ${release.version}，当前版本 ${currentVersion}`,
+      detail: "该更新包缺少 SHA256 校验值。为了保证国内加速下载的安全性，已停止自动更新。"
+    });
+    return false;
+  }
+
+  const featureText = release.features.length
+    ? release.features.map((feature) => `- ${feature}`).join("\n")
+    : release.notes || "GitHub Release 未提供详细更新说明。";
+
+  const result = await dialog.showMessageBox(mainWindow, {
+    type: "info",
+    buttons: ["立即更新", "稍后"],
+    defaultId: 0,
+    cancelId: 1,
+    title: "发现新版本",
+    message: `发现 ${release.version}，当前版本 ${currentVersion}`,
+    detail: `${release.title}\n\n${featureText}\n\n本次将下载轻量资源包并替换应用文件，不会重新安装，也不会清除设置。国内网络会优先使用 CDN，并自动尝试 GitHub 加速节点；下载完成后会校验 SHA256。`
+  });
+
+  return result.response === 0;
+}
+
+async function downloadAndApplyUpdate(release) {
+  if (updateDownloadInProgress) {
+    return;
+  }
+  if (!release.package) {
+    throw new Error("该版本没有免安装更新包");
+  }
+  if (!release.package.sha256) {
+    throw new Error("更新包缺少 SHA256 校验值");
+  }
+  if (!app.isPackaged && process.env.DANMAKU_ALLOW_DEV_UPDATE !== "1") {
+    throw new Error("开发模式下不会执行自动替换，打包版本会正常更新");
+  }
+
+  updateDownloadInProgress = true;
+  notifyUpdateStatus({ state: "downloading", release, progress: 0 });
+
+  try {
+    const target = getResourceUpdateTarget(release.package.type);
+    const updaterDir = path.join(app.getPath("temp"), "sugaryfish-danmaku-hime-updater");
+    fs.rmSync(updaterDir, { recursive: true, force: true });
+    fs.mkdirSync(updaterDir, { recursive: true });
+
+    const packagePath = path.join(updaterDir, safeFilename(release.package.name || `Sugaryfish的弹幕姬-App-${release.version}.zip`));
+    const downloaded = await downloadFileWithFallback(release.package.url, packagePath, (progress, sourceLabel) => {
+      notifyUpdateStatus({ state: "downloading", release, progress, sourceLabel });
+    });
+
+    const actualSha = await sha256File(downloaded);
+    if (actualSha !== release.package.sha256) {
+      fs.rmSync(downloaded, { force: true });
+      throw new Error("更新包 SHA256 校验失败");
+    }
+
+    const notesSource = path.join(updaterDir, "pending-update-notes.json");
+    writePendingUpdateNotesFile(notesSource, release);
+    notifyUpdateStatus({ state: "installing", release, progress: 100 });
+    launchResourceUpdaterAndQuit({ packagePath: downloaded, notesSource, target });
+  } finally {
+    updateDownloadInProgress = false;
+  }
+}
+
+function getResourceUpdateTarget(packageType) {
+  const resourcesPath = path.resolve(process.resourcesPath || "");
+  const appPath = path.resolve(app.getAppPath());
+  const appDir = path.join(resourcesPath, "app");
+  const asarPath = path.join(resourcesPath, "app.asar");
+  const mode = packageType === "app-asar" ? "app-asar" : "app-dir";
+  const targetPath = mode === "app-asar" ? asarPath : (path.basename(appPath).toLowerCase() === "app" ? appPath : appDir);
+
+  if (!isPathInside(targetPath, resourcesPath)) {
+    throw new Error("更新目标路径校验失败");
+  }
+  if (mode === "app-dir" && path.basename(targetPath).toLowerCase() !== "app") {
+    throw new Error("应用目录结构不支持免安装更新");
+  }
+  if (mode === "app-asar" && path.basename(targetPath).toLowerCase() !== "app.asar") {
+    throw new Error("应用归档结构不支持免安装更新");
+  }
+
+  return { mode, targetPath, resourcesPath, currentExe: process.execPath };
+}
+
+function isPathInside(child, parent) {
+  const relative = path.relative(path.resolve(parent), path.resolve(child));
+  return Boolean(relative) && !relative.startsWith("..") && !path.isAbsolute(relative);
+}
+
+async function downloadFileWithFallback(url, destination, onProgress) {
+  const candidates = buildDownloadCandidates(url);
+  const errors = [];
+
+  for (const candidate of candidates) {
+    try {
+      fs.rmSync(destination, { force: true });
+      await downloadFile(candidate.url, destination, (progress) => onProgress(progress, candidate.label));
+      return destination;
+    } catch (error) {
+      errors.push(`${candidate.label}: ${error.message}`);
+    }
+  }
+
+  throw new Error(`下载更新失败，已尝试 ${candidates.map((candidate) => candidate.label).join("、")}。${errors.slice(-2).join("；")}`);
+}
+
+function buildDownloadCandidates(url) {
+  const candidates = [];
+  const customPrefix = String(process.env.DANMAKU_UPDATE_PROXY_PREFIX || "").trim();
+  if (customPrefix) {
+    candidates.push({ label: "自定义加速", url: joinMirrorPrefix(customPrefix, url) });
+  }
+
+  candidates.push({ label: "CDN/直连", url });
+
+  for (const cdnUrl of buildJsDelivrAlternates(url)) {
+    candidates.push({ label: "CDN 备用", url: cdnUrl });
+  }
+
+  if (isGitHubDownloadUrl(url)) {
+    for (const prefix of getMirrorPrefixes()) {
+      candidates.push({ label: "国内加速", url: joinMirrorPrefix(prefix, url) });
+    }
+  }
+
+  return dedupeCandidates(candidates);
+}
+
+function getMirrorPrefixes() {
+  const custom = String(process.env.DANMAKU_UPDATE_MIRROR_PREFIXES || "")
+    .split(/[;,]/)
+    .map((prefix) => prefix.trim())
+    .filter(Boolean);
+  return custom.length ? custom : UPDATE_MIRROR_PREFIXES;
+}
+
+function buildJsDelivrAlternates(url) {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    if (!["cdn.jsdelivr.net", "fastly.jsdelivr.net", "gcore.jsdelivr.net"].includes(host)) {
+      return [];
+    }
+    return ["cdn.jsdelivr.net", "fastly.jsdelivr.net", "gcore.jsdelivr.net"]
+      .filter((candidateHost) => candidateHost !== host)
+      .map((candidateHost) => {
+        const next = new URL(parsed.toString());
+        next.hostname = candidateHost;
+        return next.toString();
+      });
+  } catch {
+    return [];
+  }
+}
+
+function isGitHubDownloadUrl(url) {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "github.com" || host.endsWith("githubusercontent.com");
+  } catch {
+    return false;
+  }
+}
+
+function joinMirrorPrefix(prefix, url) {
+  return `${prefix.replace(/\/?$/, "/")}${url}`;
+}
+
+function dedupeCandidates(candidates) {
+  const seen = new Set();
+  return candidates.filter((candidate) => {
+    if (seen.has(candidate.url)) {
+      return false;
+    }
+    seen.add(candidate.url);
+    return true;
+  });
+}
+
+function downloadFile(url, destination, onProgress, redirectsLeft = 5) {
+  return new Promise((resolve, reject) => {
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+
+    const request = net.request({ method: "GET", url });
+    request.setHeader("User-Agent", `${APP_NAME}/${app.getVersion()}`);
+
+    let finished = false;
+    let timeoutTimer = null;
+    let stallTimer = null;
+    let file = null;
+
+    const cleanup = () => {
+      clearTimeout(timeoutTimer);
+      clearTimeout(stallTimer);
+    };
+    const fail = (error) => {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      file?.destroy();
+      reject(error);
+    };
+    const resetStallTimer = () => {
+      clearTimeout(stallTimer);
+      stallTimer = setTimeout(() => {
+        request.abort();
+        fail(new Error("下载长时间无响应"));
+      }, UPDATE_DOWNLOAD_STALL_MS);
+    };
+
+    timeoutTimer = setTimeout(() => {
+      request.abort();
+      fail(new Error("下载更新超时"));
+    }, UPDATE_DOWNLOAD_TIMEOUT_MS);
+    resetStallTimer();
+
+    request.on("response", (response) => {
+      resetStallTimer();
+      const statusCode = Number(response.statusCode || 0);
+      const location = response.headers.location;
+      if ([301, 302, 303, 307, 308].includes(statusCode) && location && redirectsLeft > 0) {
+        cleanup();
+        resolve(downloadFile(new URL(location, url).toString(), destination, onProgress, redirectsLeft - 1));
+        return;
+      }
+      if (statusCode < 200 || statusCode >= 300) {
+        fail(new Error(`下载服务返回异常状态：${statusCode}`));
+        return;
+      }
+
+      const total = Number(response.headers["content-length"] || 0);
+      let received = 0;
+      file = fs.createWriteStream(destination);
+
+      response.on("data", (chunk) => {
+        resetStallTimer();
+        received += chunk.length;
+        if (total > 0) {
+          onProgress(Math.min(99, Math.round((received / total) * 100)));
+        }
+      });
+
+      response.pipe(file);
+
+      response.on("end", () => {
+        clearTimeout(stallTimer);
+      });
+
+      response.on("error", fail);
+      file.on("error", fail);
+      file.on("finish", () => {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        file.close(() => resolve(destination));
+      });
+    });
+
+    request.on("error", fail);
+    request.end();
+  });
+}
+
+function sha256File(filePath) {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash("sha256");
+    const stream = fs.createReadStream(filePath);
+    stream.on("data", (chunk) => hash.update(chunk));
+    stream.on("error", reject);
+    stream.on("end", () => resolve(hash.digest("hex")));
+  });
+}
+
+function safeFilename(value) {
+  return String(value || "update.zip").replace(/[<>:"/\\|?*\x00-\x1f]/g, "_");
+}
+
+function launchResourceUpdaterAndQuit({ packagePath, notesSource, target }) {
+  const scriptPath = path.join(path.dirname(packagePath), "apply-resource-update.ps1");
+  const notesTarget = getPendingUpdateNotesPath();
+  const script = `param(\n  [string]$PackagePath,\n  [string]$TargetPath,\n  [string]$ResourcesPath,\n  [string]$CurrentExe,\n  [string]$NotesSource,\n  [string]$NotesTarget,\n  [string]$Mode\n)\n$ErrorActionPreference = "Stop"\nStart-Sleep -Milliseconds 900\n$stage = Join-Path $env:TEMP ("sugaryfish-update-stage-" + [guid]::NewGuid().ToString("N"))\n$backup = $null\n$success = $false\ntry {\n  $resolvedTarget = [System.IO.Path]::GetFullPath($TargetPath)\n  $resolvedResources = [System.IO.Path]::GetFullPath($ResourcesPath).TrimEnd([System.IO.Path]::DirectorySeparatorChar)\n  $targetParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $resolvedTarget)).TrimEnd([System.IO.Path]::DirectorySeparatorChar)\n  if (![System.String]::Equals($targetParent, $resolvedResources, [System.StringComparison]::OrdinalIgnoreCase)) { throw "Target path is outside resources" }\n  [System.IO.Directory]::CreateDirectory($stage) | Out-Null\n  if ($Mode -eq "app-dir") {\n    if ((Split-Path -Leaf $resolvedTarget) -ne "app") { throw "Target guard failed" }\n    Expand-Archive -LiteralPath $PackagePath -DestinationPath $stage -Force\n    $sourceApp = Join-Path $stage "app"\n    if (!(Test-Path -LiteralPath $sourceApp)) { $sourceApp = $stage }\n    $backup = Join-Path (Split-Path -Parent $resolvedTarget) ("app.backup." + (Get-Date -Format "yyyyMMddHHmmss"))\n    if (Test-Path -LiteralPath $resolvedTarget) { Move-Item -LiteralPath $resolvedTarget -Destination $backup -Force }\n    Move-Item -LiteralPath $sourceApp -Destination $resolvedTarget -Force\n  } elseif ($Mode -eq "app-asar") {\n    if ((Split-Path -Leaf $resolvedTarget) -ne "app.asar") { throw "Target guard failed" }\n    $backup = $resolvedTarget + ".backup." + (Get-Date -Format "yyyyMMddHHmmss")\n    if (Test-Path -LiteralPath $resolvedTarget) { Move-Item -LiteralPath $resolvedTarget -Destination $backup -Force }\n    Copy-Item -LiteralPath $PackagePath -Destination $resolvedTarget -Force\n  } else {\n    throw "Unsupported update mode"\n  }\n  [System.IO.Directory]::CreateDirectory((Split-Path -Parent $NotesTarget)) | Out-Null\n  Copy-Item -LiteralPath $NotesSource -Destination $NotesTarget -Force\n  $success = $true\n} catch {\n  $errorLog = Join-Path $env:TEMP "sugaryfish-update-error.log"\n  $_ | Out-String | Set-Content -LiteralPath $errorLog -Encoding UTF8\n  if ($backup -and (Test-Path -LiteralPath $backup) -and !(Test-Path -LiteralPath $TargetPath)) {\n    Move-Item -LiteralPath $backup -Destination $TargetPath -Force\n  }\n} finally {\n  Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue\n  Start-Process -FilePath $CurrentExe\n}\nif (!$success) { exit 1 }\n`;
+
+  fs.writeFileSync(scriptPath, script, "utf8");
+  spawn("powershell.exe", [
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", scriptPath,
+    "-PackagePath", packagePath,
+    "-TargetPath", target.targetPath,
+    "-ResourcesPath", target.resourcesPath,
+    "-CurrentExe", target.currentExe,
+    "-NotesSource", notesSource,
+    "-NotesTarget", notesTarget,
+    "-Mode", target.mode
+  ], {
+    detached: true,
+    stdio: "ignore",
+    windowsHide: true
+  }).unref();
+
+  app.isQuitting = true;
+  app.quit();
+}
+
+function writePendingUpdateNotesFile(file, release) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(buildPendingUpdateNotesPayload(release), null, 2));
+}
+
+function savePendingUpdateNotes(release) {
+  writePendingUpdateNotesFile(getPendingUpdateNotesPath(), release);
+}
+
+function buildPendingUpdateNotesPayload(release) {
+  return {
+    version: release.version,
+    title: release.title,
+    notes: release.notes,
+    features: release.features,
+    releaseUrl: release.releaseUrl,
+    publishedAt: release.publishedAt,
+    shownAt: new Date().toISOString()
+  };
+}
+
+function consumePendingUpdateNotes() {
+  try {
+    const file = getPendingUpdateNotesPath();
+    const payload = JSON.parse(fs.readFileSync(file, "utf8"));
+    fs.rmSync(file, { force: true });
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function getPendingUpdateNotesPath() {
+  return path.join(app.getPath("userData"), "pending-update-notes.json");
+}
+
+function notifyUpdateStatus(payload) {
+  mainWindow?.webContents.send("update:status", payload);
+}
+
+function buildUpdateErrorMessage(error) {
+  const message = error?.message || "检查更新失败";
+  return `${message}。已自动尝试国内 CDN、直连和可校验的 GitHub 加速下载。`;
+}
 function getIconPath() {
   return path.join(__dirname, "../../assets/icon.png");
 }

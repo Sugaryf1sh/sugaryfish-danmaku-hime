@@ -17,6 +17,7 @@ const state = {
   uptimeTimer: null,
   hudDimTimer: null,
   messageCount: 0,
+  updateButtonText: "更新",
   isFeedHovered: false,
   isFeedScrolledUp: false,
   isMutatingFeed: false,
@@ -50,6 +51,11 @@ const els = {
   sessdataSummary: document.getElementById("sessdataSummary"),
   fetchSessdataBtn: document.getElementById("fetchSessdataBtn"),
   clearSessdataBtn: document.getElementById("clearSessdataBtn"),
+  updateBtn: document.getElementById("updateBtn"),
+  updateBanner: document.getElementById("updateBanner"),
+  updateBannerTitle: document.getElementById("updateBannerTitle"),
+  updateBannerBody: document.getElementById("updateBannerBody"),
+  updateBannerClose: document.getElementById("updateBannerClose"),
   megaGiftZone: document.getElementById("megaGiftZone"),
   feed: document.getElementById("feed"),
   runTime: document.getElementById("run-time"),
@@ -68,6 +74,7 @@ async function init() {
   state.uptimeTimer = setInterval(updateRuntimeDashboard, 60000);
   bindEvents();
   bindIpc();
+  consumeUpdateNotes();
 }
 
 function bindEvents() {
@@ -149,6 +156,8 @@ function bindEvents() {
     els.sessdataInput.blur();
   });
   els.fetchSessdataBtn.addEventListener("click", handleSessdataFetch);
+  els.updateBtn.addEventListener("click", handleUpdateCheck);
+  els.updateBannerClose.addEventListener("click", hideUpdateBanner);
   els.clearSessdataBtn.addEventListener("click", () => {
     endSessdataEdit();
     updateSetting("sessdata", "");
@@ -206,6 +215,10 @@ function bindIpc() {
 
   api.onEvent((event) => {
     appendItem(event);
+  });
+
+  api.onUpdateStatus((status) => {
+    handleUpdateStatus(status);
   });
 }
 
@@ -284,6 +297,7 @@ function applySettings(settings) {
   updateToggleMark(els.throughToggle, settings.clickThrough);
   els.lockToggle.classList.toggle("active", Boolean(settings.locked));
   updateToggleMark(els.lockToggle, settings.locked);
+  document.body.classList.toggle("is-locked", Boolean(settings.locked));
   document.body.classList.toggle("is-click-through", Boolean(settings.clickThrough));
   document.body.classList.toggle("is-opaque", Number(settings.opacity) >= 100);
   updateSettingsToggleText();
@@ -323,6 +337,123 @@ async function handleSessdataFetch() {
     els.fetchSessdataBtn.disabled = false;
     els.fetchSessdataBtn.textContent = originalText;
   }
+}
+
+async function handleUpdateCheck() {
+  if (!api.checkForUpdates) {
+    flashStatus("当前版本不支持自动更新", 2400);
+    return;
+  }
+
+  els.updateBtn.disabled = true;
+  setUpdateButtonText("检查中");
+  try {
+    const result = await api.checkForUpdates();
+    if (result?.status === "no-update") {
+      flashStatus("已是最新版", 2000);
+    } else if (result?.status === "skipped") {
+      flashStatus("已稍后更新", 1600);
+    }
+  } catch (error) {
+    flashStatus(error.message || "检查更新失败", 3200);
+  } finally {
+    if (!els.updateBtn.dataset.busy) {
+      els.updateBtn.disabled = false;
+      setUpdateButtonText("更新");
+    }
+  }
+}
+
+function handleUpdateStatus(status = {}) {
+  if (!els.updateBtn) {
+    return;
+  }
+
+  if (status.state === "checking") {
+    els.updateBtn.dataset.busy = "1";
+    els.updateBtn.disabled = true;
+    setUpdateButtonText("检查中");
+    return;
+  }
+
+  if (status.state === "available") {
+    setUpdateButtonText("可更新");
+    return;
+  }
+
+  if (status.state === "downloading") {
+    els.updateBtn.dataset.busy = "1";
+    els.updateBtn.disabled = true;
+    const progress = Number.isFinite(Number(status.progress)) ? Number(status.progress) : 0;
+    setUpdateButtonText(`${Math.max(0, Math.min(99, Math.round(progress)))}%`);
+    return;
+  }
+
+  if (status.state === "installing") {
+    els.updateBtn.dataset.busy = "1";
+    els.updateBtn.disabled = true;
+    setUpdateButtonText("重启中");
+    return;
+  }
+
+  delete els.updateBtn.dataset.busy;
+  els.updateBtn.disabled = false;
+  setUpdateButtonText("更新");
+
+  if (status.state === "error" && status.message) {
+    flashStatus(status.message, 3600);
+  }
+}
+
+function setUpdateButtonText(text) {
+  state.updateButtonText = text;
+  if (els.updateBtn) {
+    els.updateBtn.textContent = text;
+  }
+}
+
+async function consumeUpdateNotes() {
+  if (!api.consumeUpdateNotes) {
+    return;
+  }
+  try {
+    const notes = await api.consumeUpdateNotes();
+    if (notes) {
+      showUpdateBanner(notes);
+    }
+  } catch {
+    // Update notes are decorative; failures should not interrupt the live feed.
+  }
+}
+
+function showUpdateBanner(notes) {
+  if (!els.updateBanner) {
+    return;
+  }
+
+  const version = notes.version ? `v${notes.version}` : "新版";
+  els.updateBannerTitle.textContent = `${version} 已更新`;
+  const features = Array.isArray(notes.features) ? notes.features.filter(Boolean).slice(0, 3) : [];
+  els.updateBannerBody.textContent = features.length ? features.join(" / ") : (notes.title || "新特性已准备好。");
+  els.updateBanner.hidden = false;
+  requestAnimationFrame(() => {
+    els.updateBanner.classList.add("is-visible");
+  });
+  window.setTimeout(() => {
+    hideUpdateBanner();
+  }, 12000);
+}
+
+function hideUpdateBanner() {
+  if (!els.updateBanner || els.updateBanner.hidden) {
+    return;
+  }
+  els.updateBanner.classList.remove("is-visible");
+  window.setTimeout(() => {
+    if (!els.updateBanner.classList.contains("is-visible")) {
+      els.updateBanner.hidden = true;
+    }
+  }, 260);
 }
 
 function applyTheme(theme) {

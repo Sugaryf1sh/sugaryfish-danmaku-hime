@@ -1,0 +1,20 @@
+﻿{
+    "version":  "1.1.2",
+    "tag":  "v1.1.2",
+    "title":  "Sugaryfish的弹幕姬 1.1.2",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.2",
+    "features":  [
+                     "新增免重新安装自动更新：确认后仅替换应用资源，不清除设置。",
+                     "新增国内网络友好的更新通道：优先使用 GitHub 文件 CDN，并自动尝试备用 CDN 与加速节点。",
+                     "新增更新包 SHA256 校验：通过第三方加速下载时也会先校验再替换。",
+                     "新增更新后顶部新特性标签：重启后自动显示本次更新要点。",
+                     "修复锁定窗口后无法进入沉浸式挂机 HUD 的问题。"
+                 ],
+    "notes":  "# Sugaryfish 的弹幕姬 1.1.2\n\n## 更新亮点\n\n- 新增免重新安装自动更新：确认后仅替换应用资源，不清除设置。\n- 新增国内网络友好的更新通道：优先使用 GitHub 文件 CDN，并自动尝试备用 CDN 与加速节点。\n- 新增更新包 SHA256 校验：通过第三方加速下载时也会先校验再替换。\n- 新增更新后顶部新特性标签：重启后自动显示本次更新要点。\n- 修复锁定窗口后无法进入沉浸式挂机 HUD 的问题。",
+    "package":  {
+                    "type":  "app-dir-zip",
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.2.zip",
+                    "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@main/updates/Sugaryfish-Danmaku-Hime-App-1.1.2.zip",
+                    "sha256":  "bcdb6cc2c992e12f9fcacd8482d1243df512492008863367921508313fe9c6ec"
+                }
+}
