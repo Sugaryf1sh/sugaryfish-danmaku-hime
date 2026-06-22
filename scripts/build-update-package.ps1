@@ -64,6 +64,7 @@ $Manifest = [ordered]@{
 }
 
 $ManifestJson = $Manifest | ConvertTo-Json -Depth 6
-[System.IO.File]::WriteAllText($ManifestPath, $ManifestJson, [System.Text.Encoding]::UTF8)
+$Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+[System.IO.File]::WriteAllText($ManifestPath, $ManifestJson, $Utf8NoBom)
 Write-Host $PackagePath
 Write-Host $Hash

@@ -525,7 +525,11 @@ function normalizeProxyRules(value) {
 }
 
 function requestJson(url, headers = {}) {
-  return requestText(url, { headers }).then((text) => JSON.parse(text));
+  return requestText(url, { headers }).then((text) => JSON.parse(stripBom(text)));
+}
+
+function stripBom(text) {
+  return String(text || "").replace(/^\uFEFF/, "");
 }
 
 function requestText(url, { headers = {}, timeout = UPDATE_TIMEOUT_MS, redirectsLeft = 5 } = {}) {

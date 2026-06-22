@@ -1,4 +1,4 @@
-﻿{
+{
     "version":  "1.1.4",
     "tag":  "v1.1.4",
     "title":  "Sugaryfish的弹幕姬 1.1.4",
@@ -14,6 +14,6 @@
                     "type":  "app-dir-zip",
                     "name":  "Sugaryfish-Danmaku-Hime-App-1.1.4.zip",
                     "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@main/updates/Sugaryfish-Danmaku-Hime-App-1.1.4.zip",
-                    "sha256":  "84a01ca469731ff98fc54af28c44027b7fe6484c9617d5b9712463f89f60a730"
+                    "sha256":  "51db859e2595d52ee23c16c5f31fcfa9e1742609e213349edac0ffd724a4ed18"
                 }
 }
