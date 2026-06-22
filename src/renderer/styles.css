@@ -904,11 +904,11 @@ body.dark-theme .status-dot {
 
 .status-mode-tip {
   position: fixed;
-  left: 18px;
-  top: 68px;
+  left: 17px;
+  top: 58px;
   z-index: 2000;
   max-width: 210px;
-  padding: 5px 8px;
+  padding: 5px 8px 5px 9px;
   border: 1px solid var(--help-border);
   background: var(--help-bg);
   box-shadow: var(--help-shadow);
@@ -934,7 +934,7 @@ body.dark-theme .status-dot {
 
 body.is-click-through .status-mode-tip,
 .app-container.is-hud-dimmed .status-mode-tip {
-  top: calc(68px + var(--hud-dot-offset, 0px));
+  top: 58px;
 }
 
 body.light-theme .status-mode-tip,
