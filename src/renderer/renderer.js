@@ -16,6 +16,7 @@ const state = {
   statusFlashTimer: null,
   statusPulseTimer: null,
   statusModeTipTimer: null,
+  updateBannerTimer: null,
   clickThroughWakeTimer: null,
   clickThroughNoticeShown: false,
   startTime: Date.now(),
@@ -64,6 +65,8 @@ const els = {
   updateBannerTitle: document.getElementById("updateBannerTitle"),
   updateBannerBody: document.getElementById("updateBannerBody"),
   updateBannerClose: document.getElementById("updateBannerClose"),
+  updateProgress: document.getElementById("updateProgress"),
+  updateProgressBar: document.getElementById("updateProgressBar"),
   megaGiftZone: document.getElementById("megaGiftZone"),
   feed: document.getElementById("feed"),
   runTime: document.getElementById("run-time"),
@@ -419,11 +422,25 @@ function handleUpdateStatus(status = {}) {
     els.updateBtn.dataset.busy = "1";
     els.updateBtn.disabled = true;
     setUpdateButtonText("检查中");
+    showUpdateBanner({
+      title: "正在检查更新",
+      body: "正在连接更新源，请稍候。",
+      progress: 8,
+      sticky: true,
+      mode: "progress"
+    });
     return;
   }
 
   if (status.state === "available") {
     setUpdateButtonText("可更新");
+    showUpdateBanner({
+      title: `发现 ${status.release?.version || "新版本"}`,
+      body: "请在确认窗口中选择是否立即更新。",
+      progress: 18,
+      sticky: true,
+      mode: "progress"
+    });
     return;
   }
 
@@ -431,7 +448,15 @@ function handleUpdateStatus(status = {}) {
     els.updateBtn.dataset.busy = "1";
     els.updateBtn.disabled = true;
     const progress = Number.isFinite(Number(status.progress)) ? Number(status.progress) : 0;
-    setUpdateButtonText(`${Math.max(0, Math.min(99, Math.round(progress)))}%`);
+    const visibleProgress = Math.max(0, Math.min(99, Math.round(progress)));
+    setUpdateButtonText(`${visibleProgress}%`);
+    showUpdateBanner({
+      title: "正在下载更新包",
+      body: `${visibleProgress}%${status.sourceLabel ? ` / ${status.sourceLabel}` : ""}`,
+      progress: visibleProgress,
+      sticky: true,
+      mode: "progress"
+    });
     return;
   }
 
@@ -439,6 +464,13 @@ function handleUpdateStatus(status = {}) {
     els.updateBtn.dataset.busy = "1";
     els.updateBtn.disabled = true;
     setUpdateButtonText("重启中");
+    showUpdateBanner({
+      title: "正在重启替换",
+      body: "应用会短暂关闭并自动打开，请不要手动结束更新进程。",
+      progress: 100,
+      sticky: true,
+      mode: "progress"
+    });
     return;
   }
 
@@ -447,7 +479,14 @@ function handleUpdateStatus(status = {}) {
   setUpdateButtonText(UPDATE_IDLE_TEXT);
 
   if (status.state === "error" && status.message) {
-    flashStatus(formatUpdateError(status.message), 3600);
+    const message = formatUpdateError(status.message);
+    flashStatus(message, 3600);
+    showUpdateBanner({
+      title: "更新失败",
+      body: message,
+      sticky: false,
+      mode: "error"
+    });
   }
 }
 
@@ -480,39 +519,85 @@ async function consumeUpdateNotes() {
   try {
     const notes = await api.consumeUpdateNotes();
     if (notes) {
-      showUpdateBanner(notes);
+      showUpdateBanner(formatUpdateNotice(notes));
     }
   } catch {
     // Update notes are decorative; failures should not interrupt the live feed.
   }
 }
 
-function showUpdateBanner(notes) {
+function formatUpdateNotice(notes) {
+  if (notes?.failed) {
+    const message = Array.isArray(notes.features) && notes.features[0]
+      ? notes.features[0]
+      : notes.message || "更新没有完成，请稍后重试。";
+    return {
+      title: notes.version ? `v${notes.version} 更新失败` : "更新失败",
+      body: message,
+      mode: "error",
+      sticky: false
+    };
+  }
+
+  const version = notes.version ? `v${notes.version}` : "新版";
+  const features = Array.isArray(notes.features) ? notes.features.filter(Boolean).slice(0, 3) : [];
+  return {
+    title: `${version} 已更新`,
+    body: features.length ? features.join(" / ") : (notes.title || "新特性已准备好。"),
+    mode: "success",
+    sticky: false
+  };
+}
+
+function showUpdateBanner(details) {
   if (!els.updateBanner) {
     return;
   }
 
-  const version = notes.version ? `v${notes.version}` : "新版";
-  els.updateBannerTitle.textContent = `${version} 已更新`;
-  const features = Array.isArray(notes.features) ? notes.features.filter(Boolean).slice(0, 3) : [];
-  els.updateBannerBody.textContent = features.length ? features.join(" / ") : (notes.title || "新特性已准备好。");
+  const {
+    title = "更新中",
+    body = "正在准备更新。",
+    progress = null,
+    sticky = false,
+    mode = ""
+  } = details || {};
+
+  clearTimeout(state.updateBannerTimer);
+  els.updateBanner.classList.toggle("is-error", mode === "error");
+  els.updateBanner.classList.toggle("is-progress", mode === "progress");
+  els.updateBanner.classList.toggle("is-success", mode === "success");
+  els.updateBannerTitle.textContent = title;
+  els.updateBannerBody.textContent = body;
+  if (els.updateProgress && els.updateProgressBar) {
+    const hasProgress = Number.isFinite(Number(progress));
+    els.updateProgress.hidden = !hasProgress;
+    els.updateProgressBar.style.width = hasProgress ? `${Math.max(0, Math.min(100, Number(progress)))}%` : "0%";
+  }
   els.updateBanner.hidden = false;
   requestAnimationFrame(() => {
     els.updateBanner.classList.add("is-visible");
   });
-  window.setTimeout(() => {
-    hideUpdateBanner();
-  }, 12000);
+  if (!sticky) {
+    state.updateBannerTimer = window.setTimeout(() => {
+      hideUpdateBanner();
+    }, mode === "error" ? 9000 : 12000);
+  }
 }
 
 function hideUpdateBanner() {
   if (!els.updateBanner || els.updateBanner.hidden) {
     return;
   }
+  clearTimeout(state.updateBannerTimer);
   els.updateBanner.classList.remove("is-visible");
   window.setTimeout(() => {
     if (!els.updateBanner.classList.contains("is-visible")) {
       els.updateBanner.hidden = true;
+      els.updateBanner.classList.remove("is-error", "is-progress", "is-success");
+      if (els.updateProgress && els.updateProgressBar) {
+        els.updateProgress.hidden = true;
+        els.updateProgressBar.style.width = "0%";
+      }
     }
   }, 260);
 }

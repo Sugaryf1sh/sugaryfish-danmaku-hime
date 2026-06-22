@@ -1,19 +1,18 @@
 {
-    "version":  "1.1.5",
-    "tag":  "v1.1.5",
-    "title":  "Sugaryfish的弹幕姬 1.1.5",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.5",
+    "version":  "1.1.6",
+    "tag":  "v1.1.6",
+    "title":  "Sugaryfish的弹幕姬 1.1.6",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.6",
     "features":  [
-                     "修复免安装自动更新替换失败后只退出、不落地的问题。",
-                     "增强更新器：等待主进程退出、失败自动重试，并校验安装后的版本号。",
-                     "优化更新失败提示，避免左上角出现 Electron 原始错误文本。",
-                     "强化更新下载校验，遇到 CDN 旧缓存会继续换源重试。"
+                     "新增顶部更新进度面板，检查、下载、重启替换都有明确状态反馈。",
+                     "更新器会写入成功/失败结果，重启后直接显示更新结果。",
+                     "继续增强资源替换流程，减少“应用关闭但版本没变”的困惑。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.1.5\n\n## 更新亮点\n\n- 修复免安装自动更新替换失败后只退出、不落地的问题。\n- 增强更新器：等待主进程退出、失败自动重试，并校验安装后的版本号。\n- 优化更新失败提示，避免左上角出现 Electron 原始错误文本。\n- 强化更新下载校验，遇到 CDN 旧缓存会继续换源重试。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.1.6\n\n## 更新亮点\n\n- 新增顶部更新进度面板，检查、下载、重启替换都有明确状态反馈。\n- 更新器会写入成功/失败结果，重启后直接显示更新结果。\n- 继续增强资源替换流程，减少“应用关闭但版本没变”的困惑。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.5.zip",
-                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/main/updates/Sugaryfish-Danmaku-Hime-App-1.1.5.zip",
-                    "sha256":  "6c90efd723b722e5add96f4cbf2623902addce5d0a140ff28b14ef0f0ff79f3a"
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.6.zip",
+                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/main/updates/Sugaryfish-Danmaku-Hime-App-1.1.6.zip",
+                    "sha256":  "192c726e8e2fe3f143b2941b5fa57c71a32e4896196bc8ad6ed9a006a2e047db"
                 }
 }

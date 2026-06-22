@@ -1150,6 +1150,28 @@ function Write-UpdateLog {
   Add-Content -LiteralPath $log -Value ("[" + $timestamp + "] " + $Message) -Encoding UTF8
 }
 
+function Write-UpdateResult {
+  param(
+    [string]$Status,
+    [string]$Message
+  )
+  try {
+    [System.IO.Directory]::CreateDirectory((Split-Path -Parent $NotesTarget)) | Out-Null
+    $payload = [ordered]@{
+      version = $ExpectedVersion
+      title = if ($Status -eq "success") { "更新完成" } else { "更新失败" }
+      failed = ($Status -ne "success")
+      status = $Status
+      message = $Message
+      features = @($Message)
+      shownAt = (Get-Date).ToUniversalTime().ToString("o")
+    }
+    $payload | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $NotesTarget -Encoding UTF8
+  } catch {
+    Write-UpdateLog ("Write result failed: " + $_.Exception.Message)
+  }
+}
+
 function Invoke-WithRetry {
   param(
     [scriptblock]$Action,
@@ -1186,6 +1208,7 @@ function Read-AppVersion {
 try {
   Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
   Write-UpdateLog "Updater started"
+  Write-UpdateResult "pending" "正在替换应用资源，请稍候。"
   if ($ParentProcessId -gt 0) {
     try {
       Wait-Process -Id $ParentProcessId -Timeout 20 -ErrorAction SilentlyContinue
@@ -1245,7 +1268,9 @@ try {
   $success = $true
   Write-UpdateLog "Updater finished successfully"
 } catch {
-  Write-UpdateLog ("Updater failed: " + ($_ | Out-String))
+  $failureText = ($_ | Out-String).Trim()
+  Write-UpdateLog ("Updater failed: " + $failureText)
+  Write-UpdateResult "failed" $failureText
   if ($backup -and (Test-Path -LiteralPath $backup)) {
     try {
       if ($resolvedTarget -and (Test-Path -LiteralPath $resolvedTarget)) {
