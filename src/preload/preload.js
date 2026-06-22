@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("danmakuApp", {
   getSettings: () => ipcRenderer.invoke("settings:get"),
   updateSettings: (patch) => ipcRenderer.invoke("settings:update", patch),
+  getAppInfo: () => ipcRenderer.invoke("app:get-info"),
   fetchSessdata: () => ipcRenderer.invoke("sessdata:fetch"),
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   consumeUpdateNotes: () => ipcRenderer.invoke("update:consume-notes"),

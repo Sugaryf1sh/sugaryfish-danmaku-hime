@@ -223,6 +223,9 @@ function applyWindowSettings(nextSettings) {
 
 ipcMain.handle("settings:get", () => settings);
 ipcMain.handle("settings:update", (_event, patch) => setSettings(patch));
+ipcMain.handle("app:get-info", () => ({
+  version: app.getVersion()
+}));
 ipcMain.handle("update:check", async () => {
   try {
     return await checkForUpdates({ silent: false, prompt: true });
@@ -408,7 +411,9 @@ async function checkForUpdates({ silent, prompt }) {
 }
 
 async function doCheckForUpdates({ silent, prompt }) {
-  notifyUpdateStatus({ state: "checking" });
+  if (!silent) {
+    notifyUpdateStatus({ state: "checking" });
+  }
 
   try {
     await applyUpdateProxyFromEnvironment();
@@ -416,7 +421,9 @@ async function doCheckForUpdates({ silent, prompt }) {
     const currentVersion = app.getVersion();
 
     if (!release || !isVersionGreater(release.version, currentVersion)) {
-      notifyUpdateStatus({ state: "idle" });
+      if (!silent) {
+        notifyUpdateStatus({ state: "idle" });
+      }
       return { status: "no-update", currentVersion, latestVersion: release?.version || currentVersion };
     }
 
@@ -428,7 +435,9 @@ async function doCheckForUpdates({ silent, prompt }) {
 
     const accepted = await askUserToApplyUpdate(release, currentVersion);
     if (!accepted) {
-      notifyUpdateStatus({ state: "idle" });
+      if (!silent) {
+        notifyUpdateStatus({ state: "idle" });
+      }
       return { status: "skipped", release };
     }
 
@@ -436,7 +445,9 @@ async function doCheckForUpdates({ silent, prompt }) {
     return { status: "installing", release };
   } catch (error) {
     const message = buildUpdateErrorMessage(error);
-    notifyUpdateStatus({ state: "error", message });
+    if (!silent) {
+      notifyUpdateStatus({ state: "error", message });
+    }
     if (!silent) {
       throw new Error(message);
     }

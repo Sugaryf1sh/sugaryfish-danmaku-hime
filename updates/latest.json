@@ -1,18 +1,17 @@
 {
-    "version":  "1.1.6",
-    "tag":  "v1.1.6",
-    "title":  "Sugaryfish的弹幕姬 1.1.6",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.6",
+    "version":  "1.1.7",
+    "tag":  "v1.1.7",
+    "title":  "Sugaryfish的弹幕姬 1.1.7",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.7",
     "features":  [
-                     "新增顶部更新进度面板，检查、下载、重启替换都有明确状态反馈。",
-                     "更新器会写入成功/失败结果，重启后直接显示更新结果。",
-                     "继续增强资源替换流程，减少“应用关闭但版本没变”的困惑。"
+                     "修复启动自动检查无更新时仍弹出更新横幅的问题；无更新时保持静默，手动检查仍会显示“已是最新版本”。",
+                     "帮助卡版本号改为读取应用真实版本，避免 Bridge 修复后仍显示旧版本。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.1.6\n\n## 更新亮点\n\n- 新增顶部更新进度面板，检查、下载、重启替换都有明确状态反馈。\n- 更新器会写入成功/失败结果，重启后直接显示更新结果。\n- 继续增强资源替换流程，减少“应用关闭但版本没变”的困惑。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.1.7\n\n## 更新亮点\n\n- 修复启动自动检查无更新时仍弹出更新横幅的问题；无更新时保持静默，手动检查仍会显示“已是最新版本”。\n- 帮助卡版本号改为读取应用真实版本，避免 Bridge 修复后仍显示旧版本。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.6.zip",
-                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/main/updates/Sugaryfish-Danmaku-Hime-App-1.1.6.zip",
-                    "sha256":  "192c726e8e2fe3f143b2941b5fa57c71a32e4896196bc8ad6ed9a006a2e047db"
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.7.zip",
+                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/main/updates/Sugaryfish-Danmaku-Hime-App-1.1.7.zip",
+                    "sha256":  "e5b62852c1ba45d9af259610f948327e5cd3e888662290d2745e683dec999bdc"
                 }
 }

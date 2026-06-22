@@ -60,6 +60,7 @@ const els = {
   fetchSessdataBtn: document.getElementById("fetchSessdataBtn"),
   clearSessdataBtn: document.getElementById("clearSessdataBtn"),
   updateBtn: document.getElementById("updateBtn"),
+  appVersionText: document.getElementById("appVersionText"),
   helpMenu: document.querySelector(".help-menu"),
   updateBanner: document.getElementById("updateBanner"),
   updateBannerTitle: document.getElementById("updateBannerTitle"),
@@ -85,6 +86,7 @@ async function init() {
   state.uptimeTimer = setInterval(updateRuntimeDashboard, 60000);
   bindEvents();
   bindIpc();
+  loadAppInfo();
   consumeUpdateNotes();
 }
 
@@ -384,6 +386,7 @@ async function handleUpdateCheck() {
   try {
     const result = await api.checkForUpdates();
     if (result?.status === "no-update") {
+      hideUpdateBanner();
       flashStatus("已是最新版", 2000);
       setUpdateButtonText(UPDATE_LATEST_TEXT);
       keepResultText = true;
@@ -478,6 +481,11 @@ function handleUpdateStatus(status = {}) {
   els.updateBtn.disabled = false;
   setUpdateButtonText(UPDATE_IDLE_TEXT);
 
+  if (status.state === "idle") {
+    hideUpdateBanner();
+    return;
+  }
+
   if (status.state === "error" && status.message) {
     const message = formatUpdateError(status.message);
     flashStatus(message, 3600);
@@ -487,6 +495,20 @@ function handleUpdateStatus(status = {}) {
       sticky: false,
       mode: "error"
     });
+  }
+}
+
+async function loadAppInfo() {
+  if (!api.getAppInfo || !els.appVersionText) {
+    return;
+  }
+  try {
+    const info = await api.getAppInfo();
+    if (info?.version) {
+      els.appVersionText.textContent = `v${info.version}`;
+    }
+  } catch {
+    // Version display is decorative; package.json remains the source of truth.
   }
 }
 
