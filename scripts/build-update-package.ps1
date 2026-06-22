@@ -58,7 +58,7 @@ $Manifest = [ordered]@{
   package = [ordered]@{
     type = "app-dir-zip"
     name = $PackageName
-    url = "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@main/updates/$PackageName"
+    url = "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v$Version/updates/$PackageName"
     sha256 = $Hash
   }
 }

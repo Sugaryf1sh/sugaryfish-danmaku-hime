@@ -10,7 +10,10 @@ const APP_NAME = "Sugaryfish的弹幕姬";
 const UPDATE_REPO_OWNER = "Sugaryf1sh";
 const UPDATE_REPO_NAME = "sugaryfish-danmaku-hime";
 const UPDATE_API_URL = `https://api.github.com/repos/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}/releases/latest`;
+const UPDATE_CONTENTS_MANIFEST_URL = `https://api.github.com/repos/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}/contents/updates/latest.json?ref=main`;
 const UPDATE_MANIFEST_URLS = [
+  UPDATE_CONTENTS_MANIFEST_URL,
+  `https://ghproxy.net/https://raw.githubusercontent.com/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}/main/updates/latest.json`,
   `https://cdn.jsdelivr.net/gh/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}@main/updates/latest.json`,
   `https://fastly.jsdelivr.net/gh/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}@main/updates/latest.json`,
   `https://gcore.jsdelivr.net/gh/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}@main/updates/latest.json`,
@@ -564,8 +567,28 @@ function normalizeProxyRules(value) {
   }
 }
 
-function requestJson(url, headers = {}) {
-  return requestText(url, { headers }).then((text) => JSON.parse(stripBom(text)));
+async function requestJson(url, headers = {}) {
+  const text = await requestText(url, { headers });
+  return parseJsonResponse(text, url);
+}
+
+function parseJsonResponse(text, url = "") {
+  const data = JSON.parse(stripBom(text));
+  if (isGitHubContentsManifestUrl(url) && data?.content) {
+    const decoded = Buffer.from(String(data.content).replace(/\s/g, ""), "base64").toString("utf8");
+    return JSON.parse(stripBom(decoded));
+  }
+  return data;
+}
+
+function isGitHubContentsManifestUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.toLowerCase() === "api.github.com"
+      && /\/contents\/updates\/latest\.json$/i.test(parsed.pathname);
+  } catch {
+    return false;
+  }
 }
 
 function stripBom(text) {
