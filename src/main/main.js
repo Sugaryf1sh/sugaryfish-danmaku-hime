@@ -33,6 +33,7 @@ let sessdataLoginWindow = null;
 let sessdataFetchPromise = null;
 let updateCheckPromise = null;
 let updateDownloadInProgress = false;
+let updateInteractionRestoreClickThrough = null;
 let tray = null;
 let settings = { ...DEFAULT_SETTINGS };
 const client = new BilibiliDanmakuClient();
@@ -415,6 +416,7 @@ async function checkForUpdates({ silent, prompt }) {
 
 async function doCheckForUpdates({ silent, prompt }) {
   if (!silent) {
+    beginUpdateInteractionMode();
     notifyUpdateStatus({ state: "checking" });
   }
 
@@ -426,10 +428,14 @@ async function doCheckForUpdates({ silent, prompt }) {
     if (!release || !isVersionGreater(release.version, currentVersion)) {
       if (!silent) {
         notifyUpdateStatus({ state: "idle" });
+        endUpdateInteractionMode();
       }
       return { status: "no-update", currentVersion, latestVersion: release?.version || currentVersion };
     }
 
+    if (prompt) {
+      beginUpdateInteractionMode();
+    }
     notifyUpdateStatus({ state: "available", release });
 
     if (!prompt) {
@@ -441,6 +447,7 @@ async function doCheckForUpdates({ silent, prompt }) {
       if (!silent) {
         notifyUpdateStatus({ state: "idle" });
       }
+      endUpdateInteractionMode();
       return { status: "skipped", release };
     }
 
@@ -448,6 +455,7 @@ async function doCheckForUpdates({ silent, prompt }) {
     return { status: "installing", release };
   } catch (error) {
     const message = buildUpdateErrorMessage(error);
+    endUpdateInteractionMode();
     if (!silent) {
       notifyUpdateStatus({ state: "error", message });
     }
@@ -456,6 +464,35 @@ async function doCheckForUpdates({ silent, prompt }) {
     }
     return { status: "error", message };
   }
+}
+
+function beginUpdateInteractionMode() {
+  if (updateInteractionRestoreClickThrough === null) {
+    updateInteractionRestoreClickThrough = Boolean(settings.clickThrough);
+  }
+  if (settings.clickThrough) {
+    setSettings({ clickThrough: false });
+  }
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setIgnoreMouseEvents(false);
+    if (!mainWindow.isVisible()) {
+      mainWindow.show();
+    }
+    mainWindow.focus();
+  }
+}
+
+function endUpdateInteractionMode() {
+  if (updateInteractionRestoreClickThrough === null) {
+    return;
+  }
+  const shouldRestore = updateInteractionRestoreClickThrough;
+  updateInteractionRestoreClickThrough = null;
+  if (settings.clickThrough !== shouldRestore) {
+    setSettings({ clickThrough: shouldRestore });
+    return;
+  }
+  applyWindowSettings(settings);
 }
 
 async function loadLatestUpdateInfo() {

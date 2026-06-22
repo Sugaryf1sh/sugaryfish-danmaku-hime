@@ -1,17 +1,18 @@
 {
-    "version":  "1.1.11",
-    "tag":  "v1.1.11",
-    "title":  "Sugaryfish的弹幕姬 1.1.11",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.11",
+    "version":  "1.2.0",
+    "tag":  "v1.2.0",
+    "title":  "Sugaryfish的弹幕姬 1.2.0",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.2.0",
     "features":  [
-                     "强化更新清单获取，优先读取 GitHub Contents API，避免 raw/CDN 分发层返回旧 latest.json。",
-                     "更新包下载地址绑定版本 tag，降低 main 分支 CDN 缓存导致错包的概率。"
+                     "更新检查与确认期间会临时解除鼠标穿透，避免确认弹窗和更新提示无法点击。",
+                     "扩大更新提示关闭按钮的可点击范围，同时保持原有视觉风格。",
+                     "优化穿透恢复红点提示位置，避免提示标签遮住红点。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.1.11 测试版\n\n## 更新亮点\n\n- 强化更新清单获取，优先读取 GitHub Contents API，避免 raw/CDN 分发层返回旧 latest.json。\n- 更新包下载地址绑定版本 tag，降低 main 分支 CDN 缓存导致错包的概率。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.2.0\n\n## 更新亮点\n\n- 更新检查与确认期间会临时解除鼠标穿透，避免确认弹窗和更新提示无法点击。\n- 扩大更新提示关闭按钮的可点击范围，同时保持原有视觉风格。\n- 优化穿透恢复红点提示位置，避免提示标签遮住红点。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.11.zip",
-                    "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v1.1.11/updates/Sugaryfish-Danmaku-Hime-App-1.1.11.zip",
-                    "sha256":  "52f87e4e7fafe3ae9694909ceb044d3189c83df7b53bfea3079cf3ae4ca71071"
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.2.0.zip",
+                    "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v1.2.0/updates/Sugaryfish-Danmaku-Hime-App-1.2.0.zip",
+                    "sha256":  "725333a46a0cac67eba594a951a68e3ad5235a673b41550b255e773f4d31368c"
                 }
 }

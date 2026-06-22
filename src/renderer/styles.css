@@ -506,7 +506,7 @@ body,
   top: 10px;
   left: 18px;
   right: 18px;
-  z-index: 120;
+  z-index: 2100;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -562,8 +562,8 @@ body,
 
 .update-banner-close {
   flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
+  width: 30px;
+  height: 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -573,7 +573,7 @@ body,
   background: transparent;
   color: inherit;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
   opacity: 0.56;
 }
@@ -905,7 +905,7 @@ body.dark-theme .status-dot {
 .status-mode-tip {
   position: fixed;
   left: 18px;
-  top: 54px;
+  top: 68px;
   z-index: 2000;
   max-width: 210px;
   padding: 5px 8px;
@@ -930,6 +930,11 @@ body.dark-theme .status-dot {
 .status-mode-tip.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+body.is-click-through .status-mode-tip,
+.app-container.is-hud-dimmed .status-mode-tip {
+  top: calc(68px + var(--hud-dot-offset, 0px));
 }
 
 body.light-theme .status-mode-tip,
