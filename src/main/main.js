@@ -440,6 +440,7 @@ async function doCheckForUpdates({ silent, prompt }) {
 
 async function loadLatestUpdateInfo() {
   const errors = [];
+  const releases = [];
 
   for (const url of getUpdateManifestUrls()) {
     try {
@@ -449,7 +450,7 @@ async function loadLatestUpdateInfo() {
       });
       const release = normalizeManifestRelease(manifest, url);
       if (release) {
-        return release;
+        releases.push(release);
       }
     } catch (error) {
       errors.push(`${url}: ${error.message}`);
@@ -462,13 +463,24 @@ async function loadLatestUpdateInfo() {
       "User-Agent": `${APP_NAME}/${app.getVersion()}`
     }));
     if (release) {
-      return release;
+      releases.push(release);
     }
   } catch (error) {
     errors.push(`GitHub API: ${error.message}`);
   }
 
+  const latest = pickLatestRelease(releases);
+  if (latest) {
+    return latest;
+  }
+
   throw new Error(`无法获取更新信息，已尝试国内 CDN 与 GitHub。${errors.slice(-2).join("；")}`);
+}
+
+function pickLatestRelease(releases) {
+  return releases
+    .filter((release) => release?.version)
+    .sort((a, b) => compareVersions(b.version, a.version))[0] || null;
 }
 
 function getUpdateManifestUrls() {
@@ -728,6 +740,10 @@ function parseNotesSha256(notes, assetName) {
 }
 
 function isVersionGreater(next, current) {
+  return compareVersions(next, current) > 0;
+}
+
+function compareVersions(next, current) {
   const nextParts = normalizeVersion(next).split(".").map((part) => Number.parseInt(part, 10) || 0);
   const currentParts = normalizeVersion(current).split(".").map((part) => Number.parseInt(part, 10) || 0);
   const length = Math.max(nextParts.length, currentParts.length);
@@ -735,11 +751,11 @@ function isVersionGreater(next, current) {
   for (let index = 0; index < length; index += 1) {
     const a = nextParts[index] || 0;
     const b = currentParts[index] || 0;
-    if (a > b) return true;
-    if (a < b) return false;
+    if (a > b) return 1;
+    if (a < b) return -1;
   }
 
-  return false;
+  return 0;
 }
 
 function normalizeFeatures(features, notes) {
