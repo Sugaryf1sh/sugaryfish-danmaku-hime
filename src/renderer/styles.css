@@ -63,7 +63,8 @@ body.light-theme {
   --danmaku-user-scale: 0.9;
   --danmaku-content-scale: 1;
   --danmaku-uid-scale: 0.7;
-  --danmaku-emote-size: min(1.08em, 16px);
+  --danmaku-emote-size: min(1.5em, 22px);
+  --danmaku-emote-hero-size: min(1.75em, 26px);
   --gift-content-scale: 0.88;
   --gift-emote-size: min(1em, 14px);
   --gift-multiplier-scale: 0.95;
@@ -2371,7 +2372,7 @@ body.dark-theme .app-container.is-hud-dimmed .feed::-webkit-scrollbar-thumb {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: 20px;
   align-items: start;
   padding: 11px 6px 11px 4px;
@@ -2551,49 +2552,85 @@ body.dark-theme .item:hover::before {
   text-align: left;
 }
 
-.fans-medal {
+.fans-medal,
+.fans-badge-container {
   max-width: 100%;
   min-width: 0;
-  height: 14px;
-  display: inline-grid;
-  grid-template-columns: minmax(0, auto) auto;
-  align-items: center;
-  column-gap: 4px;
-  padding: 0 5px;
-  border: 1px solid rgba(74, 107, 156, 0.22);
-  border-radius: 3px;
-  background: rgba(74, 107, 156, 0.055);
-  color: rgba(74, 107, 156, 0.78);
-  font-family: var(--font-ui);
-  font-size: 9px;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  margin-top: 4px !important;
+  vertical-align: middle !important;
+  font-family: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", sans-serif;
+  font-size: 10px !important;
   font-weight: 500;
-  letter-spacing: 0.025em;
-  line-height: 1;
-  overflow: hidden;
+  letter-spacing: 0.015em;
+  line-height: 1.2 !important;
+  overflow: visible;
   white-space: nowrap;
 }
 
-.fans-medal-name {
+.fans-medal-name,
+.fans-badge-name {
   min-width: 0;
-  display: block;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
 }
 
-.fans-medal-level {
-  display: block;
-  color: var(--accent-red);
-  font-family: var(--font-data);
+.fans-medal-level,
+.fans-badge-level {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  font-family: inherit;
   font-size: 1em;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   letter-spacing: 0;
-  line-height: 1;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
 }
 
 .fans-medal.is-dimmed {
   opacity: 0.52;
+}
+
+body.light-theme .fans-badge-container,
+body.light-theme .fans-medal {
+  background: #e0dcd3 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  color: #5a5550 !important;
+  gap: 0;
+  padding: 2px 6px !important;
+}
+
+body.light-theme .fans-badge-name,
+body.light-theme .fans-medal-name {
+  color: #5a5550 !important;
+  font-weight: 500 !important;
+}
+
+body.light-theme .fans-badge-name::after,
+body.light-theme .fans-medal-name::after {
+  content: " · " !important;
+  color: #a19b92 !important;
+  margin: 0 2px !important;
+}
+
+body.light-theme .fans-badge-level,
+body.light-theme .fans-medal-level {
+  color: #6e6862 !important;
+  font-family: "Georgia", serif !important;
+  font-weight: 500;
+  position: relative !important;
+  top: -0.5px !important;
 }
 
 .is-tag-copy-enabled:not(.is-click-through) .danmaku-item {
@@ -2664,17 +2701,73 @@ body.dark-theme .tag::before {
   box-shadow: 0 0 6px rgba(123, 160, 192, 0.4) !important;
 }
 
+body.dark-theme .fans-badge-container,
 body.dark-theme .fans-medal {
-  border-color: rgba(123, 160, 192, 0.18);
-  background: rgba(123, 160, 192, 0.055);
-  color: rgba(138, 180, 248, 0.74);
-  font-family: var(--font-ui);
+  display: inline-flex !important;
+  align-items: center !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 3px !important;
+  box-sizing: border-box !important;
+  color: #7ba0c0 !important;
+  font-family: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", sans-serif;
   font-weight: 500;
+  gap: 0;
+  height: 18px !important;
+  max-width: none !important;
+  min-width: max-content !important;
+  overflow: visible !important;
+  padding: 0 4px !important;
+  width: auto !important;
 }
 
+body.dark-theme .fans-badge-name,
+body.dark-theme .fans-medal-name {
+  border-right: none !important;
+  color: #7ba0c0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: none !important;
+  height: 100% !important;
+  line-height: 1 !important;
+  max-width: none !important;
+  min-width: max-content !important;
+  overflow: visible !important;
+  padding: 0 4px 0 2px !important;
+  text-overflow: clip !important;
+  width: auto !important;
+}
+
+body.dark-theme .fans-badge-name::after,
+body.dark-theme .fans-medal-name::after {
+  content: "" !important;
+  display: inline-block !important;
+  width: 1px !important;
+  height: 8px !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  margin-left: 6px !important;
+}
+
+body.dark-theme .fans-badge-level,
 body.dark-theme .fans-medal-level {
-  color: rgba(193, 119, 117, 0.86);
-  text-shadow: 0 0 5px rgba(193, 119, 117, 0.22);
+  color: #c17775 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: none !important;
+  font-family: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", sans-serif !important;
+  font-weight: 600 !important;
+  height: 100% !important;
+  letter-spacing: 0 !important;
+  line-height: 1 !important;
+  max-width: none !important;
+  min-width: max-content !important;
+  overflow: visible !important;
+  padding: 0 2px 0 0 !important;
+  position: relative !important;
+  text-shadow: 0 0 4px rgba(193, 119, 117, 0.3) !important;
+  text-overflow: clip !important;
+  top: 0 !important;
+  width: auto !important;
 }
 
 body.dark-theme .uid {
@@ -2953,10 +3046,10 @@ body.dark-theme .item.guard .tag {
 .danmaku-content .emoji {
   display: inline-block !important;
   width: auto !important;
-  height: 1.2em !important;
-  max-height: 1.2em !important;
+  height: 1.35em !important;
+  max-height: 1.35em !important;
   margin: 0 2px !important;
-  vertical-align: -0.15em !important;
+  vertical-align: -0.22em !important;
 }
 
 .danmaku-content .bilibili-emote {
@@ -2964,7 +3057,20 @@ body.dark-theme .item.guard .tag {
   max-height: var(--danmaku-emote-size) !important;
   min-height: 0 !important;
   object-fit: contain;
-  vertical-align: -0.16em !important;
+  vertical-align: -0.32em !important;
+  transition: height 0.18s cubic-bezier(0.25, 1, 0.5, 1), max-height 0.18s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.danmaku-item.is-emote-message .danmaku-content .emoji {
+  height: var(--danmaku-emote-hero-size) !important;
+  max-height: var(--danmaku-emote-hero-size) !important;
+  vertical-align: -0.38em !important;
+}
+
+.danmaku-item.is-emote-message .danmaku-content .bilibili-emote {
+  height: var(--danmaku-emote-hero-size) !important;
+  max-height: var(--danmaku-emote-hero-size) !important;
+  vertical-align: -0.42em !important;
 }
 
 .danmaku-item.is-gift .danmaku-content .bilibili-emote {
@@ -3071,11 +3177,39 @@ body.dark-theme .item.guard .tag {
   opacity: 0.38;
 }
 
+.is-click-through .feed {
+  pointer-events: none !important;
+}
+
 .is-click-through .feed:has(.danmaku-item:hover) .danmaku-item,
 .is-click-through .feed.is-ink-active .danmaku-item,
 .is-click-through .feed:has(.danmaku-item:hover) .danmaku-item:hover,
 .is-click-through .feed.is-ink-active .danmaku-item.is-focused {
   opacity: 1 !important;
+  filter: none !important;
+}
+
+body.dark-theme.is-click-through .danmaku-item:hover,
+body.dark-theme.is-click-through .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.dark-theme.is-click-through .feed.is-ink-active .danmaku-item.is-focused {
+  background-color: transparent !important;
+  border-left-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+body.dark-theme.is-click-through .danmaku-item.is-gift:hover,
+body.dark-theme.is-click-through .danmaku-item.is-superchat:hover,
+body.dark-theme.is-click-through .feed:has(.danmaku-item.is-gift:hover) .danmaku-item.is-gift:hover,
+body.dark-theme.is-click-through .feed:has(.danmaku-item.is-superchat:hover) .danmaku-item.is-superchat:hover,
+body.dark-theme.is-click-through .feed.is-ink-active .danmaku-item.is-gift.is-focused,
+body.dark-theme.is-click-through .feed.is-ink-active .danmaku-item.is-superchat.is-focused {
+  background-color: rgba(193, 119, 117, 0.02) !important;
+  border-left-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 @media (max-width: 340px) {

@@ -1,20 +1,19 @@
 ﻿{
-    "version":  "1.1.3",
-    "tag":  "v1.1.3",
-    "title":  "Sugaryfish的弹幕姬 1.1.3",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.3",
+    "version":  "1.1.4",
+    "tag":  "v1.1.4",
+    "title":  "Sugaryfish的弹幕姬 1.1.4",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.4",
     "features":  [
-                     "新增 B 站全站表情解析：支持用户表情面板、直播表情、全量装扮表情包与按包懒加载。",
-                     "修复装扮表情包前缀不一致导致无法显示的问题，例如 Ave Mujica、无数梦境纪念装扮、嘉然与嘉然2.0。",
-                     "新增粉丝牌与等级显示：在弹幕标签下方展示紧凑灯牌，并适配 Light / Dark 主题。",
-                     "优化表情图片尺寸约束：自动压缩到弹幕行高内，避免大图撑开列表。",
-                     "修复表情误抓用户头像的问题，仅使用明确的表情映射或表情包明细。"
+                     "优化 B 站表情显示尺寸：普通表情更清晰，纯表情弹幕自动放大。",
+                     "重构粉丝牌视觉：Light / Dark 主题拥有独立样式，并修复复杂汉字与等级数字的对齐和裁剪问题。",
+                     "修复 Dark 主题穿透模式下鼠标指向弹幕仍触发高亮的问题。",
+                     "优化弹幕左侧标签列布局，粉丝牌可按内容自然伸展。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.1.3\n\n## 更新亮点\n\n- 新增 B 站全站表情解析：支持用户表情面板、直播表情、全量装扮表情包与按包懒加载。\n- 修复装扮表情包前缀不一致导致无法显示的问题，例如 Ave Mujica、无数梦境纪念装扮、嘉然与嘉然2.0。\n- 新增粉丝牌与等级显示：在弹幕标签下方展示紧凑灯牌，并适配 Light / Dark 主题。\n- 优化表情图片尺寸约束：自动压缩到弹幕行高内，避免大图撑开列表。\n- 修复表情误抓用户头像的问题，仅使用明确的表情映射或表情包明细。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.1.4\n\n## 更新亮点\n\n- 优化 B 站表情显示尺寸：普通表情更清晰，纯表情弹幕自动放大。\n- 重构粉丝牌视觉：Light / Dark 主题拥有独立样式，并修复复杂汉字与等级数字的对齐和裁剪问题。\n- 修复 Dark 主题穿透模式下鼠标指向弹幕仍触发高亮的问题。\n- 优化弹幕左侧标签列布局，粉丝牌可按内容自然伸展。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.3.zip",
-                    "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@main/updates/Sugaryfish-Danmaku-Hime-App-1.1.3.zip",
-                    "sha256":  "eb7d3cbe3b2a8d0c1111f6152c5fd90a6cedb61690ac60b5eb28775d7eaf00ba"
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.4.zip",
+                    "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@main/updates/Sugaryfish-Danmaku-Hime-App-1.1.4.zip",
+                    "sha256":  "84a01ca469731ff98fc54af28c44027b7fe6484c9617d5b9712463f89f60a730"
                 }
 }

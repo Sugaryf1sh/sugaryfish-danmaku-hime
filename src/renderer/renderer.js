@@ -562,6 +562,48 @@ function appendContentRuns(target, value, emotes = []) {
   appendPlainContentRuns(target, text);
 }
 
+function getContentEmoteProfile(value, emotes = []) {
+  const text = String(value || "");
+  const emoteMap = buildEmoteMap(emotes);
+  let remainingText = text;
+  let emoteCount = 0;
+
+  const markers = Array.from(emoteMap.keys()).sort((a, b) => b.length - a.length);
+  for (const marker of markers) {
+    if (!marker || !remainingText.includes(marker)) {
+      continue;
+    }
+    const markerPattern = escapeRegExp(marker);
+    const matches = remainingText.match(new RegExp(markerPattern, "g"));
+    emoteCount += matches ? matches.length : 0;
+    remainingText = remainingText.replace(new RegExp(markerPattern, "g"), "");
+  }
+
+  const emojiPattern = /\p{Extended_Pictographic}/u;
+  const segments = typeof Intl !== "undefined" && Intl.Segmenter
+    ? Array.from(new Intl.Segmenter("zh-CN", { granularity: "grapheme" }).segment(remainingText), (entry) => entry.segment)
+    : Array.from(remainingText);
+
+  const textSegments = [];
+  for (const segment of segments) {
+    if (emojiPattern.test(segment)) {
+      emoteCount += 1;
+    } else {
+      textSegments.push(segment);
+    }
+  }
+
+  const meaningfulText = textSegments
+    .join("")
+    .replace(/[\s\u200b-\u200f\uFE0E\uFE0F!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~，。！？、；：“”‘’（）《》【】…·￥]+/g, "");
+  const textLength = getGraphemeLength(meaningfulText);
+
+  return {
+    hasEmotes: emoteCount > 0,
+    isMostlyEmotes: emoteCount > 0 && (textLength === 0 || (emoteCount >= 2 && textLength <= 2))
+  };
+}
+
 function appendPlainContentRuns(target, value) {
   const text = String(value || "");
   const emojiPattern = /\p{Extended_Pictographic}/u;
@@ -621,6 +663,10 @@ function appendBilibiliEmote(target, marker, emote) {
   image.loading = "lazy";
   image.referrerPolicy = "no-referrer";
   image.draggable = false;
+  if (emote.width && emote.height) {
+    image.width = emote.width;
+    image.height = emote.height;
+  }
   image.addEventListener("error", () => {
     image.replaceWith(document.createTextNode(marker));
   }, { once: true });
@@ -645,6 +691,10 @@ function buildEmoteMap(emotes) {
     });
   }
   return map;
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function findNextMarkerIndex(text, markers, start) {
@@ -682,18 +732,18 @@ function createFansMedalElement(medal) {
   }
 
   const element = document.createElement("span");
-  element.className = "fans-medal";
+  element.className = "fans-medal fans-badge-container";
   if (medal.active === false) {
     element.classList.add("is-dimmed");
   }
   element.title = medal.anchor ? `${name} · LV${level} · ${medal.anchor}` : `${name} · LV${level}`;
 
   const medalName = document.createElement("span");
-  medalName.className = "fans-medal-name";
+  medalName.className = "fans-medal-name fans-badge-name";
   medalName.textContent = name;
 
   const medalLevel = document.createElement("span");
-  medalLevel.className = "fans-medal-level";
+  medalLevel.className = "fans-medal-level fans-badge-level";
   medalLevel.textContent = level;
 
   element.append(medalName, medalLevel);
@@ -755,6 +805,13 @@ function appendItem(item) {
   const text = document.createElement("span");
   text.className = "text danmaku-content";
   const displayText = item.price ? `${item.text} ¥${item.price}` : item.text;
+  const emoteProfile = getContentEmoteProfile(displayText, item.emotes);
+  if (emoteProfile.hasEmotes) {
+    li.classList.add("has-emote");
+  }
+  if (emoteProfile.isMostlyEmotes) {
+    li.classList.add("is-emote-message");
+  }
   appendContentRuns(text, displayText, item.emotes);
 
   meta.append(user, uid);
