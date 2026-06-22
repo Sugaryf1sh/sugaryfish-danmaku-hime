@@ -1,17 +1,17 @@
 {
-    "version":  "1.1.9",
-    "tag":  "v1.1.9",
-    "title":  "Sugaryfish的弹幕姬 1.1.9",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.9",
+    "version":  "1.1.10",
+    "tag":  "v1.1.10",
+    "title":  "Sugaryfish的弹幕姬 1.1.10",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.10",
     "features":  [
-                     "自动更新验证版，用于从本机 1.1.8 测试发现新版、下载进度、资源替换与重启流程。",
-                     "继续沿用 1.1.8 的更新器修复，重点确认后续版本可正常无感升级。"
+                     "修复自动更新确认后只关闭、不替换的问题，改用更稳定的 Windows Start-Process 启动更新器。",
+                     "修复更新清单被 CDN 旧缓存污染的问题，每次检查都会绕过 latest.json 缓存。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.1.9 测试版\n\n## 更新亮点\n\n- 自动更新验证版，用于从本机 1.1.8 测试发现新版、下载进度、资源替换与重启流程。\n- 继续沿用 1.1.8 的更新器修复，重点确认后续版本可正常无感升级。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.1.10 测试版\n\n## 更新亮点\n\n- 修复自动更新确认后只关闭、不替换的问题，改用更稳定的 Windows Start-Process 启动更新器。\n- 修复更新清单被 CDN 旧缓存污染的问题，每次检查都会绕过 latest.json 缓存。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.9.zip",
-                    "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@main/updates/Sugaryfish-Danmaku-Hime-App-1.1.9.zip",
-                    "sha256":  "8c32f8c9d7d3d98cf1417574681fe9d9206ac509f0c1e5470ed7c5560f5c7c58"
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.10.zip",
+                    "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@main/updates/Sugaryfish-Danmaku-Hime-App-1.1.10.zip",
+                    "sha256":  "3d5ace54f25ba2d1ca59bdce4fb6117a5da5843e01f2e9f6b189464d2e2b7b83"
                 }
 }

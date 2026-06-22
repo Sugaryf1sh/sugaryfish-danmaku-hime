@@ -1,5 +1,5 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, globalShortcut, dialog, net, session, shell, clipboard } = require("electron");
-const { spawn } = require("child_process");
+const { spawnSync } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
@@ -505,7 +505,18 @@ function getUpdateManifestUrls() {
     .split(/[;,]/)
     .map((url) => url.trim())
     .filter(Boolean);
-  return [...custom, ...UPDATE_MANIFEST_URLS];
+  return [...custom, ...UPDATE_MANIFEST_URLS].map(withUpdateCacheBuster);
+}
+
+function withUpdateCacheBuster(url) {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set("_t", `${Date.now()}`);
+    return parsed.toString();
+  } catch {
+    const separator = String(url).includes("?") ? "&" : "?";
+    return `${url}${separator}_t=${Date.now()}`;
+  }
 }
 
 function getUpdateApiUrl() {
@@ -1332,7 +1343,7 @@ if (!$success) { exit 1 }
 
   fs.writeFileSync(scriptPath, `\ufeff${script}`, "utf8");
   const powershellPath = getWindowsPowerShellPath();
-  const child = spawn(powershellPath, [
+  launchDetachedPowerShell(powershellPath, [
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
     "-File", scriptPath,
@@ -1345,23 +1356,47 @@ if (!$success) { exit 1 }
     "-Mode", target.mode,
     "-ParentProcessId", String(process.pid),
     "-ExpectedVersion", expectedVersion || ""
-  ], {
-    detached: true,
-    stdio: "ignore",
-    windowsHide: true
-  });
-  child.on("error", (error) => {
-    try {
-      fs.appendFileSync(path.join(app.getPath("temp"), "sugaryfish-update-error.log"), `Updater launch failed: ${error.message}\n`);
-    } catch {
-      // The updater is already in a best-effort shutdown path.
-    }
-  });
-  child.unref();
+  ]);
 
   app.isQuitting = true;
   app.quit();
   setTimeout(() => app.exit(0), 500).unref();
+}
+
+function launchDetachedPowerShell(powershellPath, args) {
+  const command = [
+    "Start-Process",
+    "-WindowStyle Hidden",
+    `-FilePath ${quotePowerShellSingle(powershellPath)}`,
+    `-ArgumentList @(${args.map(quotePowerShellSingle).join(",")})`
+  ].join(" ");
+  const result = spawnSync(powershellPath, [
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-Command", command
+  ], {
+    encoding: "utf8",
+    timeout: 5000,
+    windowsHide: true
+  });
+
+  if (result.error || result.status !== 0) {
+    const detail = [
+      result.error?.message,
+      result.stderr,
+      result.stdout
+    ].filter(Boolean).join("\n").trim() || `exit ${result.status}`;
+    try {
+      fs.appendFileSync(path.join(app.getPath("temp"), "sugaryfish-update-error.log"), `Updater launch failed: ${detail}\n`, "utf8");
+    } catch {
+      // The updater is already in a best-effort shutdown path.
+    }
+    throw new Error(`更新进程启动失败：${detail}`);
+  }
+}
+
+function quotePowerShellSingle(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
 }
 
 function getWindowsPowerShellPath() {
