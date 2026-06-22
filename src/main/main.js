@@ -871,7 +871,7 @@ async function downloadAndApplyUpdate(release) {
     const notesSource = path.join(updaterDir, "pending-update-notes.json");
     writePendingUpdateNotesFile(notesSource, release);
     notifyUpdateStatus({ state: "installing", release, progress: 100 });
-    launchResourceUpdaterAndQuit({ packagePath: downloaded, notesSource, target });
+    launchResourceUpdaterAndQuit({ packagePath: downloaded, notesSource, target, expectedVersion: release.version });
   } finally {
     updateDownloadInProgress = false;
   }
@@ -1123,13 +1123,154 @@ function safeFilename(value) {
   return String(value || "update.zip").replace(/[<>:"/\\|?*\x00-\x1f]/g, "_");
 }
 
-function launchResourceUpdaterAndQuit({ packagePath, notesSource, target }) {
+function launchResourceUpdaterAndQuit({ packagePath, notesSource, target, expectedVersion }) {
   const scriptPath = path.join(path.dirname(packagePath), "apply-resource-update.ps1");
   const notesTarget = getPendingUpdateNotesPath();
-  const script = `param(\n  [string]$PackagePath,\n  [string]$TargetPath,\n  [string]$ResourcesPath,\n  [string]$CurrentExe,\n  [string]$NotesSource,\n  [string]$NotesTarget,\n  [string]$Mode\n)\n$ErrorActionPreference = "Stop"\nStart-Sleep -Milliseconds 900\n$stage = Join-Path $env:TEMP ("sugaryfish-update-stage-" + [guid]::NewGuid().ToString("N"))\n$backup = $null\n$success = $false\ntry {\n  $resolvedTarget = [System.IO.Path]::GetFullPath($TargetPath)\n  $resolvedResources = [System.IO.Path]::GetFullPath($ResourcesPath).TrimEnd([System.IO.Path]::DirectorySeparatorChar)\n  $targetParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $resolvedTarget)).TrimEnd([System.IO.Path]::DirectorySeparatorChar)\n  if (![System.String]::Equals($targetParent, $resolvedResources, [System.StringComparison]::OrdinalIgnoreCase)) { throw "Target path is outside resources" }\n  [System.IO.Directory]::CreateDirectory($stage) | Out-Null\n  if ($Mode -eq "app-dir") {\n    if ((Split-Path -Leaf $resolvedTarget) -ne "app") { throw "Target guard failed" }\n    Expand-Archive -LiteralPath $PackagePath -DestinationPath $stage -Force\n    $sourceApp = Join-Path $stage "app"\n    if (!(Test-Path -LiteralPath $sourceApp)) { $sourceApp = $stage }\n    $backup = Join-Path (Split-Path -Parent $resolvedTarget) ("app.backup." + (Get-Date -Format "yyyyMMddHHmmss"))\n    if (Test-Path -LiteralPath $resolvedTarget) { Move-Item -LiteralPath $resolvedTarget -Destination $backup -Force }\n    Move-Item -LiteralPath $sourceApp -Destination $resolvedTarget -Force\n  } elseif ($Mode -eq "app-asar") {\n    if ((Split-Path -Leaf $resolvedTarget) -ne "app.asar") { throw "Target guard failed" }\n    $backup = $resolvedTarget + ".backup." + (Get-Date -Format "yyyyMMddHHmmss")\n    if (Test-Path -LiteralPath $resolvedTarget) { Move-Item -LiteralPath $resolvedTarget -Destination $backup -Force }\n    Copy-Item -LiteralPath $PackagePath -Destination $resolvedTarget -Force\n  } else {\n    throw "Unsupported update mode"\n  }\n  [System.IO.Directory]::CreateDirectory((Split-Path -Parent $NotesTarget)) | Out-Null\n  Copy-Item -LiteralPath $NotesSource -Destination $NotesTarget -Force\n  $success = $true\n} catch {\n  $errorLog = Join-Path $env:TEMP "sugaryfish-update-error.log"\n  $_ | Out-String | Set-Content -LiteralPath $errorLog -Encoding UTF8\n  if ($backup -and (Test-Path -LiteralPath $backup) -and !(Test-Path -LiteralPath $TargetPath)) {\n    Move-Item -LiteralPath $backup -Destination $TargetPath -Force\n  }\n} finally {\n  Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue\n  Start-Process -FilePath $CurrentExe\n}\nif (!$success) { exit 1 }\n`;
+  const script = `param(
+  [string]$PackagePath,
+  [string]$TargetPath,
+  [string]$ResourcesPath,
+  [string]$CurrentExe,
+  [string]$NotesSource,
+  [string]$NotesTarget,
+  [string]$Mode,
+  [int]$ParentProcessId,
+  [string]$ExpectedVersion
+)
+$ErrorActionPreference = "Stop"
+$log = Join-Path $env:TEMP "sugaryfish-update-error.log"
+$stage = Join-Path $env:TEMP ("sugaryfish-update-stage-" + [guid]::NewGuid().ToString("N"))
+$backup = $null
+$resolvedTarget = $null
+$success = $false
+
+function Write-UpdateLog {
+  param([string]$Message)
+  $timestamp = (Get-Date).ToString("s")
+  Add-Content -LiteralPath $log -Value ("[" + $timestamp + "] " + $Message) -Encoding UTF8
+}
+
+function Invoke-WithRetry {
+  param(
+    [scriptblock]$Action,
+    [string]$Label,
+    [int]$Attempts = 50,
+    [int]$DelayMs = 400
+  )
+  for ($i = 1; $i -le $Attempts; $i++) {
+    try {
+      & $Action
+      return
+    } catch {
+      if ($i -ge $Attempts) {
+        throw ($Label + " failed after " + $Attempts + " attempts: " + $_.Exception.Message)
+      }
+      Start-Sleep -Milliseconds $DelayMs
+    }
+  }
+}
+
+function Read-AppVersion {
+  param([string]$AppPath)
+  $packageFile = Join-Path $AppPath "package.json"
+  if (!(Test-Path -LiteralPath $packageFile)) {
+    return ""
+  }
+  try {
+    return [string]((Get-Content -LiteralPath $packageFile -Raw | ConvertFrom-Json).version)
+  } catch {
+    return ""
+  }
+}
+
+try {
+  Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
+  Write-UpdateLog "Updater started"
+  if ($ParentProcessId -gt 0) {
+    try {
+      Wait-Process -Id $ParentProcessId -Timeout 20 -ErrorAction SilentlyContinue
+    } catch {
+      Write-UpdateLog ("Parent wait skipped: " + $_.Exception.Message)
+    }
+  }
+  Start-Sleep -Milliseconds 1200
+
+  $resolvedTarget = [System.IO.Path]::GetFullPath($TargetPath)
+  $resolvedResources = [System.IO.Path]::GetFullPath($ResourcesPath).TrimEnd([System.IO.Path]::DirectorySeparatorChar)
+  $targetParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $resolvedTarget)).TrimEnd([System.IO.Path]::DirectorySeparatorChar)
+  if (![System.String]::Equals($targetParent, $resolvedResources, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Target path is outside resources"
+  }
+
+  Invoke-WithRetry { [System.IO.Directory]::CreateDirectory($stage) | Out-Null } "Create staging directory"
+
+  if ($Mode -eq "app-dir") {
+    if ((Split-Path -Leaf $resolvedTarget) -ne "app") {
+      throw "Target guard failed"
+    }
+    Invoke-WithRetry { Expand-Archive -LiteralPath $PackagePath -DestinationPath $stage -Force } "Expand update package"
+    $sourceApp = Join-Path $stage "app"
+    if (!(Test-Path -LiteralPath (Join-Path $sourceApp "package.json"))) {
+      throw "Update package is missing app/package.json"
+    }
+    $sourceVersion = Read-AppVersion $sourceApp
+    if ($ExpectedVersion -and $sourceVersion -ne $ExpectedVersion) {
+      throw ("Update package version mismatch: expected " + $ExpectedVersion + ", got " + $sourceVersion)
+    }
+
+    $backup = Join-Path (Split-Path -Parent $resolvedTarget) ("app.backup." + (Get-Date -Format "yyyyMMddHHmmss"))
+    if (Test-Path -LiteralPath $resolvedTarget) {
+      Invoke-WithRetry { Move-Item -LiteralPath $resolvedTarget -Destination $backup -Force } "Move current app to backup"
+    }
+    Invoke-WithRetry { Move-Item -LiteralPath $sourceApp -Destination $resolvedTarget -Force } "Move new app into place"
+    $installedVersion = Read-AppVersion $resolvedTarget
+    if ($ExpectedVersion -and $installedVersion -ne $ExpectedVersion) {
+      throw ("Installed version mismatch: expected " + $ExpectedVersion + ", got " + $installedVersion)
+    }
+  } elseif ($Mode -eq "app-asar") {
+    if ((Split-Path -Leaf $resolvedTarget) -ne "app.asar") {
+      throw "Target guard failed"
+    }
+    $backup = $resolvedTarget + ".backup." + (Get-Date -Format "yyyyMMddHHmmss")
+    if (Test-Path -LiteralPath $resolvedTarget) {
+      Invoke-WithRetry { Move-Item -LiteralPath $resolvedTarget -Destination $backup -Force } "Move current asar to backup"
+    }
+    Invoke-WithRetry { Copy-Item -LiteralPath $PackagePath -Destination $resolvedTarget -Force } "Copy new asar into place"
+  } else {
+    throw "Unsupported update mode"
+  }
+
+  Invoke-WithRetry { [System.IO.Directory]::CreateDirectory((Split-Path -Parent $NotesTarget)) | Out-Null } "Create notes directory"
+  Invoke-WithRetry { Copy-Item -LiteralPath $NotesSource -Destination $NotesTarget -Force } "Copy update notes"
+  $success = $true
+  Write-UpdateLog "Updater finished successfully"
+} catch {
+  Write-UpdateLog ("Updater failed: " + ($_ | Out-String))
+  if ($backup -and (Test-Path -LiteralPath $backup)) {
+    try {
+      if ($resolvedTarget -and (Test-Path -LiteralPath $resolvedTarget)) {
+        Remove-Item -LiteralPath $resolvedTarget -Recurse -Force -ErrorAction SilentlyContinue
+      }
+      if ($resolvedTarget -and !(Test-Path -LiteralPath $resolvedTarget)) {
+        Move-Item -LiteralPath $backup -Destination $resolvedTarget -Force
+        Write-UpdateLog "Backup restored"
+      }
+    } catch {
+      Write-UpdateLog ("Backup restore failed: " + $_.Exception.Message)
+    }
+  }
+} finally {
+  Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
+  if (Test-Path -LiteralPath $CurrentExe) {
+    Start-Process -FilePath $CurrentExe -ErrorAction SilentlyContinue
+  }
+}
+if (!$success) { exit 1 }
+`;
 
   fs.writeFileSync(scriptPath, script, "utf8");
-  spawn("powershell.exe", [
+  const powershellPath = getWindowsPowerShellPath();
+  const child = spawn(powershellPath, [
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
     "-File", scriptPath,
@@ -1139,15 +1280,32 @@ function launchResourceUpdaterAndQuit({ packagePath, notesSource, target }) {
     "-CurrentExe", target.currentExe,
     "-NotesSource", notesSource,
     "-NotesTarget", notesTarget,
-    "-Mode", target.mode
+    "-Mode", target.mode,
+    "-ParentProcessId", String(process.pid),
+    "-ExpectedVersion", expectedVersion || ""
   ], {
     detached: true,
     stdio: "ignore",
     windowsHide: true
-  }).unref();
+  });
+  child.on("error", (error) => {
+    try {
+      fs.appendFileSync(path.join(app.getPath("temp"), "sugaryfish-update-error.log"), `Updater launch failed: ${error.message}\n`);
+    } catch {
+      // The updater is already in a best-effort shutdown path.
+    }
+  });
+  child.unref();
 
   app.isQuitting = true;
   app.quit();
+  setTimeout(() => app.exit(0), 500).unref();
+}
+
+function getWindowsPowerShellPath() {
+  const systemRoot = process.env.SystemRoot || "C:\\Windows";
+  const powershellPath = path.join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+  return fs.existsSync(powershellPath) ? powershellPath : "powershell.exe";
 }
 
 function writePendingUpdateNotesFile(file, release) {

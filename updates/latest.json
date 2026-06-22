@@ -1,19 +1,19 @@
 {
-    "version":  "1.1.4",
-    "tag":  "v1.1.4",
-    "title":  "Sugaryfish的弹幕姬 1.1.4",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.4",
+    "version":  "1.1.5",
+    "tag":  "v1.1.5",
+    "title":  "Sugaryfish的弹幕姬 1.1.5",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.1.5",
     "features":  [
-                     "优化 B 站表情显示尺寸：普通表情更清晰，纯表情弹幕自动放大。",
-                     "重构粉丝牌视觉：Light / Dark 主题拥有独立样式，并修复复杂汉字与等级数字的对齐和裁剪问题。",
-                     "修复 Dark 主题穿透模式下鼠标指向弹幕仍触发高亮的问题。",
-                     "优化弹幕左侧标签列布局，粉丝牌可按内容自然伸展。"
+                     "修复免安装自动更新替换失败后只退出、不落地的问题。",
+                     "增强更新器：等待主进程退出、失败自动重试，并校验安装后的版本号。",
+                     "优化更新失败提示，避免左上角出现 Electron 原始错误文本。",
+                     "强化更新下载校验，遇到 CDN 旧缓存会继续换源重试。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.1.4\n\n## 更新亮点\n\n- 优化 B 站表情显示尺寸：普通表情更清晰，纯表情弹幕自动放大。\n- 重构粉丝牌视觉：Light / Dark 主题拥有独立样式，并修复复杂汉字与等级数字的对齐和裁剪问题。\n- 修复 Dark 主题穿透模式下鼠标指向弹幕仍触发高亮的问题。\n- 优化弹幕左侧标签列布局，粉丝牌可按内容自然伸展。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.1.5\n\n## 更新亮点\n\n- 修复免安装自动更新替换失败后只退出、不落地的问题。\n- 增强更新器：等待主进程退出、失败自动重试，并校验安装后的版本号。\n- 优化更新失败提示，避免左上角出现 Electron 原始错误文本。\n- 强化更新下载校验，遇到 CDN 旧缓存会继续换源重试。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.4.zip",
-                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/main/updates/Sugaryfish-Danmaku-Hime-App-1.1.4.zip",
-                    "sha256":  "02f3da81ba69238d5e46131126212d286dbc0c5e7ced779a3f1d2331261fe109"
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.1.5.zip",
+                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/main/updates/Sugaryfish-Danmaku-Hime-App-1.1.5.zip",
+                    "sha256":  "6c90efd723b722e5add96f4cbf2623902addce5d0a140ff28b14ef0f0ff79f3a"
                 }
 }
