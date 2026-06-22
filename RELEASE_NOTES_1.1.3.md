@@ -12,8 +12,8 @@
 
 | 使用说明与版本信息 | 穿透恢复提示 |
 | --- | --- |
-| ![使用说明与版本信息](assets/screenshots/help-card-light.png) | ![穿透恢复提示](assets/screenshots/click-through-recover-tip.png) |
+| ![使用说明与版本信息](https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/main/assets/screenshots/help-card-light.png) | ![穿透恢复提示](https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/main/assets/screenshots/click-through-recover-tip.png) |
 
 | 单击复制与粉丝牌 | 全站表情渲染 |
 | --- | --- |
-| ![单击复制与粉丝牌](assets/screenshots/copy-and-fans-medal.png) | ![全站表情渲染](assets/screenshots/emote-rendering-light.png) |
+| ![单击复制与粉丝牌](https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/main/assets/screenshots/copy-and-fans-medal.png) | ![全站表情渲染](https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/main/assets/screenshots/emote-rendering-light.png) |
