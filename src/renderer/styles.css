@@ -55,7 +55,9 @@ body.light-theme {
   --right-edge: 20px;
   --left-edge: 56px;
   --action-col: 50px;
+  --slot-col: 70px;
   --label-col: 72px;
+  --app-min-width: 360px;
   --connect-left: var(--left-edge);
   --connect-gap: 24px;
   --connect-font-size: 12px;
@@ -540,6 +542,7 @@ html,
 body {
   width: 100%;
   height: 100%;
+  min-width: var(--app-min-width);
   margin: 0;
   overflow: hidden;
   font-family: var(--font-ui);
@@ -600,6 +603,7 @@ body,
   position: relative;
   isolation: isolate;
   width: 100vw;
+  min-width: var(--app-min-width);
   height: 100vh;
   display: flex !important;
   flex-direction: column !important;
@@ -623,13 +627,16 @@ body,
   right: 18px;
   z-index: 2100;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   min-height: 38px;
-  padding: 9px 12px;
+  max-height: min(172px, calc(100vh - 20px));
+  padding: 10px 12px;
   border-radius: 4px;
   opacity: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   pointer-events: none;
   transform: translateY(-8px);
   transition:
@@ -646,7 +653,7 @@ body,
 .update-banner-copy {
   min-width: 0;
   display: grid;
-  gap: 4px;
+  gap: 5px;
   flex: 1 1 auto;
 }
 
@@ -661,22 +668,26 @@ body,
   color: inherit !important;
   font-size: 11px;
   font-weight: 600 !important;
-  line-height: 1;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .update-banner span {
-  overflow: hidden;
+  display: block;
+  overflow: visible;
   color: inherit !important;
   font-size: 10px;
   font-weight: 400 !important;
-  line-height: 1.35;
+  line-height: 1.48;
   opacity: 0.72;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-overflow: clip;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .update-banner-close {
   flex: 0 0 auto;
+  align-self: flex-start;
   width: 30px;
   height: 30px;
   display: inline-flex;
@@ -1937,29 +1948,42 @@ body.dark-theme .help-update:hover {
 
 .room-form,
 .login-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--label-col) var(--slot-col) minmax(calc((var(--action-col) * 2) + 12px), 1fr);
   align-items: center;
-  gap: var(--connect-gap);
+  column-gap: 10px;
   min-height: 40px;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .room-form > label,
 .login-row > label {
-  flex: 0 0 var(--label-col);
+  grid-column: 1;
 }
 
 .room-form > input,
 .login-row > .secret-field {
-  flex: 1 1 auto;
+  grid-column: 2;
 }
 
 .login-row > .login-actions {
-  flex: 0 0 auto;
+  grid-column: 3;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  min-width: 82px;
+  width: 100%;
+  max-width: calc((var(--action-col) * 2) + 12px);
+  justify-self: end;
+}
+
+.room-form > .input-actions-block {
+  grid-column: 3;
+  justify-self: end;
 }
 
 .room-form label,
@@ -2066,10 +2090,11 @@ body.dark-theme .help-update:hover {
 }
 
 .login-actions > button {
-  flex: 0 0 auto;
-  inline-size: auto;
-  width: auto;
-  min-width: 42px;
+  flex: 0 0 var(--action-col);
+  inline-size: var(--action-col);
+  width: var(--action-col);
+  min-width: var(--action-col);
+  max-width: var(--action-col);
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -4561,8 +4586,10 @@ body.dark-theme .options-panel {
 }
 
 body.moss-theme .options-panel {
-  background: #C8D1CB !important;
-  box-shadow: none !important;
+  background: rgba(200, 209, 203, 0.52) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+  backdrop-filter: blur(2px) saturate(0.96) !important;
+  -webkit-backdrop-filter: blur(2px) saturate(0.96) !important;
 }
 
 body.blueprint-theme .options-panel {
@@ -4676,6 +4703,26 @@ body.blueprint-theme .options-panel .shortcut-key {
   letter-spacing: 0.035em !important;
 }
 
+body.light-theme .options-panel .shortcut-hint,
+body.light-theme .options-panel .shortcut-key,
+body.dark-theme .options-panel .shortcut-hint,
+body.dark-theme .options-panel .shortcut-key,
+body.moss-theme .options-panel .shortcut-hint,
+body.moss-theme .options-panel .shortcut-key,
+body.blueprint-theme .options-panel .shortcut-hint,
+body.blueprint-theme .options-panel .shortcut-key {
+  height: 11px !important;
+  min-height: 11px !important;
+  margin: 2px 0 0 0 !important;
+  font-family: var(--font-ui) !important;
+  font-size: 9.5px !important;
+  font-weight: 500 !important;
+  line-height: 11px !important;
+  letter-spacing: 0.035em !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
 body.blueprint-theme .options-panel .toggle-item::before {
   content: "" !important;
   display: block !important;
@@ -4769,21 +4816,25 @@ body.blueprint-theme .input-row .input-value-display {
 
 .input-row .input-value-display {
   display: inline-block !important;
-  width: 140px !important;
+  width: min(var(--slot-col), 100%) !important;
+  max-width: var(--slot-col) !important;
   box-sizing: border-box !important;
   text-align: left !important;
   padding-bottom: 4px !important;
-  margin-right: 12px !important;
+  margin-right: 0 !important;
 }
 
 .room-form.input-row > .input-value-display,
 .login-row.input-row .secret-field {
-  flex: 0 0 140px !important;
-  width: 140px !important;
+  flex: 0 1 var(--slot-col) !important;
+  width: var(--slot-col) !important;
+  max-width: var(--slot-col) !important;
+  min-width: 0 !important;
 }
 
 .login-row.input-row .secret-field .input-value-display {
-  width: 140px !important;
+  width: min(var(--slot-col), 100%) !important;
+  max-width: var(--slot-col) !important;
 }
 
 body.light-theme .input-row .input-value-display {
@@ -4800,6 +4851,89 @@ body.blueprint-theme .input-row .input-value-display {
 
 body.dark-theme .input-row .input-value-display {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.input-row {
+  display: grid !important;
+  grid-template-columns: var(--label-col) var(--slot-col) minmax(calc((var(--action-col) * 2) + 12px), 1fr) !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  column-gap: 10px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+
+.input-row > label,
+.input-row .input-label {
+  grid-column: 1 !important;
+  width: var(--label-col) !important;
+  min-width: 0 !important;
+  max-width: var(--label-col) !important;
+  text-align: left !important;
+}
+
+.input-row .input-value-display {
+  display: inline-block !important;
+  width: var(--slot-col) !important;
+  max-width: var(--slot-col) !important;
+  min-width: 0 !important;
+  text-align: left !important;
+  padding-bottom: 4px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  box-sizing: border-box !important;
+}
+
+.room-form.input-row > .input-value-display,
+.login-row.input-row .secret-field {
+  grid-column: 2 !important;
+  justify-self: start !important;
+  width: var(--slot-col) !important;
+  max-width: var(--slot-col) !important;
+  min-width: 0 !important;
+}
+
+.login-row.input-row .secret-field {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.login-row.input-row .secret-field .input-value-display {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+#roomInput.input-value-display,
+.secret-mask,
+.secret-mask span {
+  text-align: left !important;
+}
+
+.input-actions-block {
+  grid-column: 3 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  justify-self: stretch !important;
+  width: 100% !important;
+  min-width: calc((var(--action-col) * 2) + 12px) !important;
+  max-width: none !important;
+}
+
+.input-actions-block button,
+.input-actions-block .action-btn {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 
 .header,

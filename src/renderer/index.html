@@ -73,7 +73,9 @@
             <form id="connectForm" class="room-form input-row">
               <label for="roomInput">直播间</label>
               <input id="roomInput" class="input-value-display" name="roomId" inputmode="numeric" autocomplete="off" placeholder="输入房间号">
-              <button id="connectBtn" type="submit">连接</button>
+              <div class="input-actions-block">
+                <button id="connectBtn" type="submit">连接</button>
+              </div>
             </form>
             <div class="login-row input-row">
               <label for="sessdataInput">SESSDATA</label>
@@ -83,7 +85,7 @@
                   <span id="sessdataSummary" class="input-value-display">未填写</span>
                 </button>
               </div>
-              <div class="login-actions">
+              <div class="login-actions input-actions-block">
                 <button class="sessdata-fetch" id="fetchSessdataBtn" type="button">获取</button>
                 <button class="sessdata-clear" id="clearSessdataBtn" type="button">清空</button>
               </div>

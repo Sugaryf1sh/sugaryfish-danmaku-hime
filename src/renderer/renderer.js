@@ -613,7 +613,7 @@ function formatUpdateNotice(notes) {
   const features = Array.isArray(notes.features) ? notes.features.filter(Boolean).slice(0, 3) : [];
   return {
     title: `${version} 已更新`,
-    body: features.length ? features.join(" / ") : (notes.title || "新特性已准备好。"),
+    body: features.length ? features.join("\n") : (notes.title || "新特性已准备好。"),
     mode: "success",
     sticky: false
   };
