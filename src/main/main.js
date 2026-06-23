@@ -227,7 +227,7 @@ function applyWindowSettings(nextSettings) {
   // The renderer disables drag regions when "locked" is enabled.
   mainWindow.setMovable(true);
   mainWindow.setResizable(!nextSettings.locked);
-  mainWindow.setOpacity(Math.max(0.35, Math.min(1, Number(nextSettings.opacity) / 100)));
+  mainWindow.setOpacity(1);
   mainWindow.setIgnoreMouseEvents(Boolean(nextSettings.clickThrough), { forward: true });
 }
 
@@ -1619,7 +1619,7 @@ function sanitizeSettings(value) {
     fontSize: clampNumber(value.fontSize, 12, 24, DEFAULT_SETTINGS.fontSize),
     maxItems: clampNumber(value.maxItems, 20, 200, DEFAULT_SETTINGS.maxItems),
     sessdata: String(value.sessdata || "").trim(),
-    theme: value.theme === "dark" ? "dark" : "light"
+    theme: ["light", "dark", "moss", "blueprint"].includes(value.theme) ? value.theme : "light"
   };
 }
 

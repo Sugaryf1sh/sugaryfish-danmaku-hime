@@ -4,6 +4,13 @@ const MEGA_GIFT_DURATION = 12000;
 const MEGA_GIFT_LEAVE_DELAY = 11500;
 const UPDATE_IDLE_TEXT = "检查更新";
 const UPDATE_LATEST_TEXT = "已是最新版本";
+const THEME_CLASSES = ["light-theme", "dark-theme", "moss-theme", "blueprint-theme"];
+const THEME_LABELS = {
+  light: "纸墨",
+  dark: "暗耀",
+  moss: "青苔",
+  blueprint: "白图"
+};
 
 const state = {
   settings: null,
@@ -74,7 +81,9 @@ const els = {
   feed: document.getElementById("feed"),
   runTime: document.getElementById("run-time"),
   msgCount: document.getElementById("msg-count"),
+  themeSelectorWrapper: document.querySelector(".theme-selector-wrapper"),
   themeToggle: document.getElementById("themeToggle"),
+  themeMenuItems: document.querySelectorAll(".theme-menu-item"),
   minimizeBtn: document.getElementById("minimizeBtn"),
   hideBtn: document.getElementById("hideBtn")
 };
@@ -162,7 +171,10 @@ function bindEvents() {
   els.throughToggle.addEventListener("click", () => updateSetting("clickThrough", !state.settings.clickThrough));
   els.lockToggle.addEventListener("click", () => updateSetting("locked", !state.settings.locked));
   els.copyToggle.addEventListener("click", () => updateSetting("copyOnTagClick", !state.settings.copyOnTagClick));
-  els.opacityRange.addEventListener("input", () => updateSetting("opacity", Number(els.opacityRange.value)));
+  els.opacityRange.addEventListener("input", () => {
+    applyBackgroundOpacity(Number(els.opacityRange.value));
+    updateSetting("opacity", Number(els.opacityRange.value));
+  });
   els.fontRange.addEventListener("input", () => updateSetting("fontSize", Number(els.fontRange.value)));
   els.maxRange.addEventListener("input", () => updateSetting("maxItems", Number(els.maxRange.value)));
   bindScrubbableNumber(els.opacityValue, "opacity", els.opacityRange, 35, 100, 1, (value) => `${value}%`);
@@ -193,9 +205,33 @@ function bindEvents() {
     endSessdataEdit();
     updateSetting("sessdata", "");
   });
-  els.themeToggle.addEventListener("click", () => {
-    const nextTheme = state.settings.theme === "dark" ? "light" : "dark";
-    updateSetting("theme", nextTheme);
+  els.themeToggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const isOpen = els.themeSelectorWrapper?.classList.toggle("is-open");
+    els.themeToggle.setAttribute("aria-expanded", String(Boolean(isOpen)));
+  });
+  els.themeMenuItems.forEach((item) => {
+    item.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const nextTheme = item.dataset.theme;
+      if (!isValidTheme(nextTheme)) {
+        return;
+      }
+      els.themeMenuItems.forEach((button) => button.classList.remove("is-active"));
+      item.classList.add("is-active");
+      updateSetting("theme", nextTheme);
+      closeThemeDropdown();
+    });
+  });
+  document.addEventListener("click", (event) => {
+    if (!els.themeSelectorWrapper?.contains(event.target)) {
+      closeThemeDropdown();
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeThemeDropdown();
+    }
   });
   els.minimizeBtn.addEventListener("click", () => api.minimize());
   els.hideBtn.addEventListener("click", () => api.hide());
@@ -338,11 +374,17 @@ function applySettings(settings) {
   document.body.classList.toggle("is-click-through", Boolean(settings.clickThrough));
   document.body.classList.toggle("is-tag-copy-enabled", Boolean(settings.copyOnTagClick));
   document.body.classList.toggle("is-opaque", Number(settings.opacity) >= 100);
+  applyBackgroundOpacity(settings.opacity);
   updateCopyHintTitles(Boolean(settings.copyOnTagClick));
   syncClickThroughMode(Boolean(settings.clickThrough), wasClickThrough);
   updateSettingsToggleText();
   els.feed.style.setProperty("--feed-font-size", `${settings.fontSize}px`);
   trimItems();
+}
+
+function applyBackgroundOpacity(value) {
+  const opacityValue = Math.max(0.35, Math.min(1, Number(value) / 100));
+  els.appContainer?.style.setProperty("--bg-opacity", String(opacityValue));
 }
 
 function beginSessdataEdit() {
@@ -662,19 +704,35 @@ async function endUpdateNoticeInteractionMode() {
 }
 
 function applyTheme(theme) {
-  const dark = theme === "dark";
-  document.body.classList.toggle("dark-theme", dark);
-  document.body.classList.toggle("light-theme", !dark);
-  els.themeToggle.classList.toggle("active", dark);
-  els.themeToggle.title = dark ? "切换浅色主题" : "切换暗色主题";
+  const nextTheme = isValidTheme(theme) ? theme : "light";
+  document.body.classList.remove(...THEME_CLASSES);
+  document.body.classList.add(`${nextTheme}-theme`);
+  els.themeToggle.classList.toggle("active", nextTheme !== "light");
+  els.themeToggle.title = `当前主题：${THEME_LABELS[nextTheme]}`;
   els.themeToggle.setAttribute("aria-label", els.themeToggle.title);
+  els.themeMenuItems.forEach((item) => {
+    const active = item.dataset.theme === nextTheme;
+    item.classList.toggle("is-active", active);
+    item.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function closeThemeDropdown() {
+  els.themeSelectorWrapper?.classList.remove("is-open");
+  els.themeToggle?.setAttribute("aria-expanded", "false");
+}
+
+function isValidTheme(theme) {
+  return Object.prototype.hasOwnProperty.call(THEME_LABELS, theme);
 }
 
 function updateToggleMark(toggle, active) {
-  const mark = toggle.querySelector(".chk-mark");
-  if (mark) {
-    mark.textContent = active ? "x" : "";
+  if (!toggle) {
+    return;
   }
+  const enabled = Boolean(active);
+  toggle.classList.toggle("is-active", enabled);
+  toggle.setAttribute("aria-pressed", String(enabled));
 }
 
 function syncConnectionUi(connectedUi) {
@@ -932,7 +990,7 @@ function appendItem(item) {
   li.dataset.id = item.id;
 
   const labelStack = document.createElement("div");
-  labelStack.className = "danmaku-label-stack";
+  labelStack.className = "danmaku-side-block danmaku-label-stack";
 
   const tag = document.createElement("span");
   tag.className = "tag danmaku-badge-text";
@@ -945,7 +1003,7 @@ function appendItem(item) {
   }
 
   const content = document.createElement("div");
-  content.className = "content danmaku-content-wrap";
+  content.className = "danmaku-main-block content danmaku-content-wrap";
 
   const meta = document.createElement("div");
   meta.className = "meta";

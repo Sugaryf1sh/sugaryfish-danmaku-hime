@@ -49,9 +49,17 @@
                   <button class="help-update" id="updateBtn" type="button" title="检查更新">检查更新</button>
                 </div>
               </div>
-              <button class="window-btn btn-theme" id="themeToggle" title="切换暗色主题" aria-label="切换暗色主题" type="button">
-                <span aria-hidden="true">◑</span>
-              </button>
+              <div class="theme-selector-wrapper">
+                <button class="window-btn btn-theme" id="themeToggle" title="选择主题" aria-label="选择主题" aria-haspopup="true" aria-expanded="false" type="button">
+                  <span aria-hidden="true">调</span>
+                </button>
+                <div class="theme-dropdown-menu">
+                  <button class="theme-menu-item is-active" data-theme="light" type="button">Ⅰ . 纸墨</button>
+                  <button class="theme-menu-item" data-theme="dark" type="button">Ⅱ . 暗耀</button>
+                  <button class="theme-menu-item" data-theme="moss" type="button">Ⅲ . 青苔</button>
+                  <button class="theme-menu-item" data-theme="blueprint" type="button">Ⅳ . 白图</button>
+                </div>
+              </div>
               <button class="window-btn btn-minimize" id="minimizeBtn" title="最小化" aria-label="最小化">
                 <span aria-hidden="true">－</span>
               </button>
@@ -62,17 +70,17 @@
           </header>
 
           <section class="connect-panel">
-            <form id="connectForm" class="room-form">
+            <form id="connectForm" class="room-form input-row">
               <label for="roomInput">直播间</label>
-              <input id="roomInput" name="roomId" inputmode="numeric" autocomplete="off" placeholder="输入房间号">
+              <input id="roomInput" class="input-value-display" name="roomId" inputmode="numeric" autocomplete="off" placeholder="输入房间号">
               <button id="connectBtn" type="submit">连接</button>
             </form>
-            <div class="login-row">
+            <div class="login-row input-row">
               <label for="sessdataInput">SESSDATA</label>
               <div class="secret-field" id="sessdataField">
                 <input id="sessdataInput" type="password" autocomplete="off" spellcheck="false">
                 <button class="secret-mask" id="sessdataMask" type="button" title="编辑 SESSDATA">
-                  <span id="sessdataSummary">未填写</span>
+                  <span id="sessdataSummary" class="input-value-display">未填写</span>
                 </button>
               </div>
               <div class="login-actions">
@@ -92,58 +100,44 @@
           </section>
 
           <section class="settings-panel" aria-label="设置详情">
-            <div class="settings-panel-inner">
-              <div class="setting-unit">
-                <div class="setting-switch-group setting-top-switch">
-                  <button class="toggle setting-switch active" id="topToggle" type="button" title="置顶窗口 Ctrl+Alt+T">
-                    <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark">x</span><span class="chk-bracket">]</span></span> 置顶</span><kbd class="shortcut-key">Ctrl Alt T</kbd>
-                  </button>
-                </div>
+            <div class="settings-panel-inner options-panel">
+              <div class="toggle-group" role="group" aria-label="快捷开关">
+                <button class="toggle setting-switch toggle-item active is-active" id="topToggle" type="button" title="置顶窗口 Ctrl+Alt+T">
+                  <span class="toggle-label">置顶</span><kbd class="shortcut-key shortcut-hint">Ctrl Alt T</kbd>
+                </button>
+                <button class="toggle setting-switch toggle-item" id="throughToggle" type="button" title="鼠标穿透 Ctrl+Alt+J">
+                  <span class="toggle-label">穿透</span><kbd class="shortcut-key shortcut-hint">Ctrl Alt J</kbd>
+                </button>
+                <button class="toggle setting-switch toggle-item" id="lockToggle" type="button" title="锁定窗口 Ctrl+Alt+L">
+                  <span class="toggle-label">锁定</span><kbd class="shortcut-key shortcut-hint">Ctrl Alt L</kbd>
+                </button>
+                <button class="toggle setting-switch toggle-item" id="copyToggle" type="button" title="单击弹幕复制内容">
+                  <span class="toggle-label">复制</span><kbd class="shortcut-key shortcut-hint">单击弹幕</kbd>
+                </button>
               </div>
-              <div class="setting-unit">
-                <div class="setting-switch-group setting-through-switch">
-                  <button class="toggle setting-switch" id="throughToggle" type="button" title="鼠标穿透 Ctrl+Alt+J">
-                    <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark"></span><span class="chk-bracket">]</span></span> 穿透</span><kbd class="shortcut-key">Ctrl Alt J</kbd>
-                  </button>
-                </div>
-              </div>
-              <div class="setting-unit">
-                <div class="setting-switch-group setting-lock-switch">
-                  <button class="toggle setting-switch" id="lockToggle" type="button" title="锁定窗口 Ctrl+Alt+L">
-                    <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark"></span><span class="chk-bracket">]</span></span> 锁定</span><kbd class="shortcut-key">Ctrl Alt L</kbd>
-                  </button>
-                </div>
-              </div>
-              <div class="setting-unit compact-setting">
-                <div class="setting-switch-group setting-copy-switch">
-                  <button class="toggle setting-switch" id="copyToggle" type="button" title="单击弹幕复制内容">
-                    <span><span class="chk" aria-hidden="true"><span class="chk-bracket">[</span><span class="chk-mark"></span><span class="chk-bracket">]</span></span> 复制</span><kbd class="shortcut-key">单击弹幕</kbd>
-                  </button>
-                </div>
-              </div>
-              <div class="setting-param-row">
-                <div class="setting-param-group setting-opacity-param">
+              <div class="setting-param-row param-group">
+                <div class="setting-param-group setting-opacity-param param-item">
                   <label class="setting-control">
-                    <span class="setting-label">透明度</span>
-                    <output id="opacityValue">100%</output>
+                    <span class="setting-label param-label">透明度</span>
+                    <output class="param-value" id="opacityValue">100%</output>
                     <div class="range-line">
                       <input id="opacityRange" type="range" min="35" max="100" step="1">
                     </div>
                   </label>
                 </div>
-                <div class="setting-param-group setting-font-param">
+                <div class="setting-param-group setting-font-param param-item">
                   <label class="setting-control">
-                    <span class="setting-label">字号</span>
-                    <output id="fontValue">15</output>
+                    <span class="setting-label param-label">字号</span>
+                    <output class="param-value" id="fontValue">15</output>
                     <div class="range-line">
                       <input id="fontRange" type="range" min="12" max="24" step="1">
                     </div>
                   </label>
                 </div>
-                <div class="setting-param-group setting-max-param">
+                <div class="setting-param-group setting-max-param param-item">
                   <label class="setting-control">
-                    <span class="setting-label">条数</span>
-                    <output id="maxValue">80</output>
+                    <span class="setting-label param-label">条数</span>
+                    <output class="param-value" id="maxValue">80</output>
                     <div class="range-line">
                       <input id="maxRange" type="range" min="20" max="200" step="10">
                     </div>
@@ -158,7 +152,7 @@
       <section class="feed-wrap">
         <ol id="feed" class="feed" aria-live="polite"></ol>
         <div id="emptyState" class="empty-state placeholder-hint">
-          输入直播间号后连接，弹幕会实时出现在这里。
+          输入直播间号，获取 SESSDATA 并连接后，弹幕会实时出现在这里。
         </div>
       </section>
       <div class="maker-watermark footer-container">

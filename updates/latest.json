@@ -1,17 +1,20 @@
 {
-    "version":  "1.2.2",
-    "tag":  "v1.2.2",
-    "title":  "Sugaryfish的弹幕姬 1.2.2",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.2.2",
+    "version":  "1.3.0",
+    "tag":  "v1.3.0",
+    "title":  "Sugaryfish的弹幕姬 1.3.0",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.3.0",
     "features":  [
-                     "优化穿透模式提示标签位置，避免遮挡左上红点恢复区域。",
-                     "去除提示标签角标，让状态提示更简洁。"
+                     "新增青苔禅意与工业白图两套主题，右上角主题切换升级为四主题下拉选择器。",
+                     "重构设置抽屉为 12 单元网格，移除文本复选框符号，统一按钮、参数和输入刻度槽对齐。",
+                     "优化透明度逻辑，仅让背景跟随透明度变化，文字、按钮、粉丝牌保持实体显示。",
+                     "修复有无粉丝牌导致的弹幕用户名和正文缩进错位问题。",
+                     "调整空状态提示、输入行刻度槽、暗耀/青苔/白图等主题细节，提升整体可读性与一致性。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.2.2\n\n- 优化穿透模式提示标签位置，避免遮挡左上红点恢复区域。\n- 去除提示标签角标，让状态提示更简洁。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.3.0\n\n- 新增青苔禅意与工业白图两套主题，右上角主题切换升级为四主题下拉选择器。\n- 重构设置抽屉为 12 单元网格，移除文本复选框符号，统一按钮、参数和输入刻度槽对齐。\n- 优化透明度逻辑，仅让背景跟随透明度变化，文字、按钮、粉丝牌保持实体显示。\n- 修复有无粉丝牌导致的弹幕用户名和正文缩进错位问题。\n- 调整空状态提示、输入行刻度槽、暗耀/青苔/白图等主题细节，提升整体可读性与一致性。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.2.2.zip",
-                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.2.2/updates/Sugaryfish-Danmaku-Hime-App-1.2.2.zip",
-                    "sha256":  "9b9e154cd0cbe6a9b3c69a76be611a86c34844c8e7924dce7a985534fd98e570"
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.3.0.zip",
+                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.3.0/updates/Sugaryfish-Danmaku-Hime-App-1.3.0.zip",
+                    "sha256":  "0e373380a7a12aac6a3cb10b85eb5f52d585d347542ae95112eb27247eca8f7b"
                 }
 }
