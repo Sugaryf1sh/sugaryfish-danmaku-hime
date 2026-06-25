@@ -4,13 +4,16 @@ const MEGA_GIFT_DURATION = 12000;
 const MEGA_GIFT_LEAVE_DELAY = 11500;
 const UPDATE_IDLE_TEXT = "检查更新";
 const UPDATE_LATEST_TEXT = "已是最新版本";
-const THEME_CLASSES = ["light-theme", "dark-theme", "moss-theme", "blueprint-theme", "walnut-theme"];
+const THEME_CLASSES = ["light-theme", "moss-theme", "blueprint-theme", "glacial-theme", "dark-theme", "walnut-theme", "leica-theme", "bordeaux-theme"];
 const THEME_LABELS = {
   light: "纸墨",
-  dark: "暗耀",
   moss: "青苔",
   blueprint: "白图",
-  walnut: "胡桃"
+  glacial: "极地",
+  dark: "暗耀",
+  walnut: "胡桃",
+  leica: "纪实",
+  bordeaux: "波尔多"
 };
 
 const state = {
@@ -957,6 +960,20 @@ function getGraphemeLength(value) {
   return Array.from(text).length;
 }
 
+function getDisplayWidth(value) {
+  const text = String(value || "");
+  const segments = typeof Intl !== "undefined" && Intl.Segmenter
+    ? Array.from(new Intl.Segmenter("zh-CN", { granularity: "grapheme" }).segment(text), (item) => item.segment)
+    : Array.from(text);
+  return segments.reduce((width, segment) => {
+    const codePoint = segment.codePointAt(0) || 0;
+    const isWide =
+      /[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6]/u.test(segment) ||
+      codePoint > 0x1F000;
+    return width + (isWide ? 2 : 1);
+  }, 0);
+}
+
 function createFansMedalElement(medal) {
   const name = String(medal?.name || "").trim();
   const level = Number.parseInt(medal?.level, 10);
@@ -1025,7 +1042,7 @@ function appendItem(item) {
   const user = document.createElement("span");
   user.className = "user danmaku-username";
   const userName = item.user || "匿名";
-  if (getGraphemeLength(userName) > 14) {
+  if (getDisplayWidth(userName) > 18) {
     user.classList.add("is-faded");
   }
   appendUsernameRuns(user, userName);

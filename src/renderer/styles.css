@@ -1023,11 +1023,14 @@ body.is-click-through .titlebar {
   position: relative;
   z-index: 0;
   isolation: isolate;
-  width: 7px;
-  height: 7px;
+  --status-dot-size: 7px;
+  --status-ring-size: 21px;
+  --status-wave-size: 7px;
+  width: var(--status-dot-size);
+  height: var(--status-dot-size);
   margin-top: 0;
   border-radius: 50%;
-  background: var(--status-dot-color, var(--blue));
+  background-color: var(--status-dot-color, var(--status-signal, var(--blue)));
   box-shadow: 0 0 0 5px var(--blue-soft);
   transform: translateY(1px);
 }
@@ -1049,11 +1052,16 @@ body.dark-theme .status-dot {
 .status-dot::before {
   content: "";
   position: absolute;
-  inset: -7px;
+  left: 50%;
+  top: 50%;
+  width: var(--status-ring-size);
+  height: var(--status-ring-size);
   border: 1px solid transparent;
   border-radius: 50%;
   opacity: 0;
   pointer-events: none;
+  transform: translate(-50%, -50%) scale(1);
+  transform-origin: center;
   transition:
     border-color 0.3s ease,
     box-shadow 0.3s ease,
@@ -1064,24 +1072,18 @@ body.dark-theme .status-dot {
 .status-dot::after {
   content: "";
   position: absolute;
-  inset: -10px;
-  border-radius: 50%;
-  border: 1px solid var(--accent-red);
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.72);
-}
-
-.mark::after {
-  content: "";
-  position: absolute;
-  inset: 0;
+  left: 50%;
+  top: 50%;
   z-index: -1;
+  width: var(--status-wave-size);
+  height: var(--status-wave-size);
   border-radius: 50%;
-  background: var(--accent-blue);
+  border: 1px solid transparent;
+  background-color: var(--status-signal, var(--accent-blue));
   opacity: 0;
   pointer-events: none;
-  transform: scale(1);
+  transform: translate(-50%, -50%) scale(1);
+  transform-origin: center;
 }
 
 .status-mode-tip {
@@ -1127,30 +1129,40 @@ body.dark-theme .status-mode-tip {
 }
 
 body.is-click-through {
-  --status-dot-color: var(--accent-red);
+  --status-unlock-signal: var(--tag-superchat, var(--accent-red));
+  --status-dot-color: var(--status-unlock-signal);
+  --status-dot-glow: color-mix(in srgb, var(--status-unlock-signal) 38%, transparent);
+  --status-dot-shadow:
+    0 0 0 5px color-mix(in srgb, var(--status-unlock-signal) 15%, transparent),
+    0 0 9px var(--status-dot-glow);
 }
 
 body.is-click-through .status-dot {
   opacity: 0.95 !important;
   box-shadow:
-    0 0 0 5px color-mix(in srgb, var(--accent-red) 15%, transparent),
-    0 0 9px color-mix(in srgb, var(--accent-red) 38%, transparent) !important;
+    0 0 0 5px color-mix(in srgb, var(--status-unlock-signal) 15%, transparent),
+    0 0 9px color-mix(in srgb, var(--status-unlock-signal) 38%, transparent) !important;
 }
 
 body.is-click-through .status-dot::before {
-  border-color: color-mix(in srgb, var(--accent-red) 55%, transparent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent-red) 26%, transparent);
+  border-color: color-mix(in srgb, var(--status-unlock-signal) 55%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--status-unlock-signal) 26%, transparent);
   opacity: 1;
-  transform: scale(1.02);
+  transform: translate(-50%, -50%) scale(1.02);
 }
 
 body.dark-theme.is-click-through .status-dot {
-  box-shadow:
-    0 0 0 5px rgba(193, 119, 117, 0.12),
-    0 0 10px rgba(193, 119, 117, 0.42) !important;
+  --status-dot-shadow:
+    0 0 0 5px color-mix(in srgb, var(--status-unlock-signal) 12%, transparent),
+    0 0 10px color-mix(in srgb, var(--status-unlock-signal) 42%, transparent);
 }
 
 body.is-click-through .status-dot.is-waking::after {
+  width: var(--status-ring-size);
+  height: var(--status-ring-size);
+  border-color: color-mix(in srgb, var(--status-unlock-signal) 62%, transparent);
+  background-color: transparent;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--status-unlock-signal) 22%, transparent);
   animation: wake-ring 0.8s linear forwards;
 }
 
@@ -1223,19 +1235,19 @@ body.is-click-through .status-dot.is-waking::after {
 @keyframes wave-out {
   0% {
     opacity: 0.72;
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 
   100% {
     opacity: 0;
-    transform: scale(3);
+    transform: translate(-50%, -50%) scale(3);
   }
 }
 
 @keyframes wake-ring {
   0% {
     opacity: 0.15;
-    transform: scale(0.72);
+    transform: translate(-50%, -50%) scale(0.72);
   }
 
   35% {
@@ -1244,7 +1256,7 @@ body.is-click-through .status-dot.is-waking::after {
 
   100% {
     opacity: 0;
-    transform: scale(1.95);
+    transform: translate(-50%, -50%) scale(1.95);
   }
 }
 
@@ -5453,6 +5465,1841 @@ body.dark-theme .input-row .input-value-display {
 .fans-badge-name,
 .fans-badge-level {
   opacity: 1 !important;
+}
+
+body.leica-theme {
+  color-scheme: dark;
+  --bg-main-rgb: 15, 15, 17 !important;
+  --bg-card: #18181A !important;
+  --text-main: #FFFFFF !important;
+  --text-sub: #7A7A80 !important;
+  --accent-leica: #FF1A1A !important;
+  --divider: rgba(242, 242, 247, 0.04) !important;
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+  --font-text: "Georgia", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", serif;
+  --font-data: var(--font-ui);
+  --font-serif: var(--font-text);
+  --font-mono: "Courier New", Courier, monospace;
+  --bg-primary: rgb(var(--bg-main-rgb));
+  --bg-hover: rgba(255, 26, 26, 0.03);
+  --spotlight: radial-gradient(circle at 50% 35%, rgba(242, 242, 247, 0.035), transparent 58%);
+  --top-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent 42%);
+  --window-shadow: 0 40px 90px rgba(0, 0, 0, 0.8);
+  --track-color: rgba(242, 242, 247, 0.1);
+  --scroll-thumb: rgba(255, 26, 26, 0.18);
+  --scroll-color: rgba(242, 242, 247, 0.1);
+  --hover-band: linear-gradient(90deg, rgba(255, 26, 26, 0.035), transparent);
+  --text-title: var(--text-main);
+  --text-data: var(--text-main);
+  --text-label: var(--text-sub);
+  --text-watermark: rgba(122, 122, 128, 0.36);
+  --maker-watermark: rgba(122, 122, 128, 0.24);
+  --accent-blue: var(--accent-leica);
+  --accent-blue-line: rgba(255, 26, 26, 0.38);
+  --accent-red: var(--accent-leica);
+  --placeholder-color: rgba(122, 122, 128, 0.54);
+  --uid-color: rgba(242, 242, 247, 0.12);
+  --body-text: var(--text-main);
+  --border-color: var(--divider);
+  --divider-shadow: none;
+  --status-breathe-glow: rgba(255, 26, 26, 0.38);
+  --help-bg: #1A1A1C;
+  --help-border: rgba(242, 242, 247, 0.05);
+  --help-shadow: 0 30px 70px rgba(0, 0, 0, 0.8);
+  --help-text: var(--text-sub);
+  --help-title: var(--text-main);
+  --paper: rgba(var(--bg-main-rgb), var(--bg-opacity, 1));
+  --paper-solid: rgb(var(--bg-main-rgb));
+  --paper-soft: rgba(24, 24, 26, 0.72);
+  --ink: var(--text-main);
+  --ink-soft: var(--text-sub);
+  --ink-faint: rgba(122, 122, 128, 0.68);
+  --line: var(--divider);
+  --line-soft: rgba(242, 242, 247, 0.03);
+  --blue: var(--accent-leica);
+  --blue-soft: rgba(255, 26, 26, 0.1);
+  --gift: #B6B6BE;
+  --superchat: var(--accent-leica);
+  --guard: #7B7B84;
+}
+
+body.bordeaux-theme {
+  color-scheme: dark;
+  --bg-main-rgb: 26, 14, 18 !important;
+  --bg-card: #2B171D !important;
+  --text-main: #EADCB9 !important;
+  --text-sub: #876E73 !important;
+  --accent-crimson: #B6353E !important;
+  --divider: rgba(229, 217, 197, 0.03) !important;
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+  --font-text: "Georgia", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", serif;
+  --font-data: var(--font-ui);
+  --font-serif: var(--font-text);
+  --font-mono: "Courier New", Courier, monospace;
+  --bg-primary: rgb(var(--bg-main-rgb));
+  --bg-hover: rgba(182, 53, 62, 0.04);
+  --spotlight: radial-gradient(circle at 50% 35%, rgba(182, 53, 62, 0.04), transparent 58%);
+  --top-sheen: linear-gradient(180deg, rgba(229, 217, 197, 0.018), transparent 42%);
+  --window-shadow: 0 35px 80px rgba(0, 0, 0, 0.6);
+  --track-color: rgba(229, 217, 197, 0.08);
+  --scroll-thumb: rgba(182, 53, 62, 0.22);
+  --scroll-color: rgba(229, 217, 197, 0.08);
+  --hover-band: linear-gradient(90deg, rgba(182, 53, 62, 0.04), transparent);
+  --text-title: var(--text-main);
+  --text-data: var(--text-main);
+  --text-label: var(--text-sub);
+  --text-watermark: rgba(135, 110, 115, 0.44);
+  --maker-watermark: rgba(135, 110, 115, 0.26);
+  --accent-blue: var(--accent-crimson);
+  --accent-blue-line: rgba(182, 53, 62, 0.4);
+  --accent-red: var(--accent-crimson);
+  --placeholder-color: rgba(135, 110, 115, 0.54);
+  --uid-color: rgba(229, 217, 197, 0.15);
+  --body-text: var(--text-main);
+  --border-color: var(--divider);
+  --divider-shadow: none;
+  --status-breathe-glow: rgba(182, 53, 62, 0.44);
+  --help-bg: #1C1214;
+  --help-border: rgba(229, 217, 197, 0.05);
+  --help-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+  --help-text: var(--text-sub);
+  --help-title: var(--text-main);
+  --paper: rgba(var(--bg-main-rgb), var(--bg-opacity, 1));
+  --paper-solid: rgb(var(--bg-main-rgb));
+  --paper-soft: rgba(43, 23, 29, 0.72);
+  --ink: var(--text-main);
+  --ink-soft: var(--text-sub);
+  --ink-faint: rgba(135, 110, 115, 0.68);
+  --line: var(--divider);
+  --line-soft: rgba(229, 217, 197, 0.025);
+  --blue: var(--accent-crimson);
+  --blue-soft: rgba(182, 53, 62, 0.1);
+  --gift: #B88A72;
+  --superchat: var(--accent-crimson);
+  --guard: #8C5960;
+}
+
+body.leica-theme .app-container,
+body.leica-theme .shell,
+body.leica-theme.is-opaque .shell,
+body.bordeaux-theme .app-container,
+body.bordeaux-theme .shell,
+body.bordeaux-theme.is-opaque .shell {
+  background-color: rgba(var(--bg-main-rgb), var(--bg-opacity, 1)) !important;
+  background-image: var(--spotlight), var(--top-sheen) !important;
+}
+
+body.leica-theme .app-container,
+body.leica-theme .shell,
+body.leica-theme.is-opaque .shell {
+  border: 1px solid rgba(255, 255, 255, 0.01) !important;
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.8) !important;
+}
+
+body.bordeaux-theme .app-container,
+body.bordeaux-theme .shell,
+body.bordeaux-theme.is-opaque .shell {
+  border: 1px solid rgba(229, 217, 197, 0.012) !important;
+  box-shadow: 0 35px 80px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.leica-theme .theme-dropdown-menu {
+  background: #1A1A1C !important;
+  border: 1px solid rgba(242, 242, 247, 0.05) !important;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8) !important;
+}
+
+body.bordeaux-theme .theme-dropdown-menu {
+  background: #1C1214 !important;
+  border: 1px solid rgba(229, 217, 197, 0.05) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7) !important;
+}
+
+body.leica-theme .theme-menu-item,
+body.bordeaux-theme .theme-menu-item {
+  color: var(--text-sub) !important;
+}
+
+body.leica-theme .theme-menu-item:hover {
+  background: rgba(255, 26, 26, 0.03) !important;
+  color: var(--text-main) !important;
+}
+
+body.bordeaux-theme .theme-menu-item:hover {
+  background: rgba(182, 53, 62, 0.04) !important;
+  color: var(--text-main) !important;
+}
+
+body.leica-theme .theme-menu-item.is-active {
+  color: var(--accent-leica) !important;
+  font-weight: 600 !important;
+}
+
+body.leica-theme .theme-menu-item.is-active::before {
+  background-color: var(--accent-leica) !important;
+}
+
+body.bordeaux-theme .theme-menu-item.is-active {
+  color: var(--accent-crimson) !important;
+}
+
+body.bordeaux-theme .theme-menu-item.is-active::before {
+  background-color: var(--accent-crimson) !important;
+}
+
+body.leica-theme .header-title,
+body.leica-theme .options-title,
+body.leica-theme .param-value,
+body.leica-theme .setting-control output,
+body.leica-theme .brand strong,
+body.leica-theme .status-data,
+body.leica-theme .popularity-inline,
+body.leica-theme .popularity-short,
+body.leica-theme .popularity-full,
+body.bordeaux-theme .header-title,
+body.bordeaux-theme .options-title,
+body.bordeaux-theme .param-value,
+body.bordeaux-theme .setting-control output,
+body.bordeaux-theme .brand strong,
+body.bordeaux-theme .status-data,
+body.bordeaux-theme .popularity-inline,
+body.bordeaux-theme .popularity-short,
+body.bordeaux-theme .popularity-full {
+  color: var(--text-main) !important;
+}
+
+body.leica-theme .options-sub,
+body.leica-theme .shortcut-hint,
+body.leica-theme .shortcut-key,
+body.leica-theme .param-label,
+body.leica-theme .setting-label,
+body.leica-theme .window-btn,
+body.leica-theme .status,
+body.leica-theme .placeholder-hint,
+body.leica-theme .empty-state,
+body.leica-theme .room-form label,
+body.leica-theme .login-row label,
+body.bordeaux-theme .options-sub,
+body.bordeaux-theme .shortcut-hint,
+body.bordeaux-theme .shortcut-key,
+body.bordeaux-theme .param-label,
+body.bordeaux-theme .setting-label,
+body.bordeaux-theme .window-btn,
+body.bordeaux-theme .status,
+body.bordeaux-theme .placeholder-hint,
+body.bordeaux-theme .empty-state,
+body.bordeaux-theme .room-form label,
+body.bordeaux-theme .login-row label {
+  color: var(--text-sub) !important;
+}
+
+body.leica-theme .window-btn:hover {
+  color: var(--accent-leica) !important;
+  background: rgba(255, 26, 26, 0.03) !important;
+  box-shadow: 0 0 12px rgba(255, 26, 26, 0.08) !important;
+  transform: translateY(0.5px) !important;
+}
+
+body.bordeaux-theme .window-btn:hover {
+  color: var(--accent-crimson) !important;
+  background: rgba(182, 53, 62, 0.04) !important;
+  box-shadow: 0 0 12px rgba(182, 53, 62, 0.08) !important;
+  transform: translateY(0.5px) !important;
+}
+
+body.leica-theme .feed,
+body.bordeaux-theme .feed {
+  background: transparent !important;
+  scrollbar-width: thin !important;
+}
+
+body.leica-theme .feed {
+  scrollbar-color: rgba(255, 26, 26, 0.22) transparent !important;
+}
+
+body.bordeaux-theme .feed {
+  scrollbar-color: rgba(182, 53, 62, 0.22) transparent !important;
+}
+
+body.bordeaux-theme .feed::-webkit-scrollbar,
+body.bordeaux-theme .danmaku-list-container::-webkit-scrollbar {
+  width: 3px !important;
+}
+
+body.leica-theme .feed::-webkit-scrollbar,
+body.leica-theme .danmaku-list-container::-webkit-scrollbar {
+  width: 2px !important;
+}
+
+body.leica-theme .feed::-webkit-scrollbar-track,
+body.leica-theme .danmaku-list-container::-webkit-scrollbar-track,
+body.bordeaux-theme .feed::-webkit-scrollbar-track,
+body.bordeaux-theme .danmaku-list-container::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+body.leica-theme .feed::-webkit-scrollbar-thumb,
+body.leica-theme .danmaku-list-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 26, 26, 0.22) !important;
+  border-radius: 1px !important;
+  transition: background 0.3s ease !important;
+}
+
+body.bordeaux-theme .feed::-webkit-scrollbar-thumb,
+body.bordeaux-theme .danmaku-list-container::-webkit-scrollbar-thumb {
+  background: rgba(182, 53, 62, 0.25) !important;
+  border-radius: 1.5px !important;
+}
+
+body.leica-theme .feed::-webkit-scrollbar-thumb:hover,
+body.leica-theme .danmaku-list-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 26, 26, 0.7) !important;
+}
+
+body.bordeaux-theme .feed::-webkit-scrollbar-thumb:hover,
+body.bordeaux-theme .danmaku-list-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(182, 53, 62, 0.55) !important;
+}
+
+body.leica-theme .danmaku-content,
+body.leica-theme .text,
+body.bordeaux-theme .danmaku-content,
+body.bordeaux-theme .text {
+  color: var(--text-main) !important;
+  font-family: "Georgia", "Noto Serif CJK SC", serif !important;
+  line-height: 1.55 !important;
+  padding-left: 0 !important;
+  text-shadow: none !important;
+  word-break: break-word !important;
+}
+
+body.leica-theme .danmaku-username,
+body.leica-theme .user,
+body.bordeaux-theme .danmaku-username,
+body.bordeaux-theme .user {
+  color: var(--text-sub) !important;
+  text-shadow: none !important;
+}
+
+body.leica-theme .uid {
+  color: rgba(242, 242, 247, 0.12) !important;
+}
+
+body.bordeaux-theme .uid {
+  color: rgba(229, 217, 197, 0.15) !important;
+}
+
+body.leica-theme .danmaku-badge-dot,
+body.leica-theme .status-dot,
+body.leica-theme .tag::before {
+  background-color: var(--accent-leica) !important;
+  box-shadow: 0 0 5px rgba(255, 26, 26, 0.4) !important;
+}
+
+body.bordeaux-theme .danmaku-badge-dot,
+body.bordeaux-theme .status-dot,
+body.bordeaux-theme .tag::before {
+  background-color: var(--accent-crimson) !important;
+  box-shadow: 0 0 6px rgba(182, 53, 62, 0.5) !important;
+}
+
+body.leica-theme .tag {
+  color: var(--accent-leica) !important;
+}
+
+body.bordeaux-theme .tag {
+  color: var(--accent-crimson) !important;
+}
+
+body.leica-theme .danmaku-item,
+body.bordeaux-theme .danmaku-item {
+  border-left: 2px solid transparent !important;
+  border-bottom: 1px solid var(--divider) !important;
+  background-image: none !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  transition: border-color 0.2s ease, opacity 0.3s ease, background-color 0.2s ease !important;
+}
+
+body.leica-theme .danmaku-item:hover,
+body.leica-theme .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.leica-theme .feed.is-ink-active .danmaku-item.is-focused {
+  border-left-color: var(--accent-leica) !important;
+  background-color: rgba(255, 26, 26, 0.025) !important;
+  box-shadow: none !important;
+}
+
+body.bordeaux-theme .danmaku-item:hover,
+body.bordeaux-theme .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.bordeaux-theme .feed.is-ink-active .danmaku-item.is-focused {
+  border-left-color: var(--accent-crimson) !important;
+  background-color: rgba(182, 53, 62, 0.03) !important;
+  box-shadow: none !important;
+}
+
+body.leica-theme .danmaku-list:hover .danmaku-item,
+body.leica-theme .feed:hover .danmaku-item,
+body.leica-theme .feed:has(.danmaku-item:hover) .danmaku-item,
+body.leica-theme .feed.is-ink-active .danmaku-item,
+body.bordeaux-theme .danmaku-list:hover .danmaku-item,
+body.bordeaux-theme .feed:hover .danmaku-item,
+body.bordeaux-theme .feed:has(.danmaku-item:hover) .danmaku-item,
+body.bordeaux-theme .feed.is-ink-active .danmaku-item {
+  opacity: 0.35 !important;
+}
+
+body.leica-theme .danmaku-list:hover .danmaku-item:hover,
+body.leica-theme .feed:hover .danmaku-item:hover,
+body.leica-theme .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.leica-theme .feed.is-ink-active .danmaku-item.is-focused,
+body.bordeaux-theme .danmaku-list:hover .danmaku-item:hover,
+body.bordeaux-theme .feed:hover .danmaku-item:hover,
+body.bordeaux-theme .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.bordeaux-theme .feed.is-ink-active .danmaku-item.is-focused {
+  opacity: 1 !important;
+}
+
+body.leica-theme .fans-badge-container,
+body.leica-theme .fans-medal,
+body.bordeaux-theme .fans-badge-container,
+body.bordeaux-theme .fans-medal {
+  height: 15px !important;
+  min-height: 15px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+  gap: 0 !important;
+  padding: 1px 5px !important;
+  font-size: 10px !important;
+  line-height: 13px !important;
+  overflow: visible !important;
+}
+
+body.leica-theme .fans-badge-container,
+body.leica-theme .fans-medal {
+  background: rgba(242, 242, 247, 0.035) !important;
+  border: 1px solid rgba(242, 242, 247, 0.16) !important;
+}
+
+body.bordeaux-theme .fans-badge-container,
+body.bordeaux-theme .fans-medal {
+  background: rgba(182, 53, 62, 0.08) !important;
+  border: 1px solid rgba(182, 53, 62, 0.25) !important;
+}
+
+body.leica-theme .fans-badge-container::before,
+body.leica-theme .fans-medal::before,
+body.bordeaux-theme .fans-badge-container::before,
+body.bordeaux-theme .fans-medal::before {
+  display: none !important;
+}
+
+body.leica-theme .fans-badge-name,
+body.leica-theme .fans-medal-name,
+body.bordeaux-theme .fans-badge-name,
+body.bordeaux-theme .fans-medal-name {
+  height: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  color: var(--text-sub) !important;
+  font-weight: 500 !important;
+  line-height: 13px !important;
+  overflow: visible !important;
+}
+
+body.leica-theme .fans-badge-name::after,
+body.leica-theme .fans-medal-name::after {
+  content: " ·" !important;
+  color: var(--accent-leica) !important;
+}
+
+body.bordeaux-theme .fans-badge-name::after,
+body.bordeaux-theme .fans-medal-name::after {
+  content: " ·" !important;
+  color: var(--accent-crimson) !important;
+}
+
+body.leica-theme .fans-badge-level,
+body.leica-theme .fans-medal-level,
+body.bordeaux-theme .fans-badge-level,
+body.bordeaux-theme .fans-medal-level {
+  height: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  font-family: "Courier New", monospace !important;
+  font-weight: 700 !important;
+  line-height: 13px !important;
+  overflow: visible !important;
+}
+
+body.leica-theme .fans-badge-level,
+body.leica-theme .fans-medal-level {
+  color: var(--accent-leica) !important;
+}
+
+body.bordeaux-theme .fans-badge-level,
+body.bordeaux-theme .fans-medal-level {
+  color: var(--accent-crimson) !important;
+}
+
+body.leica-theme .options-panel,
+body.bordeaux-theme .options-panel {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 14px var(--right-edge) 4px var(--left-edge) !important;
+  border: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  row-gap: 0 !important;
+}
+
+body.leica-theme .options-panel {
+  background: #1A1A1C !important;
+  box-shadow: inset 0 1px 0 rgba(242, 242, 247, 0.03) !important;
+}
+
+body.bordeaux-theme .options-panel {
+  background: #1C1214 !important;
+  box-shadow: inset 0 1px 0 rgba(229, 217, 197, 0.025) !important;
+}
+
+body.leica-theme .settings-panel,
+body.bordeaux-theme .settings-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.leica-theme .options-panel .toggle-group,
+body.leica-theme .options-panel .param-group,
+body.bordeaux-theme .options-panel .toggle-group,
+body.bordeaux-theme .options-panel .param-group {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  align-items: center !important;
+  justify-items: stretch !important;
+}
+
+body.leica-theme .options-panel .param-group {
+  margin-top: 14px !important;
+  padding-top: 0 !important;
+  border-top: 1px solid rgba(242, 242, 247, 0.04) !important;
+}
+
+body.bordeaux-theme .options-panel .param-group {
+  margin-top: 14px !important;
+  padding-top: 0 !important;
+  border-top: 1px solid rgba(229, 217, 197, 0.04) !important;
+}
+
+body.leica-theme .options-panel .toggle-item,
+body.bordeaux-theme .options-panel .toggle-item {
+  grid-column: span 3 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  font-weight: 500 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+body.leica-theme .options-panel .param-item,
+body.bordeaux-theme .options-panel .param-item {
+  grid-column: span 4 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+body.leica-theme .options-panel .setting-control,
+body.bordeaux-theme .options-panel .setting-control {
+  position: relative !important;
+  height: 40px !important;
+  justify-content: center !important;
+}
+
+body.leica-theme .options-panel .toggle-item::before,
+body.bordeaux-theme .options-panel .toggle-item::before {
+  content: "" !important;
+  display: block !important;
+  width: 11px !important;
+  height: 11px !important;
+  flex: 0 0 11px !important;
+  border-radius: 0 !important;
+  margin: 0 0 7px 0 !important;
+  position: relative !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease !important;
+}
+
+body.leica-theme .options-panel .toggle-item::before {
+  border: 1px solid rgba(242, 242, 247, 0.16) !important;
+}
+
+body.bordeaux-theme .options-panel .toggle-item::before {
+  border: 1px solid rgba(229, 217, 197, 0.15) !important;
+}
+
+body.leica-theme .options-panel .toggle-item.is-active,
+body.bordeaux-theme .options-panel .toggle-item.is-active {
+  color: var(--text-main) !important;
+  font-weight: 500 !important;
+}
+
+body.leica-theme .options-panel .toggle-item.is-active::before {
+  background-color: var(--accent-leica) !important;
+  border-color: var(--accent-leica) !important;
+  box-shadow: 0 0 5px rgba(255, 26, 26, 0.34) !important;
+}
+
+body.bordeaux-theme .options-panel .toggle-item.is-active::before {
+  background-color: var(--accent-crimson) !important;
+  border-color: var(--accent-crimson) !important;
+  box-shadow: 0 0 5px rgba(182, 53, 62, 0.34) !important;
+}
+
+body.leica-theme .options-panel .toggle-item::after,
+body.leica-theme .options-panel .toggle-item.is-active::after,
+body.bordeaux-theme .options-panel .toggle-item::after,
+body.bordeaux-theme .options-panel .toggle-item.is-active::after {
+  content: none !important;
+  display: none !important;
+}
+
+body.leica-theme .options-panel .shortcut-hint,
+body.leica-theme .options-panel .shortcut-key,
+body.bordeaux-theme .options-panel .shortcut-hint,
+body.bordeaux-theme .options-panel .shortcut-key {
+  height: 11px !important;
+  min-height: 11px !important;
+  margin: 2px 0 0 0 !important;
+  font-family: var(--font-ui) !important;
+  font-size: 9.5px !important;
+  font-weight: 500 !important;
+  line-height: 11px !important;
+  letter-spacing: 0.035em !important;
+  opacity: 1 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+body.leica-theme .options-panel .shortcut-hint,
+body.leica-theme .options-panel .shortcut-key {
+  color: rgba(122, 122, 128, 0.72) !important;
+}
+
+body.bordeaux-theme .options-panel .shortcut-hint,
+body.bordeaux-theme .options-panel .shortcut-key {
+  color: rgba(125, 107, 111, 0.72) !important;
+}
+
+body.leica-theme .options-panel .param-value,
+body.leica-theme .options-panel .setting-control output,
+body.bordeaux-theme .options-panel .param-value,
+body.bordeaux-theme .options-panel .setting-control output {
+  display: block !important;
+  height: 17px !important;
+  margin: 4px 0 0 0 !important;
+  padding: 0 0 1px 0 !important;
+  border-bottom: 1px solid transparent !important;
+  color: var(--text-main) !important;
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" 1 !important;
+  letter-spacing: 0 !important;
+  line-height: 16px !important;
+  text-align: center !important;
+  font-synthesis: none !important;
+}
+
+body.leica-theme .room-form .input-value-display,
+body.leica-theme .login-row .input-value-display,
+body.leica-theme .input-row .input-value-display {
+  display: inline-block !important;
+  border-bottom: 1px solid rgba(242, 242, 247, 0.08) !important;
+  padding-bottom: 2px !important;
+}
+
+body.bordeaux-theme .room-form .input-value-display,
+body.bordeaux-theme .login-row .input-value-display,
+body.bordeaux-theme .input-row .input-value-display {
+  display: inline-block !important;
+  border-bottom: 1px solid rgba(229, 217, 197, 0.08) !important;
+  padding-bottom: 2px !important;
+}
+
+body.leica-theme .help-card,
+body.leica-theme .update-banner,
+body.bordeaux-theme .help-card,
+body.bordeaux-theme .update-banner {
+  background: var(--help-bg) !important;
+  border: 1px solid var(--help-border) !important;
+  box-shadow: var(--help-shadow) !important;
+}
+
+body.leica-theme .help-card,
+body.leica-theme .help-card *,
+body.bordeaux-theme .help-card,
+body.bordeaux-theme .help-card * {
+  color: var(--text-sub) !important;
+  font-family: var(--font-ui) !important;
+  text-shadow: none !important;
+}
+
+body.leica-theme .help-card strong,
+body.leica-theme .help-meta dt,
+body.leica-theme .update-banner strong,
+body.bordeaux-theme .help-card strong,
+body.bordeaux-theme .help-meta dt,
+body.bordeaux-theme .update-banner strong {
+  color: var(--text-main) !important;
+}
+
+body.leica-theme .help-card a,
+body.leica-theme .help-update,
+body.leica-theme .room-form button:hover,
+body.leica-theme .toggle:hover,
+body.leica-theme .toggle.update-check:hover,
+body.leica-theme .login-actions > .sessdata-fetch:hover {
+  color: var(--accent-leica) !important;
+}
+
+body.bordeaux-theme .help-card a,
+body.bordeaux-theme .help-update,
+body.bordeaux-theme .room-form button:hover,
+body.bordeaux-theme .toggle:hover,
+body.bordeaux-theme .toggle.update-check:hover,
+body.bordeaux-theme .login-actions > .sessdata-fetch:hover {
+  color: var(--accent-crimson) !important;
+}
+
+body.leica-theme .maker-watermark,
+body.leica-theme .footer-dashboard,
+body.leica-theme .footer-dashboard span,
+body.bordeaux-theme .maker-watermark,
+body.bordeaux-theme .footer-dashboard,
+body.bordeaux-theme .footer-dashboard span {
+  color: var(--maker-watermark) !important;
+  font-family: var(--font-ui) !important;
+  text-shadow: none !important;
+}
+
+body.bordeaux-theme .danmaku-content,
+body.bordeaux-theme .text {
+  color: var(--text-main) !important;
+  font-family: "Georgia", "Noto Serif CJK SC", "Source Han Serif SC", serif !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  letter-spacing: 0.04em !important;
+}
+
+body.bordeaux-theme .uid,
+body.bordeaux-theme .crafted-text,
+body.bordeaux-theme [class*="footer"] {
+  color: rgba(229, 217, 197, 0.16) !important;
+}
+
+body.bordeaux-theme .danmaku-username,
+body.bordeaux-theme .user {
+  color: #876E73 !important;
+}
+
+body.leica-theme .danmaku-content,
+body.leica-theme .text {
+  color: var(--text-main) !important;
+  font-family: "Georgia", "Noto Serif CJK SC", "Source Han Serif SC", serif !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  letter-spacing: 0.04em !important;
+}
+
+body.leica-theme .uid {
+  color: rgba(242, 242, 247, 0.22) !important;
+}
+
+body.leica-theme .danmaku-username,
+body.leica-theme .user {
+  color: #7A7A80 !important;
+}
+
+body.glacial-theme {
+  color-scheme: light;
+  --bg-main-rgb: 243, 245, 248 !important;
+  --bg-card: #E4E8EF !important;
+  --text-main: #161A23 !important;
+  --text-sub: #7C8494 !important;
+  --accent-ice: #4A7BB0 !important;
+  --divider: rgba(22, 26, 35, 0.04) !important;
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+  --font-text: "Georgia", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", serif;
+  --font-data: var(--font-ui);
+  --font-serif: var(--font-text);
+  --font-mono: "Courier New", Courier, monospace;
+  --bg-primary: rgb(var(--bg-main-rgb));
+  --bg-hover: rgba(74, 123, 176, 0.03);
+  --spotlight: radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.5), transparent 58%);
+  --top-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.34), transparent 44%);
+  --window-shadow: 0 30px 70px rgba(22, 26, 35, 0.05);
+  --track-color: rgba(22, 26, 35, 0.08);
+  --scroll-thumb: rgba(74, 123, 176, 0.18);
+  --scroll-color: rgba(22, 26, 35, 0.08);
+  --hover-band: linear-gradient(90deg, rgba(74, 123, 176, 0.03), transparent);
+  --text-title: var(--text-main);
+  --text-data: var(--text-main);
+  --text-label: var(--text-sub);
+  --text-watermark: rgba(124, 132, 148, 0.5);
+  --maker-watermark: rgba(124, 132, 148, 0.34);
+  --accent-blue: var(--accent-ice);
+  --accent-blue-line: rgba(74, 123, 176, 0.36);
+  --accent-red: #3B5E82;
+  --placeholder-color: rgba(124, 132, 148, 0.58);
+  --uid-color: rgba(22, 26, 35, 0.15);
+  --body-text: var(--text-main);
+  --border-color: var(--divider);
+  --divider-shadow: none;
+  --status-breathe-glow: rgba(74, 123, 176, 0.28);
+  --help-bg: #FAFAFB;
+  --help-border: rgba(74, 123, 176, 0.15);
+  --help-shadow: 0 20px 35px rgba(22, 26, 35, 0.06);
+  --help-text: var(--text-sub);
+  --help-title: var(--text-main);
+  --paper: rgba(var(--bg-main-rgb), var(--bg-opacity, 1));
+  --paper-solid: rgb(var(--bg-main-rgb));
+  --paper-soft: rgba(228, 232, 239, 0.7);
+  --ink: var(--text-main);
+  --ink-soft: var(--text-sub);
+  --ink-faint: rgba(124, 132, 148, 0.7);
+  --line: var(--divider);
+  --line-soft: rgba(22, 26, 35, 0.03);
+  --blue: var(--accent-ice);
+  --blue-soft: rgba(74, 123, 176, 0.1);
+  --gift: #5D7898;
+  --superchat: #3B5E82;
+  --guard: #607789;
+}
+
+body.glacial-theme .app-container,
+body.glacial-theme .shell,
+body.glacial-theme.is-opaque .shell {
+  background-color: rgba(var(--bg-main-rgb), var(--bg-opacity, 1)) !important;
+  background-image: var(--spotlight), var(--top-sheen) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 30px 70px rgba(22, 26, 35, 0.05) !important;
+}
+
+body.glacial-theme .theme-dropdown-menu {
+  background: #FAFAFB !important;
+  border: 1px solid rgba(74, 123, 176, 0.15) !important;
+  box-shadow: 0 20px 35px rgba(22, 26, 35, 0.06) !important;
+}
+
+body.glacial-theme .theme-menu-item {
+  color: var(--text-sub) !important;
+}
+
+body.glacial-theme .theme-menu-item:hover {
+  background: rgba(74, 123, 176, 0.03) !important;
+  color: var(--text-main) !important;
+}
+
+body.glacial-theme .theme-menu-item.is-active {
+  color: var(--accent-ice) !important;
+  font-weight: 600 !important;
+}
+
+body.glacial-theme .theme-menu-item.is-active::before {
+  background-color: var(--accent-ice) !important;
+}
+
+body.glacial-theme .header-title,
+body.glacial-theme .options-title,
+body.glacial-theme .param-value,
+body.glacial-theme .setting-control output,
+body.glacial-theme .brand strong,
+body.glacial-theme .status-data,
+body.glacial-theme .popularity-inline,
+body.glacial-theme .popularity-short,
+body.glacial-theme .popularity-full {
+  color: var(--text-main) !important;
+}
+
+body.glacial-theme .options-sub,
+body.glacial-theme .shortcut-hint,
+body.glacial-theme .shortcut-key,
+body.glacial-theme .param-label,
+body.glacial-theme .setting-label,
+body.glacial-theme .window-btn,
+body.glacial-theme .status,
+body.glacial-theme .placeholder-hint,
+body.glacial-theme .empty-state,
+body.glacial-theme .room-form label,
+body.glacial-theme .login-row label {
+  color: var(--text-sub) !important;
+}
+
+body.glacial-theme .window-btn:hover {
+  color: var(--accent-ice) !important;
+  background: rgba(74, 123, 176, 0.03) !important;
+  box-shadow: 0 0 12px rgba(74, 123, 176, 0.08) !important;
+  transform: translateY(0.5px) !important;
+}
+
+body.glacial-theme .feed {
+  background: transparent !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(74, 123, 176, 0.18) transparent !important;
+}
+
+body.glacial-theme .feed::-webkit-scrollbar,
+body.glacial-theme .danmaku-list-container::-webkit-scrollbar {
+  width: 2px !important;
+}
+
+body.glacial-theme .feed::-webkit-scrollbar-track,
+body.glacial-theme .danmaku-list-container::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+body.glacial-theme .feed::-webkit-scrollbar-thumb,
+body.glacial-theme .danmaku-list-container::-webkit-scrollbar-thumb {
+  background: rgba(74, 123, 176, 0.18) !important;
+  border-radius: 1px !important;
+}
+
+body.glacial-theme .feed::-webkit-scrollbar-thumb:hover,
+body.glacial-theme .danmaku-list-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 123, 176, 0.55) !important;
+}
+
+body.glacial-theme .danmaku-content,
+body.glacial-theme .text {
+  color: var(--text-main) !important;
+  font-family: "Georgia", "Noto Serif CJK SC", serif !important;
+  line-height: 1.55 !important;
+  padding-left: 0 !important;
+  text-shadow: none !important;
+  word-break: break-word !important;
+}
+
+body.glacial-theme .danmaku-username,
+body.glacial-theme .user {
+  color: var(--text-sub) !important;
+  text-shadow: none !important;
+}
+
+body.glacial-theme .uid,
+body.glacial-theme .crafted-text {
+  color: rgba(22, 26, 35, 0.25) !important;
+  opacity: 1 !important;
+}
+
+body.glacial-theme .danmaku-badge-dot,
+body.glacial-theme .status-dot,
+body.glacial-theme .tag::before {
+  background-color: var(--accent-ice) !important;
+  box-shadow: 0 0 4px rgba(74, 123, 176, 0.3) !important;
+}
+
+body.glacial-theme .tag {
+  color: var(--accent-ice) !important;
+}
+
+body.glacial-theme .danmaku-item {
+  border-left: 2px solid transparent !important;
+  border-bottom: 1px solid var(--divider) !important;
+  background-image: none !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  transition: border-color 0.2s ease, opacity 0.3s ease, background-color 0.2s ease !important;
+}
+
+body.glacial-theme .danmaku-item:hover,
+body.glacial-theme .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.glacial-theme .feed.is-ink-active .danmaku-item.is-focused {
+  border-left-color: var(--accent-ice) !important;
+  background-color: rgba(74, 123, 176, 0.025) !important;
+  box-shadow: none !important;
+}
+
+body.glacial-theme .danmaku-list:hover .danmaku-item,
+body.glacial-theme .feed:hover .danmaku-item,
+body.glacial-theme .feed:has(.danmaku-item:hover) .danmaku-item,
+body.glacial-theme .feed.is-ink-active .danmaku-item {
+  opacity: 0.35 !important;
+}
+
+body.glacial-theme .danmaku-list:hover .danmaku-item:hover,
+body.glacial-theme .feed:hover .danmaku-item:hover,
+body.glacial-theme .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.glacial-theme .feed.is-ink-active .danmaku-item.is-focused {
+  opacity: 1 !important;
+}
+
+body.glacial-theme .fans-badge-container,
+body.glacial-theme .fans-medal {
+  height: 15px !important;
+  min-height: 15px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(74, 123, 176, 0.04) !important;
+  border: 1px solid rgba(74, 123, 176, 0.22) !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+  gap: 0 !important;
+  padding: 1px 5px !important;
+  font-size: 10px !important;
+  line-height: 13px !important;
+  overflow: visible !important;
+}
+
+body.glacial-theme .fans-badge-container::before,
+body.glacial-theme .fans-medal::before {
+  display: none !important;
+}
+
+body.glacial-theme .fans-badge-name,
+body.glacial-theme .fans-medal-name {
+  height: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  color: var(--text-sub) !important;
+  font-weight: 500 !important;
+  line-height: 13px !important;
+  overflow: visible !important;
+}
+
+body.glacial-theme .fans-badge-name::after,
+body.glacial-theme .fans-medal-name::after {
+  content: " ·" !important;
+  color: var(--accent-ice) !important;
+}
+
+body.glacial-theme .fans-badge-level,
+body.glacial-theme .fans-medal-level {
+  height: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  color: var(--accent-ice) !important;
+  font-family: "Courier New", monospace !important;
+  font-weight: 700 !important;
+  line-height: 13px !important;
+  overflow: visible !important;
+}
+
+body.glacial-theme .options-panel {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 14px var(--right-edge) 4px var(--left-edge) !important;
+  border: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  row-gap: 0 !important;
+  background: #EAEFF5 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+}
+
+body.glacial-theme .settings-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.glacial-theme .options-panel .toggle-group,
+body.glacial-theme .options-panel .param-group {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  align-items: center !important;
+  justify-items: stretch !important;
+}
+
+body.glacial-theme .options-panel .param-group {
+  margin-top: 14px !important;
+  padding-top: 0 !important;
+  border-top: 1px solid rgba(22, 26, 35, 0.03) !important;
+}
+
+body.glacial-theme .options-panel .toggle-item {
+  grid-column: span 3 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  font-weight: 500 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+body.glacial-theme .options-panel .param-item {
+  grid-column: span 4 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+body.glacial-theme .options-panel .setting-control {
+  position: relative !important;
+  height: 40px !important;
+  justify-content: center !important;
+}
+
+body.glacial-theme .options-panel .toggle-item::before {
+  content: "" !important;
+  display: block !important;
+  width: 11px !important;
+  height: 11px !important;
+  flex: 0 0 11px !important;
+  border: 1px solid rgba(22, 26, 35, 0.15) !important;
+  border-radius: 0 !important;
+  margin: 0 0 7px 0 !important;
+  position: relative !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease !important;
+}
+
+body.glacial-theme .options-panel .toggle-item.is-active {
+  color: var(--text-main) !important;
+  font-weight: 500 !important;
+}
+
+body.glacial-theme .options-panel .toggle-item.is-active::before {
+  background-color: var(--accent-ice) !important;
+  border-color: var(--accent-ice) !important;
+}
+
+body.glacial-theme .options-panel .toggle-item::after,
+body.glacial-theme .options-panel .toggle-item.is-active::after {
+  content: none !important;
+  display: none !important;
+}
+
+body.glacial-theme .options-panel .shortcut-hint,
+body.glacial-theme .options-panel .shortcut-key {
+  height: 11px !important;
+  min-height: 11px !important;
+  margin: 2px 0 0 0 !important;
+  color: rgba(124, 132, 148, 0.72) !important;
+  font-family: var(--font-ui) !important;
+  font-size: 9.5px !important;
+  font-weight: 500 !important;
+  line-height: 11px !important;
+  letter-spacing: 0.035em !important;
+  opacity: 1 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+body.glacial-theme .options-panel .param-value,
+body.glacial-theme .options-panel .setting-control output {
+  display: block !important;
+  height: 17px !important;
+  margin: 4px 0 0 0 !important;
+  padding: 0 0 1px 0 !important;
+  border-bottom: 1px solid transparent !important;
+  color: var(--text-main) !important;
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" 1 !important;
+  letter-spacing: 0 !important;
+  line-height: 16px !important;
+  text-align: center !important;
+  font-synthesis: none !important;
+}
+
+body.glacial-theme .room-form .input-value-display,
+body.glacial-theme .login-row .input-value-display,
+body.glacial-theme .input-row .input-value-display {
+  display: inline-block !important;
+  border-bottom: 1px solid rgba(22, 26, 35, 0.08) !important;
+  padding-bottom: 2px !important;
+}
+
+body.glacial-theme .btn-disconnect,
+body.glacial-theme #disconnectBtn,
+body.glacial-theme .text-danger,
+body.glacial-theme .btn-clear,
+body.glacial-theme #clearSessdataBtn,
+body.glacial-theme .sessdata-clear,
+body.glacial-theme .toggle.danger {
+  color: #3B5E82 !important;
+  font-weight: 600 !important;
+}
+
+body.glacial-theme .help-card,
+body.glacial-theme .update-banner {
+  background: var(--help-bg) !important;
+  border: 1px solid var(--help-border) !important;
+  box-shadow: var(--help-shadow) !important;
+}
+
+body.glacial-theme .help-card,
+body.glacial-theme .help-card * {
+  color: var(--text-sub) !important;
+  font-family: var(--font-ui) !important;
+  text-shadow: none !important;
+}
+
+body.glacial-theme .help-card strong,
+body.glacial-theme .help-meta dt,
+body.glacial-theme .update-banner strong {
+  color: var(--text-main) !important;
+}
+
+body.glacial-theme .help-card a,
+body.glacial-theme .help-update,
+body.glacial-theme .room-form button:hover,
+body.glacial-theme .toggle:hover,
+body.glacial-theme .toggle.update-check:hover,
+body.glacial-theme .login-actions > .sessdata-fetch:hover {
+  color: var(--accent-ice) !important;
+}
+
+body.glacial-theme .maker-watermark,
+body.glacial-theme .footer-dashboard,
+body.glacial-theme .footer-dashboard span {
+  color: rgba(22, 26, 35, 0.25) !important;
+  font-family: var(--font-ui) !important;
+  text-shadow: none !important;
+}
+
+body.light-theme .danmaku-content,
+body.light-theme .text,
+body.dark-theme .danmaku-content,
+body.dark-theme .text,
+body.moss-theme .danmaku-content,
+body.moss-theme .text,
+body.blueprint-theme .danmaku-content,
+body.blueprint-theme .text,
+body.walnut-theme .danmaku-content,
+body.walnut-theme .text,
+body.leica-theme .danmaku-content,
+body.leica-theme .text,
+body.bordeaux-theme .danmaku-content,
+body.bordeaux-theme .text,
+body.glacial-theme .danmaku-content,
+body.glacial-theme .text {
+  line-height: 1.55 !important;
+}
+
+body .danmaku-item {
+  --danmaku-rail-gap: 10px;
+  --danmaku-rail-width: 2px;
+  border-left-width: var(--danmaku-rail-width) !important;
+  padding-left: var(--danmaku-rail-gap) !important;
+}
+
+body .danmaku-item::before {
+  left: calc(6px + var(--danmaku-rail-width) + var(--danmaku-rail-gap)) !important;
+}
+
+body .uid {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+
+body .meta {
+  flex-wrap: nowrap !important;
+}
+
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .brand strong,
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .header-title {
+  font-family: var(--font-serif) !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+}
+
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .brand-copy > span,
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .status {
+  font-family: var(--font-ui) !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+}
+
+body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .brand strong,
+body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .header-title,
+body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .brand-copy > span,
+body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .status {
+  font-family: var(--font-ui) !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+}
+
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .brand strong {
+  font-size: 27px !important;
+  line-height: 26px !important;
+  font-weight: 800 !important;
+}
+
+body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .brand strong {
+  font-size: 27px !important;
+  line-height: 26px !important;
+  font-weight: 700 !important;
+}
+
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .danmaku-content,
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .text {
+  font-family: "Georgia", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif !important;
+  font-size: calc(1em * var(--danmaku-content-scale)) !important;
+  letter-spacing: 0.03em !important;
+}
+
+body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .danmaku-content,
+body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .text {
+  font-family: "Georgia", "Noto Serif CJK SC", "Source Han Serif SC", serif !important;
+  font-size: 14px !important;
+  letter-spacing: 0.04em !important;
+}
+
+body.light-theme .danmaku-username,
+body.light-theme .user,
+body.moss-theme .danmaku-username,
+body.moss-theme .user,
+body.blueprint-theme .danmaku-username,
+body.blueprint-theme .user,
+body.glacial-theme .danmaku-username,
+body.glacial-theme .user {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei UI", sans-serif !important;
+  font-size: calc(1em * var(--danmaku-user-scale)) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1.25 !important;
+  margin-top: 0 !important;
+  text-shadow: none !important;
+}
+
+body.dark-theme .danmaku-username,
+body.dark-theme .user,
+body.walnut-theme .danmaku-username,
+body.walnut-theme .user,
+body.leica-theme .danmaku-username,
+body.leica-theme .user,
+body.bordeaux-theme .danmaku-username,
+body.bordeaux-theme .user {
+  font-family: var(--font-ui) !important;
+  font-size: calc(1em * var(--danmaku-user-scale)) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1.25 !important;
+  margin-top: 0 !important;
+  text-shadow: none !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-container,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal {
+  height: 17px !important;
+  min-height: 17px !important;
+  max-height: 17px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  padding: 1px 5px 2px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  font-family: "Microsoft YaHei UI", "PingFang SC", "Hiragino Sans GB", "Segoe UI", Arial, sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  line-height: 14px !important;
+  letter-spacing: 0 !important;
+}
+
+body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .fans-badge-container,
+body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .fans-medal {
+  background: rgba(0, 0, 0, 0.25) !important;
+  border-radius: 0 !important;
+  padding: 1px 5px 2px !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-name,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal-name,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-level,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal-level {
+  height: 14px !important;
+  min-height: 14px !important;
+  max-height: 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 14px !important;
+  font-family: "Microsoft YaHei UI", "PingFang SC", "Hiragino Sans GB", "Segoe UI", Arial, sans-serif !important;
+  font-size: inherit !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  transform: none !important;
+  top: 0 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-name,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal-name {
+  min-width: 0 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-level,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal-level {
+  flex: 0 0 auto !important;
+  align-self: center !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-name::after,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal-name::after {
+  content: " ·" !important;
+  height: 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  margin: 0 !important;
+  background: transparent !important;
+  line-height: 14px !important;
+  font-family: "Microsoft YaHei UI", "PingFang SC", "Hiragino Sans GB", "Segoe UI", Arial, sans-serif !important;
+  font-size: inherit !important;
+  transform: none !important;
+  top: 0 !important;
+}
+
+body.light-theme .fans-badge-name,
+body.light-theme .fans-medal-name {
+  color: #5a5550 !important;
+}
+
+body.light-theme .fans-badge-name::after,
+body.light-theme .fans-medal-name::after,
+body.light-theme .fans-badge-level,
+body.light-theme .fans-medal-level {
+  color: #4a6b9c !important;
+}
+
+body.dark-theme .fans-badge-name,
+body.dark-theme .fans-medal-name {
+  color: #8A95A3 !important;
+}
+
+body.dark-theme .fans-badge-name::after,
+body.dark-theme .fans-medal-name::after,
+body.dark-theme .fans-badge-level,
+body.dark-theme .fans-medal-level {
+  color: #7BA0C0 !important;
+}
+
+body.dark-theme .fans-badge-container,
+body.dark-theme .fans-medal {
+  border: 1px solid rgba(123, 160, 192, 0.18) !important;
+}
+
+body.dark-theme .fans-badge-name::after,
+body.dark-theme .fans-medal-name::after {
+  content: " ·" !important;
+  width: auto !important;
+  height: 14px !important;
+  margin: 0 !important;
+  background: transparent !important;
+  color: #7BA0C0 !important;
+}
+
+body.moss-theme .fans-badge-name,
+body.moss-theme .fans-medal-name {
+  color: #6E7A74 !important;
+}
+
+body.moss-theme .fans-badge-name::after,
+body.moss-theme .fans-medal-name::after,
+body.moss-theme .fans-badge-level,
+body.moss-theme .fans-medal-level {
+  color: #4A6B5D !important;
+}
+
+body.blueprint-theme .fans-badge-name,
+body.blueprint-theme .fans-medal-name {
+  color: #5275A1 !important;
+}
+
+body.blueprint-theme .fans-badge-name::after,
+body.blueprint-theme .fans-medal-name::after,
+body.blueprint-theme .fans-badge-level,
+body.blueprint-theme .fans-medal-level {
+  color: #003399 !important;
+}
+
+body.walnut-theme .fans-badge-name,
+body.walnut-theme .fans-medal-name {
+  color: var(--text-sub) !important;
+}
+
+body.walnut-theme .fans-badge-name::after,
+body.walnut-theme .fans-medal-name::after,
+body.walnut-theme .fans-badge-level,
+body.walnut-theme .fans-medal-level {
+  color: var(--accent-amber) !important;
+}
+
+body.walnut-theme .fans-badge-container,
+body.walnut-theme .fans-medal {
+  border: 1px solid rgba(204, 112, 61, 0.18) !important;
+}
+
+body.leica-theme .fans-badge-name,
+body.leica-theme .fans-medal-name {
+  color: var(--text-sub) !important;
+}
+
+body.leica-theme .fans-badge-name::after,
+body.leica-theme .fans-medal-name::after,
+body.leica-theme .fans-badge-level,
+body.leica-theme .fans-medal-level {
+  color: var(--accent-leica) !important;
+}
+
+body.leica-theme .fans-badge-container,
+body.leica-theme .fans-medal {
+  border: 1px solid rgba(255, 26, 26, 0.18) !important;
+}
+
+body.bordeaux-theme .fans-badge-name,
+body.bordeaux-theme .fans-medal-name {
+  color: var(--text-sub) !important;
+}
+
+body.bordeaux-theme .fans-badge-name::after,
+body.bordeaux-theme .fans-medal-name::after,
+body.bordeaux-theme .fans-badge-level,
+body.bordeaux-theme .fans-medal-level {
+  color: var(--accent-crimson) !important;
+}
+
+body.bordeaux-theme .fans-badge-container,
+body.bordeaux-theme .fans-medal {
+  border: 1px solid rgba(182, 53, 62, 0.22) !important;
+}
+
+body.glacial-theme .fans-badge-name,
+body.glacial-theme .fans-medal-name {
+  color: var(--text-sub) !important;
+}
+
+body.glacial-theme .fans-badge-name::after,
+body.glacial-theme .fans-medal-name::after,
+body.glacial-theme .fans-badge-level,
+body.glacial-theme .fans-medal-level {
+  color: var(--accent-ice) !important;
+}
+
+body.light-theme {
+  --tag-danmaku: #4A6B9C;
+  --tag-gift: #8A6F35;
+  --tag-superchat: #8F5C45;
+  --tag-guard: #6F637D;
+  --status-signal: #4A6B9C;
+  --status-signal-glow: rgba(74, 107, 156, 0.34);
+}
+
+body.dark-theme {
+  --tag-danmaku: #7BA0C0;
+  --tag-gift: #B5A06D;
+  --tag-superchat: #C17775;
+  --tag-guard: #9F91B8;
+  --status-signal: #7BA0C0;
+  --status-signal-glow: rgba(123, 160, 192, 0.34);
+}
+
+body.moss-theme {
+  --tag-danmaku: #4A6B5D;
+  --tag-gift: #8A7A4F;
+  --tag-superchat: #8C655D;
+  --tag-guard: #607068;
+  --status-signal: #4A6B5D;
+  --status-signal-glow: rgba(74, 107, 93, 0.28);
+}
+
+body.blueprint-theme {
+  --tag-danmaku: #003399;
+  --tag-gift: #4D6D9A;
+  --tag-superchat: #7D527A;
+  --tag-guard: #405D91;
+  --status-signal: #003399;
+  --status-signal-glow: rgba(0, 51, 153, 0.28);
+}
+
+body.walnut-theme {
+  --tag-danmaku: #CC703D;
+  --tag-gift: #B98255;
+  --tag-superchat: #C0392B;
+  --tag-guard: #A77B4F;
+  --status-signal: #CC703D;
+  --status-signal-glow: rgba(204, 112, 61, 0.36);
+}
+
+body.leica-theme {
+  --tag-danmaku: #FF1A1A;
+  --tag-gift: #B6B6BE;
+  --tag-superchat: #FF1A1A;
+  --tag-guard: #7B7B84;
+  --status-signal: #FF1A1A;
+  --status-signal-glow: rgba(255, 26, 26, 0.34);
+}
+
+body.bordeaux-theme {
+  --tag-danmaku: #B6353E;
+  --tag-gift: #B88A72;
+  --tag-superchat: #B6353E;
+  --tag-guard: #8C5960;
+  --status-signal: #B6353E;
+  --status-signal-glow: rgba(182, 53, 62, 0.34);
+}
+
+body.glacial-theme {
+  --tag-danmaku: #4A7BB0;
+  --tag-gift: #5D7898;
+  --tag-superchat: #3B5E82;
+  --tag-guard: #607789;
+  --status-signal: #4A7BB0;
+  --status-signal-glow: rgba(74, 123, 176, 0.28);
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .tag {
+  color: var(--tag-danmaku) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .tag::before {
+  background-color: currentColor !important;
+  box-shadow: 0 0 6px color-mix(in srgb, currentColor 34%, transparent) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-gift .tag,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.gift .tag {
+  color: var(--tag-gift) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-gift .tag::before,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.gift .tag::before {
+  background-color: var(--tag-gift) !important;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tag-gift) 30%, transparent) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat .tag,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.superchat .tag {
+  color: var(--tag-superchat) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-guard .tag,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.guard .tag,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.guard .tag {
+  color: var(--tag-guard) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-guard .tag::before,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.guard .tag::before,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.guard .tag::before {
+  background-color: var(--tag-guard) !important;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tag-guard) 30%, transparent) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-badge-dot {
+  background-color: var(--status-signal) !important;
+  box-shadow: 0 0 6px var(--status-signal-glow) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .status-dot {
+  background-color: var(--status-dot-color, var(--status-signal)) !important;
+  box-shadow: var(--status-dot-shadow, 0 0 6px var(--status-dot-glow, var(--status-signal-glow))) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat {
+  border-left-color: var(--tag-superchat) !important;
+  background-color: color-mix(in srgb, var(--tag-superchat) 3.5%, transparent) !important;
+  box-shadow: none !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat .tag {
+  color: var(--tag-superchat) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat .tag::before {
+  background-color: var(--tag-superchat) !important;
+  box-shadow: 0 0 7px color-mix(in srgb, var(--tag-superchat) 28%, transparent) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed:has(.danmaku-item.is-superchat:hover) .danmaku-item.is-superchat:hover,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed.is-ink-active .danmaku-item.is-superchat.is-focused {
+  border-left-color: var(--tag-superchat) !important;
+  background-color: color-mix(in srgb, var(--tag-superchat) 6%, transparent) !important;
+  box-shadow:
+    0 10px 26px color-mix(in srgb, var(--tag-superchat) 8%, transparent),
+    0 1px 2px color-mix(in srgb, var(--tag-superchat) 5%, transparent) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .gift-multiplier {
+  color: var(--tag-gift) !important;
+  text-shadow: 0 0 5px color-mix(in srgb, var(--tag-gift) 24%, transparent) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .mega-gift-banner {
+  background: var(--bg-card) !important;
+  border: 1px solid color-mix(in srgb, var(--superchat) 14%, transparent) !important;
+  border-left: 3px solid var(--superchat) !important;
+  border-radius: 0 !important;
+  box-shadow:
+    0 10px 28px color-mix(in srgb, var(--superchat) 6%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text-main) 3%, transparent) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .mega-gift-user {
+  color: var(--text-main) !important;
+  font-family: var(--font-ui) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .mega-gift-action {
+  color: var(--text-sub) !important;
+  font-family: var(--font-ui) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .mega-gift-progress {
+  height: 2px !important;
+  background: color-mix(in srgb, var(--superchat) 42%, transparent) !important;
+  box-shadow: 0 0 5px color-mix(in srgb, var(--superchat) 24%, transparent) !important;
+}
+
+.theme-dropdown-menu {
+  width: 156px !important;
+  padding: 6px 0 !important;
+  box-sizing: border-box !important;
+}
+
+.theme-menu-item {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  padding: 7px 16px !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+.theme-name {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+}
+
+.theme-swatch {
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 2px !important;
+  flex: 0 0 12px !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  opacity: 0.85 !important;
+  transition: transform 0.2s ease, opacity 0.2s ease !important;
+}
+
+.theme-menu-item .theme-swatch::before,
+.theme-menu-item .theme-swatch::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  pointer-events: none !important;
+}
+
+.theme-menu-item .theme-swatch::before {
+  background: var(--swatch-bg) !important;
+  clip-path: polygon(0 0, 100% 0, 0 100%) !important;
+}
+
+.theme-menu-item .theme-swatch::after {
+  background: var(--swatch-accent) !important;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%) !important;
+}
+
+.theme-menu-item:hover .theme-swatch,
+.theme-menu-item.is-active .theme-swatch {
+  transform: scale(1.1) !important;
+  opacity: 1 !important;
+}
+
+.swatch-light {
+  --swatch-bg: #F4F1EB;
+  --swatch-accent: #335599;
+}
+
+.swatch-dark {
+  --swatch-bg: #1A1A1A;
+  --swatch-accent: #00A3FF;
+}
+
+.swatch-moss {
+  --swatch-bg: #E2E4D8;
+  --swatch-accent: #5C7A6B;
+}
+
+.swatch-blueprint {
+  --swatch-bg: #E1E8F0;
+  --swatch-accent: #003399;
+}
+
+.swatch-walnut {
+  --swatch-bg: #1E1715;
+  --swatch-accent: #CC703D;
+}
+
+.swatch-leica {
+  --swatch-bg: #151517;
+  --swatch-accent: #FF1A1A;
+}
+
+.swatch-bordeaux {
+  --swatch-bg: #261418;
+  --swatch-accent: #B6353E;
+}
+
+.swatch-glacial {
+  --swatch-bg: #F3F5F8;
+  --swatch-accent: #4A7BB0;
 }
 
 @media (max-width: 340px) {
