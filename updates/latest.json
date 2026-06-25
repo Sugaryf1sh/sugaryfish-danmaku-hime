@@ -1,17 +1,19 @@
 {
-    "version":  "1.4.4",
-    "tag":  "v1.4.4",
-    "title":  "Sugaryfish的弹幕姬 1.4.4",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.4.4",
+    "version":  "1.4.5",
+    "tag":  "v1.4.5",
+    "title":  "Sugaryfish的弹幕姬 1.4.5",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.4.5",
     "features":  [
-                     "修复瑰砂主题无法保持切换状态的问题。",
-                     "同步主进程主题白名单，确保第九套主题不会被设置清洗回纸墨。"
+                     "优化主题下拉菜单双列矩阵，第十格加入不可点击的工业几何工艺水印。",
+                     "取消瑰砂菜单项跨栏拉伸，统一九套主题的网格单元比例。",
+                     "加入分主题字体锐化与菜单对比度微调，提升浅色主题文字清晰度。",
+                     "按主题风格加深右下角水印，并校正位置与菜单按钮对齐。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.4.4\n\n- 修复瑰砂主题无法保持切换状态的问题。\n- 同步主进程主题白名单，确保第九套主题不会被设置清洗回纸墨。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.4.5\n\n- 优化主题下拉菜单双列矩阵，第十格加入不可点击的工业几何工艺水印。\n- 取消瑰砂菜单项跨栏拉伸，统一九套主题的网格单元比例。\n- 加入分主题字体锐化与菜单对比度微调，提升浅色主题文字清晰度。\n- 按主题风格加深右下角水印，并校正位置与菜单按钮对齐。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.4.4.zip",
-                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.4.4/updates/Sugaryfish-Danmaku-Hime-App-1.4.4.zip",
-                    "sha256":  "8a9c10274691283e93d8c3fbce67f5fc1a6ff408a4b07885e8fe7b2901825475"
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.4.5.zip",
+                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.4.5/updates/Sugaryfish-Danmaku-Hime-App-1.4.5.zip",
+                    "sha256":  "0bd75c09dec9d793d6e21ab38c087f59e89a4790f382c790c8eb07178b14f0f7"
                 }
 }
