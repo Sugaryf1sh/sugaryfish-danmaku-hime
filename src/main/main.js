@@ -1744,7 +1744,7 @@ function sanitizeSettings(value) {
     fontSize: clampNumber(value.fontSize, 12, 24, DEFAULT_SETTINGS.fontSize),
     maxItems: clampNumber(value.maxItems, 20, 200, DEFAULT_SETTINGS.maxItems),
     sessdata: String(value.sessdata || "").trim(),
-    theme: ["light", "moss", "blueprint", "glacial", "dark", "walnut", "leica", "bordeaux"].includes(value.theme) ? value.theme : "light"
+    theme: ["light", "moss", "blueprint", "glacial", "dark", "walnut", "leica", "bordeaux", "quartz"].includes(value.theme) ? value.theme : "light"
   };
 }
 
