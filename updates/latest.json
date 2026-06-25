@@ -1,20 +1,20 @@
 {
-    "version":  "1.3.1",
-    "tag":  "v1.3.1",
-    "title":  "Sugaryfish的弹幕姬 1.3.1",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.3.1",
+    "version":  "1.3.2",
+    "tag":  "v1.3.2",
+    "title":  "Sugaryfish的弹幕姬 1.3.2",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.3.2",
     "features":  [
-                     "将应用最小宽度调整为 360px，并修复窗口收窄时连接、获取、清空按钮被挤出视窗的问题。",
-                     "统一直播间与 SESSDATA 输入行的三列网格，修复值槽、槽线和右侧动作按钮的水平错位。",
-                     "修复更新完成后的说明横幅显示不全问题，支持多条更新说明换行展示并自动扩展高度。",
-                     "微调青苔禅意主题设置抽屉透明度，让抽屉材质更贴近背景，同时保持按钮与参数文字清晰。",
-                     "统一设置抽屉快捷键提示和参数数字的高度、字体与对齐细节，减少主题切换时的视觉跳动。"
+                     "新增第五套中古胡桃主题，使用深焙咖啡底色、古铜强调色、衬线弹幕正文和专属琥珀细滚动条。",
+                     "将右上角“调”字主题菜单扩展为五阶罗马主轴索引，并支持胡桃主题持久化保存。",
+                     "优化胡桃主题粉丝牌、UID、状态灯、分割线和多行弹幕排版，减少裁切、刺眼边框和长文本溢出。",
+                     "改进直播间表情解析与渲染，兼容更多无方括号或房间表情包前缀的弹幕表情标记。",
+                     "优化锁定、置顶和穿透状态下的悬浮窗恢复行为，降低显示桌面或锁定 HUD 时窗口状态丢失的概率。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.3.1\n\n- 将应用最小宽度调整为 360px，并修复窗口收窄时连接、获取、清空按钮被挤出视窗的问题。\n- 统一直播间与 SESSDATA 输入行的三列网格，修复值槽、槽线和右侧动作按钮的水平错位。\n- 修复更新完成后的说明横幅显示不全问题，支持多条更新说明换行展示并自动扩展高度。\n- 微调青苔禅意主题设置抽屉透明度，让抽屉材质更贴近背景，同时保持按钮与参数文字清晰。\n- 统一设置抽屉快捷键提示和参数数字的高度、字体与对齐细节，减少主题切换时的视觉跳动。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.3.2\n\n- 新增第五套中古胡桃主题，使用深焙咖啡底色、古铜强调色、衬线弹幕正文和专属琥珀细滚动条。\n- 将右上角“调”字主题菜单扩展为五阶罗马主轴索引，并支持胡桃主题持久化保存。\n- 优化胡桃主题粉丝牌、UID、状态灯、分割线和多行弹幕排版，减少裁切、刺眼边框和长文本溢出。\n- 改进直播间表情解析与渲染，兼容更多无方括号或房间表情包前缀的弹幕表情标记。\n- 优化锁定、置顶和穿透状态下的悬浮窗恢复行为，降低显示桌面或锁定 HUD 时窗口状态丢失的概率。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.3.1.zip",
-                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.3.1/updates/Sugaryfish-Danmaku-Hime-App-1.3.1.zip",
-                    "sha256":  "39fb036de9db1220ed7c1e084977d9e0d13d9441edc98b7a653f9b32278546b5"
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.3.2.zip",
+                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.3.2/updates/Sugaryfish-Danmaku-Hime-App-1.3.2.zip",
+                    "sha256":  "dff99a7034e66fd843c410e128d81b7b9848f9fceacaa0736458e74ab9f33046"
                 }
 }

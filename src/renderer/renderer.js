@@ -4,12 +4,13 @@ const MEGA_GIFT_DURATION = 12000;
 const MEGA_GIFT_LEAVE_DELAY = 11500;
 const UPDATE_IDLE_TEXT = "检查更新";
 const UPDATE_LATEST_TEXT = "已是最新版本";
-const THEME_CLASSES = ["light-theme", "dark-theme", "moss-theme", "blueprint-theme"];
+const THEME_CLASSES = ["light-theme", "dark-theme", "moss-theme", "blueprint-theme", "walnut-theme"];
 const THEME_LABELS = {
   light: "纸墨",
   dark: "暗耀",
   moss: "青苔",
-  blueprint: "白图"
+  blueprint: "白图",
+  walnut: "胡桃"
 };
 
 const state = {
@@ -352,6 +353,7 @@ function clampToStep(value, min, max, step) {
 
 function applySettings(settings) {
   const wasClickThrough = document.body.classList.contains("is-click-through");
+  const wasLocked = document.body.classList.contains("is-locked");
   els.roomInput.value = settings.roomId || els.roomInput.value || "";
   els.opacityRange.value = settings.opacity;
   els.fontRange.value = settings.fontSize;
@@ -377,6 +379,7 @@ function applySettings(settings) {
   applyBackgroundOpacity(settings.opacity);
   updateCopyHintTitles(Boolean(settings.copyOnTagClick));
   syncClickThroughMode(Boolean(settings.clickThrough), wasClickThrough);
+  syncLockedHudMode(Boolean(settings.locked), wasLocked);
   updateSettingsToggleText();
   els.feed.style.setProperty("--feed-font-size", `${settings.fontSize}px`);
   trimItems();
@@ -900,7 +903,7 @@ function buildEmoteMap(emotes) {
 
   for (const emote of emotes) {
     const marker = String(emote?.text || "").trim();
-    if (!/^\[[^\[\]\r\n]{1,40}\]$/.test(marker) || !isSafeImageUrl(emote?.url)) {
+    if (!isSafeEmoteMarker(marker) || !isSafeImageUrl(emote?.url)) {
       continue;
     }
     map.set(marker, {
@@ -910,6 +913,17 @@ function buildEmoteMap(emotes) {
     });
   }
   return map;
+}
+
+function isSafeEmoteMarker(value) {
+  const marker = String(value || "").trim();
+  if (!marker || marker.length > 40 || /[\r\n]/.test(marker)) {
+    return false;
+  }
+  if (/^\[[^\[\]\r\n]{1,40}\]$/.test(marker)) {
+    return true;
+  }
+  return !/[\[\]]/.test(marker);
 }
 
 function escapeRegExp(value) {
@@ -1359,6 +1373,9 @@ function handleHudWake() {
   if (isClickThroughMode()) {
     return;
   }
+  if (state.settings?.locked && !els.appContainer?.classList.contains("is-hud-dimmed")) {
+    return;
+  }
   clearTimeout(state.hudDimTimer);
   state.hudDimTimer = null;
   els.appContainer?.classList.remove("is-hud-dimmed");
@@ -1367,6 +1384,7 @@ function handleHudWake() {
 function scheduleHudDim() {
   clearTimeout(state.hudDimTimer);
   state.hudDimTimer = setTimeout(() => {
+    state.hudDimTimer = null;
     if (state.updateNoticeInteractionActive) {
       return;
     }
@@ -1393,12 +1411,28 @@ function isClickThroughMode() {
   return Boolean(state.settings?.clickThrough);
 }
 
+function syncLockedHudMode(locked, wasLocked) {
+  if (locked) {
+    if (!els.appContainer?.classList.contains("is-hud-dimmed") && !state.hudDimTimer) {
+      scheduleHudDim();
+    }
+    return;
+  }
+
+  clearTimeout(state.hudDimTimer);
+  state.hudDimTimer = null;
+  if (wasLocked) {
+    els.appContainer?.classList.remove("is-hud-dimmed");
+  }
+}
+
 function syncClickThroughMode(enabled, wasEnabled) {
   if (!enabled) {
     clearTimeout(state.clickThroughWakeTimer);
     state.clickThroughWakeTimer = null;
     clearInkFocus();
     if (wasEnabled) {
+      els.appContainer?.classList.remove("is-hud-dimmed");
       showStatusModeTip("已恢复交互", 1800);
     }
     return;

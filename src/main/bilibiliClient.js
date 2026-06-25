@@ -578,9 +578,11 @@ function buildRoomEmoticonMarkers(rawName, packageName = "") {
   const cleanPackageName = String(packageName || "").trim().replace(/^\[|\]$/g, "");
   const markers = new Set();
   if (cleanName) {
+    markers.add(cleanName);
     markers.add(`[${cleanName}]`);
   }
   if (cleanPackageName && cleanName && !cleanName.startsWith(`${cleanPackageName}_`)) {
+    markers.add(`${cleanPackageName}_${cleanName}`);
     markers.add(`[${cleanPackageName}_${cleanName}]`);
   }
   return Array.from(markers);
@@ -883,15 +885,17 @@ const EMOTE_URL_KEY_PATTERN = /^(url|uri|src|gif_url|webp_url|image_url|img_url)
 const EMOTE_TEXT_KEY_PATTERN = /^(text|name|keyword|phrase|emoji|emote|emoticon|emoticon_name|emoji_name|descript)$/i;
 
 function extractDanmakuEmotes(raw, messageText, roomEmotes = new Map()) {
-  const bracketTexts = new Set(String(messageText || "").match(EMOTE_MARKER_PATTERN) || []);
-  if (!bracketTexts.size) {
-    return [];
+  const text = String(messageText || "").trim();
+  const acceptedMarkers = new Set(String(messageText || "").match(EMOTE_MARKER_PATTERN) || []);
+  if (text) {
+    acceptedMarkers.add(text);
+    acceptedMarkers.add(text.replace(/^\[|\]$/g, ""));
   }
 
   const emotes = new Map();
 
   const addEmote = (markerValue, urlValue, source = {}) => {
-    const marker = normalizeEmoteMarker(markerValue, bracketTexts);
+    const marker = normalizeEmoteMarker(markerValue, acceptedMarkers);
     const url = normalizeImageUrl(urlValue);
     if (!marker || !url) {
       return;
@@ -908,11 +912,11 @@ function extractDanmakuEmotes(raw, messageText, roomEmotes = new Map()) {
   };
 
   for (const source of getDanmakuEmoteSources(raw)) {
-    inspectEmoteContainer(source, "", bracketTexts, addEmote);
+    inspectEmoteContainer(source, "", acceptedMarkers, addEmote);
   }
 
   if (roomEmotes?.size) {
-    for (const marker of bracketTexts) {
+    for (const marker of acceptedMarkers) {
       const roomEmote = roomEmotes.get(marker);
       if (roomEmote && !emotes.has(marker)) {
         addEmote(marker, roomEmote.url, roomEmote);
@@ -973,7 +977,7 @@ function inspectEmoteContainer(node, keyHint, bracketTexts, addEmote, depth = 0)
 
   const parsed = typeof node === "string" ? maybeParseJson(node) : node;
   if (parsed == null || typeof parsed !== "object") {
-    if (isBracketMarker(keyHint) && looksLikeImageUrl(node)) {
+    if (normalizeEmoteMarker(keyHint, bracketTexts) && looksLikeImageUrl(node)) {
       addEmote(keyHint, node);
     }
     return;
@@ -993,7 +997,7 @@ function inspectEmoteContainer(node, keyHint, bracketTexts, addEmote, depth = 0)
   }
 
   for (const [key, item] of Object.entries(parsed)) {
-    if (isBracketMarker(key)) {
+    if (normalizeEmoteMarker(key, bracketTexts)) {
       if (typeof item === "string") {
         addEmote(key, item);
       } else {
@@ -1001,7 +1005,7 @@ function inspectEmoteContainer(node, keyHint, bracketTexts, addEmote, depth = 0)
       }
       continue;
     }
-    if (EMOTE_CONTAINER_KEY_PATTERN.test(key)) {
+    if (EMOTE_CONTAINER_KEY_PATTERN.test(key) || /^(extra|data)$/i.test(key) || /emot|emoji|bulge/i.test(key)) {
       inspectEmoteContainer(item, "", bracketTexts, addEmote, depth + 1);
     }
   }
@@ -1046,12 +1050,19 @@ function normalizeEmoteMarker(value, bracketTexts) {
   if (!text) {
     return "";
   }
-  if (isBracketMarker(text) && (!bracketTexts.size || bracketTexts.has(text))) {
+  if (isBracketMarker(text) && !bracketTexts.size) {
+    return text;
+  }
+  if (bracketTexts.has(text)) {
     return text;
   }
   const wrapped = `[${text.replace(/^\[|\]$/g, "")}]`;
   if (bracketTexts.has(wrapped)) {
     return wrapped;
+  }
+  const unwrapped = text.replace(/^\[|\]$/g, "");
+  if (bracketTexts.has(unwrapped)) {
+    return unwrapped;
   }
   return "";
 }

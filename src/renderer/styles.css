@@ -245,6 +245,62 @@ body.blueprint-theme {
   --guard: #405D91;
 }
 
+body.walnut-theme {
+  color-scheme: dark;
+  --bg-main-rgb: 22, 17, 15 !important;
+  --bg-card: #1E1715 !important;
+  --text-main: #E3D9C3 !important;
+  --text-sub: #85756B !important;
+  --accent-amber: #CC703D !important;
+  --divider: rgba(227, 217, 195, 0.03) !important;
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+  --font-text: "Georgia", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", "华文中宋", "华文宋体", "宋体", "SimSun", serif;
+  --font-data: var(--font-ui);
+  --font-serif: var(--font-text);
+  --font-mono: "Courier New", Courier, monospace;
+  --bg-primary: rgb(var(--bg-main-rgb));
+  --bg-hover: rgba(204, 112, 61, 0.035);
+  --spotlight: radial-gradient(circle at 50% 35%, rgba(204, 112, 61, 0.028), transparent 54%);
+  --top-sheen: linear-gradient(180deg, rgba(227, 217, 195, 0.02), transparent 42%);
+  --window-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  --track-color: rgba(227, 217, 195, 0.08);
+  --scroll-thumb: rgba(204, 112, 61, 0.14);
+  --scroll-color: rgba(227, 217, 195, 0.08);
+  --hover-band: linear-gradient(90deg, rgba(204, 112, 61, 0.035), transparent);
+  --text-title: var(--text-main);
+  --text-data: var(--text-main);
+  --text-label: var(--text-sub);
+  --text-watermark: rgba(133, 117, 107, 0.44);
+  --maker-watermark: rgba(133, 117, 107, 0.24);
+  --accent-blue: var(--accent-amber);
+  --accent-blue-line: rgba(204, 112, 61, 0.34);
+  --accent-red: #C0392B;
+  --placeholder-color: rgba(133, 117, 107, 0.5);
+  --uid-color: rgba(227, 217, 195, 0.16);
+  --body-text: var(--text-main);
+  --border-color: var(--divider);
+  --divider-shadow: none;
+  --status-breathe-glow: rgba(204, 112, 61, 0.34);
+  --help-bg: var(--bg-card);
+  --help-border: rgba(227, 217, 195, 0.045);
+  --help-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  --help-text: var(--text-sub);
+  --help-title: var(--text-main);
+  --paper: rgba(var(--bg-main-rgb), var(--bg-opacity, 1));
+  --paper-solid: rgb(var(--bg-main-rgb));
+  --paper-soft: rgba(30, 23, 21, 0.68);
+  --ink: var(--text-main);
+  --ink-soft: var(--text-sub);
+  --ink-faint: rgba(133, 117, 107, 0.66);
+  --line: var(--divider);
+  --line-soft: rgba(227, 217, 195, 0.025);
+  --blue: var(--accent-amber);
+  --blue-soft: rgba(204, 112, 61, 0.1);
+  --gift: #B98255;
+  --superchat: #C0392B;
+  --guard: #A77B4F;
+}
+
 body.light-theme .status,
 body.light-theme .setting-label,
 body.light-theme .options-title,
@@ -1614,6 +1670,30 @@ body.moss-theme .theme-menu-item.is-active::before {
   background-color: #4A6B5D !important;
 }
 
+body.walnut-theme .theme-dropdown-menu {
+  background: var(--bg-card) !important;
+  border: 1px solid rgba(227, 217, 195, 0.045) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.walnut-theme .theme-menu-item {
+  color: var(--text-sub) !important;
+}
+
+body.walnut-theme .theme-menu-item:hover {
+  background: rgba(204, 112, 61, 0.035) !important;
+  color: var(--text-main) !important;
+}
+
+body.walnut-theme .theme-menu-item.is-active {
+  color: var(--accent-amber) !important;
+}
+
+body.walnut-theme .theme-menu-item.is-active::before {
+  background-color: var(--accent-amber) !important;
+  box-shadow: 0 0 4px rgba(204, 112, 61, 0.4) !important;
+}
+
 .btn-note,
 .btn-theme {
   transform: none !important;
@@ -1690,7 +1770,8 @@ body.moss-theme .theme-menu-item.is-active::before {
 body.light-theme .window-actions .window-btn span,
 body.dark-theme .window-actions .window-btn span,
 body.moss-theme .window-actions .window-btn span,
-body.blueprint-theme .window-actions .window-btn span {
+body.blueprint-theme .window-actions .window-btn span,
+body.walnut-theme .window-actions .window-btn span {
   font-family: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", sans-serif !important;
   font-size: 11px !important;
   font-weight: 500 !important;
@@ -3964,7 +4045,8 @@ body.moss-theme.is-click-through .feed.is-ink-active .danmaku-item.is-focused {
 body.light-theme .app-container,
 body.dark-theme .app-container,
 body.moss-theme .app-container,
-body.blueprint-theme .app-container {
+body.blueprint-theme .app-container,
+body.walnut-theme .app-container {
   background-color: rgba(var(--bg-main-rgb), var(--bg-opacity, 1)) !important;
 }
 
@@ -4217,6 +4299,296 @@ body.blueprint-theme .footer-dashboard span {
   text-shadow: none !important;
 }
 
+body.walnut-theme .app-container,
+body.walnut-theme .shell,
+body.walnut-theme.is-opaque .shell {
+  background-color: rgba(var(--bg-main-rgb), var(--bg-opacity, 1)) !important;
+  background-image: var(--spotlight), var(--top-sheen) !important;
+  border: 1px solid rgba(227, 217, 195, 0.018) !important;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.walnut-theme .feed {
+  background: transparent !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(204, 112, 61, 0.15) transparent !important;
+}
+
+body.walnut-theme .feed::-webkit-scrollbar,
+body.walnut-theme .danmaku-list-container::-webkit-scrollbar {
+  width: 3px !important;
+}
+
+body.walnut-theme .feed::-webkit-scrollbar-track,
+body.walnut-theme .danmaku-list-container::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+body.walnut-theme .feed::-webkit-scrollbar-thumb,
+body.walnut-theme .danmaku-list-container::-webkit-scrollbar-thumb {
+  background: rgba(204, 112, 61, 0.15) !important;
+  border-radius: 1.5px !important;
+  transition: background 0.3s ease !important;
+}
+
+body.walnut-theme .feed::-webkit-scrollbar-thumb:hover,
+body.walnut-theme .danmaku-list-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(204, 112, 61, 0.4) !important;
+}
+
+body.walnut-theme .header-title,
+body.walnut-theme .options-title,
+body.walnut-theme .param-value,
+body.walnut-theme .setting-control output,
+body.walnut-theme .brand strong,
+body.walnut-theme .status-data,
+body.walnut-theme .popularity-inline,
+body.walnut-theme .popularity-short,
+body.walnut-theme .popularity-full {
+  color: var(--text-main) !important;
+}
+
+body.walnut-theme .options-sub,
+body.walnut-theme .shortcut-hint,
+body.walnut-theme .shortcut-key,
+body.walnut-theme .param-label,
+body.walnut-theme .setting-label,
+body.walnut-theme .window-btn,
+body.walnut-theme .status,
+body.walnut-theme .placeholder-hint,
+body.walnut-theme .empty-state,
+body.walnut-theme .room-form label,
+body.walnut-theme .login-row label {
+  color: var(--text-sub) !important;
+}
+
+body.walnut-theme .brand strong {
+  font-family: var(--font-ui) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+}
+
+body.walnut-theme .window-btn:hover {
+  color: var(--accent-amber) !important;
+  background: rgba(204, 112, 61, 0.035) !important;
+  box-shadow: 0 0 12px rgba(204, 112, 61, 0.06) !important;
+  transform: translateY(0.5px) !important;
+  text-shadow: none !important;
+}
+
+body.walnut-theme .settings-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.walnut-theme .help-card {
+  background: var(--bg-card) !important;
+  border: 1px solid rgba(227, 217, 195, 0.045) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.walnut-theme .help-card,
+body.walnut-theme .help-card * {
+  color: var(--text-sub) !important;
+  font-family: var(--font-ui) !important;
+  text-shadow: none !important;
+}
+
+body.walnut-theme .help-card strong,
+body.walnut-theme .help-meta dt {
+  color: var(--text-main) !important;
+}
+
+body.walnut-theme .help-card a,
+body.walnut-theme .help-update,
+body.walnut-theme .room-form button:hover,
+body.walnut-theme .toggle:hover,
+body.walnut-theme .toggle.update-check:hover,
+body.walnut-theme .login-actions > .sessdata-fetch:hover {
+  color: var(--accent-amber) !important;
+  text-shadow: none !important;
+}
+
+body.walnut-theme .update-banner {
+  background: var(--bg-card) !important;
+  border: 1px solid rgba(227, 217, 195, 0.045) !important;
+  color: var(--text-sub) !important;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.48) !important;
+}
+
+body.walnut-theme .update-banner strong {
+  color: var(--text-main) !important;
+}
+
+body.walnut-theme .update-progress i {
+  background: var(--accent-amber) !important;
+  box-shadow: 0 0 8px rgba(204, 112, 61, 0.34) !important;
+}
+
+body.walnut-theme .status-text,
+body.walnut-theme #statusText,
+body.walnut-theme .status {
+  color: var(--text-sub) !important;
+}
+
+body.walnut-theme .btn-disconnect,
+body.walnut-theme #disconnectBtn,
+body.walnut-theme .text-danger,
+body.walnut-theme .btn-clear,
+body.walnut-theme #clearSessdataBtn,
+body.walnut-theme .sessdata-clear,
+body.walnut-theme .toggle.danger {
+  color: #C0392B !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.05em !important;
+}
+
+body.walnut-theme .danmaku-content,
+body.walnut-theme .text {
+  color: var(--text-main) !important;
+  font-family: "Georgia", "Noto Serif CJK SC", "Source Han Serif SC", serif !important;
+  font-size: 14px !important;
+  letter-spacing: 0.03em !important;
+  line-height: 1.55 !important;
+  padding-left: 0 !important;
+  text-shadow: none !important;
+  word-break: break-word !important;
+}
+
+body.walnut-theme .danmaku-username,
+body.walnut-theme .user {
+  color: var(--text-sub) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  text-shadow: none !important;
+}
+
+body.walnut-theme .danmaku-main-block .danmaku-username {
+  margin-bottom: 3px !important;
+}
+
+body.walnut-theme .uid {
+  color: rgba(227, 217, 195, 0.18) !important;
+}
+
+body.walnut-theme .danmaku-badge-dot,
+body.walnut-theme .status-dot,
+body.walnut-theme .tag::before {
+  background-color: var(--accent-amber) !important;
+  box-shadow: 0 0 6px rgba(204, 112, 61, 0.4) !important;
+}
+
+body.walnut-theme .tag {
+  color: var(--accent-amber) !important;
+  text-shadow: none !important;
+}
+
+body.walnut-theme .danmaku-item {
+  border-left: 2px solid transparent !important;
+  border-bottom: 1px solid var(--divider) !important;
+  background-image: none !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  transition: border-color 0.2s ease, opacity 0.3s ease, background-color 0.2s ease !important;
+}
+
+body.walnut-theme .danmaku-item:hover,
+body.walnut-theme .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.walnut-theme .feed.is-ink-active .danmaku-item.is-focused {
+  border-left-color: var(--accent-amber) !important;
+  background-color: rgba(204, 112, 61, 0.025) !important;
+  box-shadow: none !important;
+}
+
+body.walnut-theme .danmaku-list:hover .danmaku-item,
+body.walnut-theme .feed:hover .danmaku-item,
+body.walnut-theme .feed:has(.danmaku-item:hover) .danmaku-item,
+body.walnut-theme .feed.is-ink-active .danmaku-item {
+  opacity: 0.38 !important;
+}
+
+body.walnut-theme .danmaku-list:hover .danmaku-item:hover,
+body.walnut-theme .feed:hover .danmaku-item:hover,
+body.walnut-theme .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.walnut-theme .feed.is-ink-active .danmaku-item.is-focused {
+  opacity: 1 !important;
+}
+
+body.walnut-theme .fans-badge-container,
+body.walnut-theme .fans-medal {
+  height: 15px !important;
+  min-height: 15px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(204, 112, 61, 0.18) !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+  gap: 0 !important;
+  padding: 1px 5px !important;
+  position: relative !important;
+  color: var(--accent-amber) !important;
+  font-size: 10px !important;
+  line-height: 13px !important;
+  overflow: visible !important;
+}
+
+body.walnut-theme .fans-badge-container::before,
+body.walnut-theme .fans-medal::before {
+  display: none !important;
+}
+
+body.walnut-theme .fans-badge-name,
+body.walnut-theme .fans-medal-name {
+  height: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  color: var(--text-sub) !important;
+  font-weight: 500 !important;
+  line-height: 13px !important;
+  overflow: visible !important;
+}
+
+body.walnut-theme .fans-badge-name::after,
+body.walnut-theme .fans-medal-name::after {
+  content: " ·" !important;
+  color: var(--accent-amber) !important;
+}
+
+body.walnut-theme .fans-badge-level,
+body.walnut-theme .fans-medal-level {
+  height: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  color: var(--accent-amber) !important;
+  font-family: "Courier New", monospace !important;
+  font-weight: 700 !important;
+  line-height: 13px !important;
+  position: relative !important;
+  top: 0 !important;
+  overflow: visible !important;
+}
+
+body.walnut-theme .maker-watermark,
+body.walnut-theme .footer-dashboard,
+body.walnut-theme .footer-dashboard span {
+  color: var(--maker-watermark) !important;
+  font-family: var(--font-ui) !important;
+  text-shadow: none !important;
+}
+
+body.walnut-theme.is-click-through .danmaku-item:hover,
+body.walnut-theme.is-click-through .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.walnut-theme.is-click-through .feed.is-ink-active .danmaku-item.is-focused {
+  background-color: transparent !important;
+  border-left-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
 .shortcut-hint,
 .shortcut-key {
   font-size: 9px !important;
@@ -4238,7 +4610,9 @@ body.dark-theme .shortcut-key,
 body.moss-theme .shortcut-hint,
 body.moss-theme .shortcut-key,
 body.blueprint-theme .shortcut-hint,
-body.blueprint-theme .shortcut-key {
+body.blueprint-theme .shortcut-key,
+body.walnut-theme .shortcut-hint,
+body.walnut-theme .shortcut-key {
   font-size: 9px !important;
   opacity: 0.4 !important;
   margin-top: 2px !important;
@@ -4252,7 +4626,9 @@ body.dark-theme .setting-control output.param-value,
 body.moss-theme .param-value,
 body.moss-theme .setting-control output.param-value,
 body.blueprint-theme .param-value,
-body.blueprint-theme .setting-control output.param-value {
+body.blueprint-theme .setting-control output.param-value,
+body.walnut-theme .param-value,
+body.walnut-theme .setting-control output.param-value {
   font-family: "Courier New", Courier, monospace !important;
   font-weight: 700 !important;
 }
@@ -4453,6 +4829,62 @@ body.blueprint-theme .toggle-item.is-active {
   font-weight: 500 !important;
 }
 
+body.walnut-theme .options-panel {
+  background: var(--bg-card) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  padding: 14px !important;
+}
+
+body.walnut-theme .param-group {
+  border-top: 1px solid rgba(227, 217, 195, 0.025) !important;
+  margin-top: 0 !important;
+  padding-top: 4px !important;
+}
+
+body.walnut-theme .param-item {
+  flex: 1 !important;
+  text-align: center !important;
+}
+
+body.walnut-theme .param-value,
+body.walnut-theme .setting-control output {
+  color: var(--text-main) !important;
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  margin-top: 4px !important;
+}
+
+body.walnut-theme .param-label,
+body.walnut-theme .setting-control .setting-label {
+  color: var(--text-sub) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.05em !important;
+}
+
+body.walnut-theme .toggle-item {
+  color: var(--text-sub) !important;
+}
+
+body.walnut-theme .toggle-item.is-active {
+  color: var(--text-main) !important;
+  font-weight: 500 !important;
+}
+
+body.walnut-theme .toggle-item::before {
+  border: 1px solid rgba(227, 217, 195, 0.14) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+body.walnut-theme .toggle-item.is-active::before {
+  background: var(--accent-amber) !important;
+  border-color: var(--accent-amber) !important;
+  box-shadow: 0 0 5px rgba(204, 112, 61, 0.34) !important;
+}
+
 body.blueprint-theme .toggle-item::before {
   border-color: rgba(0, 51, 153, 0.32) !important;
   border: 1px solid rgba(0, 51, 153, 0.3) !important;
@@ -4563,7 +4995,8 @@ body.blueprint-theme .options-panel .toggle-item.is-active::before {
 body.light-theme .options-panel,
 body.dark-theme .options-panel,
 body.moss-theme .options-panel,
-body.blueprint-theme .options-panel {
+body.blueprint-theme .options-panel,
+body.walnut-theme .options-panel {
   width: 100% !important;
   margin: 0 !important;
   padding: 14px var(--right-edge) 4px var(--left-edge) !important;
@@ -4599,10 +5032,16 @@ body.blueprint-theme .options-panel {
   box-shadow: none !important;
 }
 
+body.walnut-theme .options-panel {
+  background: var(--bg-card) !important;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
 body.light-theme .options-panel .param-group,
 body.dark-theme .options-panel .param-group,
 body.moss-theme .options-panel .param-group,
-body.blueprint-theme .options-panel .param-group {
+body.blueprint-theme .options-panel .param-group,
+body.walnut-theme .options-panel .param-group {
   margin-top: 14px !important;
   padding-top: 0 !important;
   border-top: 0 !important;
@@ -4613,10 +5052,12 @@ body.light-theme .options-panel .toggle-group,
 body.dark-theme .options-panel .toggle-group,
 body.moss-theme .options-panel .toggle-group,
 body.blueprint-theme .options-panel .toggle-group,
+body.walnut-theme .options-panel .toggle-group,
 body.light-theme .options-panel .param-group,
 body.dark-theme .options-panel .param-group,
 body.moss-theme .options-panel .param-group,
-body.blueprint-theme .options-panel .param-group {
+body.blueprint-theme .options-panel .param-group,
+body.walnut-theme .options-panel .param-group {
   width: 100% !important;
   min-width: 0 !important;
   display: grid !important;
@@ -4626,10 +5067,15 @@ body.blueprint-theme .options-panel .param-group {
   justify-items: stretch !important;
 }
 
+body.walnut-theme .options-panel .param-group {
+  border-top: 1px solid rgba(227, 217, 195, 0.025) !important;
+}
+
 body.light-theme .options-panel .toggle-item,
 body.dark-theme .options-panel .toggle-item,
 body.moss-theme .options-panel .toggle-item,
-body.blueprint-theme .options-panel .toggle-item {
+body.blueprint-theme .options-panel .toggle-item,
+body.walnut-theme .options-panel .toggle-item {
   grid-column: span 3 !important;
   height: 40px !important;
   min-height: 40px !important;
@@ -4642,14 +5088,16 @@ body.blueprint-theme .options-panel .toggle-item {
 body.light-theme .options-panel .toggle-item.is-active,
 body.dark-theme .options-panel .toggle-item.is-active,
 body.moss-theme .options-panel .toggle-item.is-active,
-body.blueprint-theme .options-panel .toggle-item.is-active {
+body.blueprint-theme .options-panel .toggle-item.is-active,
+body.walnut-theme .options-panel .toggle-item.is-active {
   font-weight: 500 !important;
 }
 
 body.light-theme .options-panel .param-item,
 body.dark-theme .options-panel .param-item,
 body.moss-theme .options-panel .param-item,
-body.blueprint-theme .options-panel .param-item {
+body.blueprint-theme .options-panel .param-item,
+body.walnut-theme .options-panel .param-item {
   grid-column: span 4 !important;
   height: 40px !important;
   min-height: 40px !important;
@@ -4662,7 +5110,8 @@ body.blueprint-theme .options-panel .param-item {
 body.light-theme .options-panel .setting-control,
 body.dark-theme .options-panel .setting-control,
 body.moss-theme .options-panel .setting-control,
-body.blueprint-theme .options-panel .setting-control {
+body.blueprint-theme .options-panel .setting-control,
+body.walnut-theme .options-panel .setting-control {
   position: relative !important;
   height: 40px !important;
   justify-content: center !important;
@@ -4703,6 +5152,14 @@ body.blueprint-theme .options-panel .shortcut-key {
   letter-spacing: 0.035em !important;
 }
 
+body.walnut-theme .options-panel .shortcut-hint,
+body.walnut-theme .options-panel .shortcut-key {
+  color: rgba(133, 117, 107, 0.66) !important;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.035em !important;
+}
+
 body.light-theme .options-panel .shortcut-hint,
 body.light-theme .options-panel .shortcut-key,
 body.dark-theme .options-panel .shortcut-hint,
@@ -4710,7 +5167,9 @@ body.dark-theme .options-panel .shortcut-key,
 body.moss-theme .options-panel .shortcut-hint,
 body.moss-theme .options-panel .shortcut-key,
 body.blueprint-theme .options-panel .shortcut-hint,
-body.blueprint-theme .options-panel .shortcut-key {
+body.blueprint-theme .options-panel .shortcut-key,
+body.walnut-theme .options-panel .shortcut-hint,
+body.walnut-theme .options-panel .shortcut-key {
   height: 11px !important;
   min-height: 11px !important;
   margin: 2px 0 0 0 !important;
@@ -4757,6 +5216,36 @@ body.blueprint-theme .options-panel .toggle-item.is-active::after {
   display: none !important;
 }
 
+body.walnut-theme .options-panel .toggle-item::before {
+  content: "" !important;
+  display: block !important;
+  width: 11px !important;
+  height: 11px !important;
+  flex: 0 0 11px !important;
+  border: 1px solid rgba(227, 217, 195, 0.14) !important;
+  border-radius: 0 !important;
+  margin: 0 0 7px 0 !important;
+  position: relative !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease !important;
+}
+
+body.walnut-theme .options-panel .toggle-item.is-active::before {
+  border-color: var(--accent-amber) !important;
+  background-color: var(--accent-amber) !important;
+  background-image: none !important;
+  box-shadow: 0 0 5px rgba(204, 112, 61, 0.34) !important;
+}
+
+body.walnut-theme .options-panel .toggle-item::after,
+body.walnut-theme .options-panel .toggle-item.is-active::after {
+  content: none !important;
+  display: none !important;
+}
+
 body.light-theme .options-panel .param-value,
 body.light-theme .options-panel .setting-control output,
 body.dark-theme .options-panel .param-value,
@@ -4764,7 +5253,9 @@ body.dark-theme .options-panel .setting-control output,
 body.moss-theme .options-panel .param-value,
 body.moss-theme .options-panel .setting-control output,
 body.blueprint-theme .options-panel .param-value,
-body.blueprint-theme .options-panel .setting-control output {
+body.blueprint-theme .options-panel .setting-control output,
+body.walnut-theme .options-panel .param-value,
+body.walnut-theme .options-panel .setting-control output {
   display: block !important;
   height: 17px !important;
   margin: 4px 0 0 0 !important;
@@ -4814,6 +5305,14 @@ body.blueprint-theme .input-row .input-value-display {
   padding-bottom: 2px !important;
 }
 
+body.walnut-theme .room-form .input-value-display,
+body.walnut-theme .login-row .input-value-display,
+body.walnut-theme .input-row .input-value-display {
+  display: inline-block !important;
+  border-bottom: 1px solid rgba(227, 217, 195, 0.07) !important;
+  padding-bottom: 2px !important;
+}
+
 .input-row .input-value-display {
   display: inline-block !important;
   width: min(var(--slot-col), 100%) !important;
@@ -4847,6 +5346,10 @@ body.moss-theme .input-row .input-value-display {
 
 body.blueprint-theme .input-row .input-value-display {
   border-bottom: 1px dashed rgba(0, 51, 153, 0.2) !important;
+}
+
+body.walnut-theme .input-row .input-value-display {
+  border-bottom: 1px solid rgba(227, 217, 195, 0.07) !important;
 }
 
 body.dark-theme .input-row .input-value-display {

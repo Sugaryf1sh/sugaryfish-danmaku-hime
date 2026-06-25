@@ -42,6 +42,10 @@ let startupAutoUpdateSatisfied = false;
 let startupAutoUpdateAttempts = 0;
 let tray = null;
 let settings = { ...DEFAULT_SETTINGS };
+let allowUserMinimize = false;
+let alwaysOnTopRestoreTimer = null;
+let userMinimizedWindow = false;
+let userHiddenWindow = false;
 const client = new BilibiliDanmakuClient();
 
 const singleInstance = app.requestSingleInstanceLock();
@@ -51,8 +55,11 @@ if (!singleInstance) {
 
 app.on("second-instance", () => {
   if (mainWindow) {
+    userMinimizedWindow = false;
+    userHiddenWindow = false;
     mainWindow.show();
     mainWindow.focus();
+    syncAlwaysOnTopRestoreGuard();
   }
 });
 
@@ -97,15 +104,35 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
   mainWindow.once("ready-to-show", () => {
+    userMinimizedWindow = false;
+    userHiddenWindow = false;
     mainWindow.show();
     applyWindowSettings(settings);
+    syncAlwaysOnTopRestoreGuard();
   });
 
   mainWindow.on("close", (event) => {
     if (!app.isQuitting) {
       event.preventDefault();
+      userHiddenWindow = true;
+      stopAlwaysOnTopRestoreGuard();
       mainWindow.hide();
     }
+  });
+
+  mainWindow.on("minimize", (event) => {
+    if (allowUserMinimize) {
+      allowUserMinimize = false;
+      stopAlwaysOnTopRestoreGuard();
+      return;
+    }
+
+    if (!shouldResistDesktopMinimize()) {
+      return;
+    }
+
+    event.preventDefault();
+    restoreFloatingWindowAfterDesktopToggle();
   });
 }
 
@@ -115,7 +142,16 @@ function createTray() {
   tray.setToolTip(APP_NAME);
   tray.on("double-click", () => {
     if (!mainWindow) return;
-    mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+    if (mainWindow.isVisible()) {
+      userHiddenWindow = true;
+      stopAlwaysOnTopRestoreGuard();
+      mainWindow.hide();
+    } else {
+      userMinimizedWindow = false;
+      userHiddenWindow = false;
+      mainWindow.show();
+      syncAlwaysOnTopRestoreGuard();
+    }
   });
   updateTrayMenu();
 }
@@ -128,7 +164,16 @@ function updateTrayMenu() {
       label: mainWindow?.isVisible() ? "隐藏窗口" : "显示窗口",
       click: () => {
         if (!mainWindow) return;
-        mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+        if (mainWindow.isVisible()) {
+          userHiddenWindow = true;
+          stopAlwaysOnTopRestoreGuard();
+          mainWindow.hide();
+        } else {
+          userMinimizedWindow = false;
+          userHiddenWindow = false;
+          mainWindow.show();
+          syncAlwaysOnTopRestoreGuard();
+        }
         updateTrayMenu();
       }
     },
@@ -205,15 +250,22 @@ function registerShortcut(accelerator, callback) {
 
 function showWindowAfterShortcut() {
   if (!mainWindow) return;
+  userMinimizedWindow = false;
+  userHiddenWindow = false;
   if (!mainWindow.isVisible()) {
     mainWindow.show();
   }
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+  syncAlwaysOnTopRestoreGuard();
 }
 
 function setSettings(patch) {
   settings = sanitizeSettings({ ...settings, ...patch });
   saveSettings(settings);
   applyWindowSettings(settings);
+  syncAlwaysOnTopRestoreGuard();
   updateTrayMenu();
   mainWindow?.webContents.send("settings:changed", settings);
   return settings;
@@ -227,8 +279,72 @@ function applyWindowSettings(nextSettings) {
   // The renderer disables drag regions when "locked" is enabled.
   mainWindow.setMovable(true);
   mainWindow.setResizable(!nextSettings.locked);
+  mainWindow.setSkipTaskbar(Boolean(nextSettings.alwaysOnTop));
   mainWindow.setOpacity(1);
   mainWindow.setIgnoreMouseEvents(Boolean(nextSettings.clickThrough), { forward: true });
+}
+
+function shouldResistDesktopMinimize() {
+  return Boolean(settings.alwaysOnTop && !allowUserMinimize && !userMinimizedWindow && !userHiddenWindow);
+}
+
+function restoreFloatingWindowAfterDesktopToggle() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  const restore = () => {
+    if (!mainWindow || mainWindow.isDestroyed() || !shouldResistDesktopMinimize()) {
+      return;
+    }
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    if (!mainWindow.isVisible()) {
+      mainWindow.showInactive();
+    }
+    applyWindowSettings(settings);
+    mainWindow.moveTop();
+  };
+
+  restore();
+  setTimeout(restore, 100);
+  setTimeout(restore, 350);
+}
+
+function syncAlwaysOnTopRestoreGuard() {
+  if (!settings.alwaysOnTop || allowUserMinimize) {
+    stopAlwaysOnTopRestoreGuard();
+    return;
+  }
+
+  if (alwaysOnTopRestoreTimer) {
+    return;
+  }
+
+  alwaysOnTopRestoreTimer = setInterval(() => {
+    if (!shouldResistDesktopMinimize()) {
+      stopAlwaysOnTopRestoreGuard();
+      return;
+    }
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      stopAlwaysOnTopRestoreGuard();
+      return;
+    }
+    if (mainWindow.isMinimized() || !mainWindow.isVisible()) {
+      restoreFloatingWindowAfterDesktopToggle();
+      return;
+    }
+    applyWindowSettings(settings);
+  }, 250);
+}
+
+function stopAlwaysOnTopRestoreGuard() {
+  if (!alwaysOnTopRestoreTimer) {
+    return;
+  }
+  clearInterval(alwaysOnTopRestoreTimer);
+  alwaysOnTopRestoreTimer = null;
 }
 
 ipcMain.handle("settings:get", () => settings);
@@ -275,10 +391,19 @@ ipcMain.handle("danmaku:disconnect", () => {
 });
 
 ipcMain.handle("window:minimize", () => {
+  allowUserMinimize = true;
+  userMinimizedWindow = true;
+  stopAlwaysOnTopRestoreGuard();
   mainWindow?.minimize();
+  setTimeout(() => {
+    allowUserMinimize = false;
+    syncAlwaysOnTopRestoreGuard();
+  }, 250);
 });
 
 ipcMain.handle("window:hide", () => {
+  userHiddenWindow = true;
+  stopAlwaysOnTopRestoreGuard();
   mainWindow?.hide();
   updateTrayMenu();
 });
@@ -1619,7 +1744,7 @@ function sanitizeSettings(value) {
     fontSize: clampNumber(value.fontSize, 12, 24, DEFAULT_SETTINGS.fontSize),
     maxItems: clampNumber(value.maxItems, 20, 200, DEFAULT_SETTINGS.maxItems),
     sessdata: String(value.sessdata || "").trim(),
-    theme: ["light", "dark", "moss", "blueprint"].includes(value.theme) ? value.theme : "light"
+    theme: ["light", "dark", "moss", "blueprint", "walnut"].includes(value.theme) ? value.theme : "light"
   };
 }
 
