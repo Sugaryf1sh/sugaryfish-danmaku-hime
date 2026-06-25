@@ -4,7 +4,7 @@ const MEGA_GIFT_DURATION = 12000;
 const MEGA_GIFT_LEAVE_DELAY = 11500;
 const UPDATE_IDLE_TEXT = "检查更新";
 const UPDATE_LATEST_TEXT = "已是最新版本";
-const THEME_CLASSES = ["light-theme", "moss-theme", "blueprint-theme", "glacial-theme", "dark-theme", "walnut-theme", "leica-theme", "bordeaux-theme"];
+const THEME_CLASSES = ["light-theme", "moss-theme", "blueprint-theme", "glacial-theme", "dark-theme", "walnut-theme", "leica-theme", "bordeaux-theme", "quartz-theme"];
 const THEME_LABELS = {
   light: "纸墨",
   moss: "青苔",
@@ -13,7 +13,8 @@ const THEME_LABELS = {
   dark: "暗耀",
   walnut: "胡桃",
   leica: "纪实",
-  bordeaux: "波尔多"
+  bordeaux: "波尔多",
+  quartz: "瑰砂"
 };
 
 const state = {

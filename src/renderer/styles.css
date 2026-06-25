@@ -1550,12 +1550,13 @@ body.dark-theme .window-btn:hover {
   position: absolute !important;
   top: calc(100% + 6px) !important;
   right: 0 !important;
-  width: 110px !important;
-  padding: 4px !important;
-  border-radius: 4px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 2px !important;
+  width: auto !important;
+  min-width: 280px !important;
+  padding: 8px !important;
+  border-radius: 2px !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, 134px) !important;
+  gap: 2px 6px !important;
   opacity: 0 !important;
   transform: translateY(-6px) !important;
   pointer-events: none !important;
@@ -1578,38 +1579,22 @@ body.dark-theme .window-btn:hover {
   outline: none !important;
   cursor: pointer !important;
   width: 100% !important;
-  padding: 6px 12px 6px 16px !important;
+  padding: 6px 10px !important;
   text-align: left !important;
   font-size: 11px !important;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
   letter-spacing: 0.05em !important;
-  border-radius: 2px !important;
+  border-radius: 1px !important;
   line-height: 1.2 !important;
   white-space: nowrap !important;
   -webkit-app-region: no-drag;
   transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
-.theme-menu-item::before {
-  content: "" !important;
-  position: absolute !important;
-  left: 6px !important;
-  top: 50% !important;
-  transform: translateY(-50%) scaleY(0) !important;
-  width: 2px !important;
-  height: 8px !important;
-  border-radius: 1px !important;
-  opacity: 0 !important;
-  transition: transform 0.25s ease, opacity 0.25s ease !important;
-}
-
-.theme-menu-item.is-active {
-  font-weight: 600 !important;
-}
-
+.theme-menu-item::before,
 .theme-menu-item.is-active::before {
-  transform: translateY(-50%) scaleY(1) !important;
-  opacity: 1 !important;
+  content: none !important;
+  display: none !important;
 }
 
 body.light-theme .theme-dropdown-menu {
@@ -6687,6 +6672,453 @@ body.glacial-theme .footer-dashboard span {
   text-shadow: none !important;
 }
 
+body.quartz-theme {
+  color-scheme: light;
+  --bg-main-rgb: 244, 236, 233 !important;
+  --bg-card: #E8DDD9 !important;
+  --text-main: #261F20 !important;
+  --text-sub: #8C7C7B !important;
+  --accent-rose: #B35C55 !important;
+  --divider: rgba(38, 31, 32, 0.04) !important;
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+  --font-text: "Georgia", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", serif;
+  --font-data: var(--font-ui);
+  --font-serif: var(--font-text);
+  --font-mono: "Courier New", Courier, monospace;
+  --bg-primary: rgb(var(--bg-main-rgb));
+  --bg-hover: rgba(179, 92, 85, 0.03);
+  --spotlight: radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.42), transparent 58%);
+  --top-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent 44%);
+  --window-shadow: 0 30px 70px rgba(38, 31, 32, 0.04);
+  --track-color: rgba(38, 31, 32, 0.08);
+  --scroll-thumb: rgba(179, 92, 85, 0.18);
+  --scroll-color: rgba(38, 31, 32, 0.08);
+  --hover-band: linear-gradient(90deg, rgba(179, 92, 85, 0.03), transparent);
+  --text-title: var(--text-main);
+  --text-data: var(--text-main);
+  --text-label: var(--text-sub);
+  --text-watermark: rgba(140, 124, 123, 0.5);
+  --maker-watermark: rgba(38, 31, 32, 0.22);
+  --accent-blue: var(--accent-rose);
+  --accent-blue-line: rgba(179, 92, 85, 0.36);
+  --accent-red: #9A4E58;
+  --placeholder-color: rgba(140, 124, 123, 0.58);
+  --uid-color: rgba(38, 31, 32, 0.14);
+  --body-text: var(--text-main);
+  --border-color: var(--divider);
+  --divider-shadow: none;
+  --status-breathe-glow: rgba(179, 92, 85, 0.28);
+  --help-bg: #FAF6F5;
+  --help-border: rgba(179, 92, 85, 0.12);
+  --help-shadow: 0 20px 50px rgba(38, 31, 32, 0.05);
+  --help-text: var(--text-sub);
+  --help-title: var(--text-main);
+  --paper: rgba(var(--bg-main-rgb), var(--bg-opacity, 1));
+  --paper-solid: rgb(var(--bg-main-rgb));
+  --paper-soft: rgba(232, 221, 217, 0.72);
+  --ink: var(--text-main);
+  --ink-soft: var(--text-sub);
+  --ink-faint: rgba(140, 124, 123, 0.68);
+  --line: var(--divider);
+  --line-soft: rgba(38, 31, 32, 0.03);
+  --blue: var(--accent-rose);
+  --blue-soft: rgba(179, 92, 85, 0.1);
+  --gift: #9A6F61;
+  --superchat: #9A4E58;
+  --guard: #7F6A82;
+}
+
+body.quartz-theme .app-container,
+body.quartz-theme .shell,
+body.quartz-theme.is-opaque .shell {
+  background-color: rgba(var(--bg-main-rgb), var(--bg-opacity, 1)) !important;
+  background-image: var(--spotlight), var(--top-sheen) !important;
+  border: 1px solid rgba(0, 0, 0, 0.01) !important;
+  box-shadow: 0 30px 70px rgba(38, 31, 32, 0.04) !important;
+}
+
+body.quartz-theme .theme-dropdown-menu {
+  background: #FAF6F5 !important;
+  border: 1px solid rgba(179, 92, 85, 0.12) !important;
+  box-shadow: 0 20px 50px rgba(38, 31, 32, 0.05) !important;
+}
+
+body.quartz-theme .theme-menu-item {
+  color: var(--text-sub) !important;
+}
+
+body.quartz-theme .theme-menu-item:hover {
+  background: rgba(179, 92, 85, 0.03) !important;
+  color: var(--text-main) !important;
+}
+
+body.quartz-theme .theme-menu-item.is-active {
+  color: var(--accent-rose) !important;
+  font-weight: 600 !important;
+}
+
+body.quartz-theme .header-title,
+body.quartz-theme .options-title,
+body.quartz-theme .param-value,
+body.quartz-theme .setting-control output,
+body.quartz-theme .brand strong,
+body.quartz-theme .status-data,
+body.quartz-theme .popularity-inline,
+body.quartz-theme .popularity-short,
+body.quartz-theme .popularity-full {
+  color: var(--text-main) !important;
+}
+
+body.quartz-theme .options-sub,
+body.quartz-theme .shortcut-hint,
+body.quartz-theme .shortcut-key,
+body.quartz-theme .param-label,
+body.quartz-theme .setting-label,
+body.quartz-theme .window-btn,
+body.quartz-theme .status,
+body.quartz-theme .placeholder-hint,
+body.quartz-theme .empty-state,
+body.quartz-theme .room-form label,
+body.quartz-theme .login-row label {
+  color: var(--text-sub) !important;
+}
+
+body.quartz-theme .window-btn:hover {
+  color: var(--accent-rose) !important;
+  background: rgba(179, 92, 85, 0.03) !important;
+  box-shadow: 0 0 12px rgba(179, 92, 85, 0.08) !important;
+  transform: translateY(0.5px) !important;
+}
+
+body.quartz-theme .feed {
+  background: transparent !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(179, 92, 85, 0.18) transparent !important;
+}
+
+body.quartz-theme .feed::-webkit-scrollbar,
+body.quartz-theme .danmaku-list-container::-webkit-scrollbar {
+  width: 2px !important;
+}
+
+body.quartz-theme .feed::-webkit-scrollbar-track,
+body.quartz-theme .danmaku-list-container::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+body.quartz-theme .feed::-webkit-scrollbar-thumb,
+body.quartz-theme .danmaku-list-container::-webkit-scrollbar-thumb {
+  background: rgba(179, 92, 85, 0.18) !important;
+  border-radius: 1px !important;
+}
+
+body.quartz-theme .feed::-webkit-scrollbar-thumb:hover,
+body.quartz-theme .danmaku-list-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(179, 92, 85, 0.55) !important;
+}
+
+body.quartz-theme .danmaku-content,
+body.quartz-theme .text {
+  color: var(--text-main) !important;
+  font-family: "Georgia", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", serif !important;
+  line-height: 1.55 !important;
+  padding-left: 0 !important;
+  text-shadow: none !important;
+  word-break: break-word !important;
+}
+
+body.quartz-theme .danmaku-username,
+body.quartz-theme .user {
+  color: var(--text-sub) !important;
+  text-shadow: none !important;
+}
+
+body.quartz-theme .uid,
+body.quartz-theme .crafted-text {
+  color: rgba(38, 31, 32, 0.14) !important;
+  opacity: 1 !important;
+}
+
+body.quartz-theme .danmaku-badge-dot,
+body.quartz-theme .status-dot,
+body.quartz-theme .tag::before {
+  background-color: var(--accent-rose) !important;
+  box-shadow: 0 0 4px rgba(179, 92, 85, 0.3) !important;
+}
+
+body.quartz-theme .tag {
+  color: var(--accent-rose) !important;
+}
+
+body.quartz-theme .danmaku-item {
+  border-left: 2px solid transparent !important;
+  border-bottom: 1px solid var(--divider) !important;
+  background-image: none !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  transition: border-color 0.2s ease, opacity 0.3s ease, background-color 0.2s ease !important;
+}
+
+body.quartz-theme .danmaku-item:hover,
+body.quartz-theme .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.quartz-theme .feed.is-ink-active .danmaku-item.is-focused {
+  border-left-color: var(--accent-rose) !important;
+  background-color: rgba(179, 92, 85, 0.025) !important;
+  box-shadow: none !important;
+}
+
+body.quartz-theme .danmaku-list:hover .danmaku-item,
+body.quartz-theme .feed:hover .danmaku-item,
+body.quartz-theme .feed:has(.danmaku-item:hover) .danmaku-item,
+body.quartz-theme .feed.is-ink-active .danmaku-item {
+  opacity: 0.38 !important;
+}
+
+body.quartz-theme .danmaku-list:hover .danmaku-item:hover,
+body.quartz-theme .feed:hover .danmaku-item:hover,
+body.quartz-theme .feed:has(.danmaku-item:hover) .danmaku-item:hover,
+body.quartz-theme .feed.is-ink-active .danmaku-item.is-focused {
+  opacity: 1 !important;
+}
+
+body.quartz-theme .fans-badge-container,
+body.quartz-theme .fans-medal {
+  height: 15px !important;
+  min-height: 15px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(179, 92, 85, 0.04) !important;
+  border: 1px solid rgba(179, 92, 85, 0.22) !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+  gap: 0 !important;
+  padding: 1px 5px !important;
+  font-size: 10px !important;
+  line-height: 13px !important;
+  overflow: visible !important;
+}
+
+body.quartz-theme .fans-badge-container::before,
+body.quartz-theme .fans-medal::before {
+  display: none !important;
+}
+
+body.quartz-theme .fans-badge-name,
+body.quartz-theme .fans-medal-name {
+  height: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  color: var(--text-sub) !important;
+  font-weight: 500 !important;
+  line-height: 13px !important;
+  overflow: visible !important;
+}
+
+body.quartz-theme .fans-badge-name::after,
+body.quartz-theme .fans-medal-name::after {
+  content: " ·" !important;
+  color: var(--accent-rose) !important;
+}
+
+body.quartz-theme .fans-badge-level,
+body.quartz-theme .fans-medal-level {
+  height: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  color: var(--accent-rose) !important;
+  font-family: "Courier New", monospace !important;
+  font-weight: 700 !important;
+  line-height: 13px !important;
+  overflow: visible !important;
+}
+
+body.quartz-theme .options-panel {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 14px var(--right-edge) 4px var(--left-edge) !important;
+  border: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  row-gap: 0 !important;
+  background: #EBE1DE !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+}
+
+body.quartz-theme .settings-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.quartz-theme .options-panel .toggle-group,
+body.quartz-theme .options-panel .param-group {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  align-items: center !important;
+  justify-items: stretch !important;
+}
+
+body.quartz-theme .options-panel .param-group {
+  margin-top: 14px !important;
+  padding-top: 0 !important;
+  border-top: 1px solid rgba(38, 31, 32, 0.04) !important;
+}
+
+body.quartz-theme .options-panel .toggle-item {
+  grid-column: span 3 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  font-weight: 500 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+body.quartz-theme .options-panel .param-item {
+  grid-column: span 4 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+body.quartz-theme .options-panel .setting-control {
+  position: relative !important;
+  height: 40px !important;
+  justify-content: center !important;
+}
+
+body.quartz-theme .options-panel .toggle-item::before {
+  content: "" !important;
+  display: block !important;
+  width: 11px !important;
+  height: 11px !important;
+  flex: 0 0 11px !important;
+  border: 1px solid rgba(38, 31, 32, 0.15) !important;
+  border-radius: 0 !important;
+  margin: 0 0 7px 0 !important;
+  position: relative !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease !important;
+}
+
+body.quartz-theme .options-panel .toggle-item.is-active {
+  color: var(--text-main) !important;
+  font-weight: 500 !important;
+}
+
+body.quartz-theme .options-panel .toggle-item.is-active::before {
+  background-color: var(--accent-rose) !important;
+  border-color: var(--accent-rose) !important;
+}
+
+body.quartz-theme .options-panel .toggle-item::after,
+body.quartz-theme .options-panel .toggle-item.is-active::after {
+  content: none !important;
+  display: none !important;
+}
+
+body.quartz-theme .options-panel .shortcut-hint,
+body.quartz-theme .options-panel .shortcut-key {
+  height: 11px !important;
+  min-height: 11px !important;
+  margin: 2px 0 0 0 !important;
+  color: rgba(140, 124, 123, 0.72) !important;
+  font-family: var(--font-ui) !important;
+  font-size: 9.5px !important;
+  font-weight: 500 !important;
+  line-height: 11px !important;
+  letter-spacing: 0.035em !important;
+  opacity: 1 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+body.quartz-theme .options-panel .param-value,
+body.quartz-theme .options-panel .setting-control output {
+  display: block !important;
+  height: 17px !important;
+  margin: 4px 0 0 0 !important;
+  padding: 0 0 1px 0 !important;
+  border-bottom: 1px solid transparent !important;
+  color: var(--text-main) !important;
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" 1 !important;
+  letter-spacing: 0 !important;
+  line-height: 16px !important;
+  text-align: center !important;
+  font-synthesis: none !important;
+}
+
+body.quartz-theme .room-form .input-value-display,
+body.quartz-theme .login-row .input-value-display,
+body.quartz-theme .input-row .input-value-display {
+  display: inline-block !important;
+  border-bottom: 1px solid rgba(38, 31, 32, 0.08) !important;
+  padding-bottom: 2px !important;
+}
+
+body.quartz-theme .btn-disconnect,
+body.quartz-theme #disconnectBtn,
+body.quartz-theme .text-danger,
+body.quartz-theme .btn-clear,
+body.quartz-theme #clearSessdataBtn,
+body.quartz-theme .sessdata-clear,
+body.quartz-theme .toggle.danger {
+  color: #9A4E58 !important;
+  font-weight: 600 !important;
+}
+
+body.quartz-theme .help-card,
+body.quartz-theme .update-banner {
+  background: var(--help-bg) !important;
+  border: 1px solid var(--help-border) !important;
+  box-shadow: var(--help-shadow) !important;
+}
+
+body.quartz-theme .help-card,
+body.quartz-theme .help-card * {
+  color: var(--text-sub) !important;
+  font-family: var(--font-ui) !important;
+  text-shadow: none !important;
+}
+
+body.quartz-theme .help-card strong,
+body.quartz-theme .help-meta dt,
+body.quartz-theme .update-banner strong {
+  color: var(--text-main) !important;
+}
+
+body.quartz-theme .help-card a,
+body.quartz-theme .help-update,
+body.quartz-theme .room-form button:hover,
+body.quartz-theme .toggle:hover,
+body.quartz-theme .toggle.update-check:hover,
+body.quartz-theme .login-actions > .sessdata-fetch:hover {
+  color: var(--accent-rose) !important;
+}
+
+body.quartz-theme .maker-watermark,
+body.quartz-theme .footer-dashboard,
+body.quartz-theme .footer-dashboard span {
+  color: rgba(38, 31, 32, 0.18) !important;
+  font-family: var(--font-ui) !important;
+  text-shadow: none !important;
+}
+
 body.light-theme .danmaku-content,
 body.light-theme .text,
 body.dark-theme .danmaku-content,
@@ -6702,7 +7134,9 @@ body.leica-theme .text,
 body.bordeaux-theme .danmaku-content,
 body.bordeaux-theme .text,
 body.glacial-theme .danmaku-content,
-body.glacial-theme .text {
+body.glacial-theme .text,
+body.quartz-theme .danmaku-content,
+body.quartz-theme .text {
   line-height: 1.55 !important;
 }
 
@@ -6726,15 +7160,15 @@ body .meta {
   flex-wrap: nowrap !important;
 }
 
-body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .brand strong,
-body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .header-title {
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme, .quartz-theme) .brand strong,
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme, .quartz-theme) .header-title {
   font-family: var(--font-serif) !important;
   letter-spacing: 0 !important;
   text-shadow: none !important;
 }
 
-body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .brand-copy > span,
-body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .status {
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme, .quartz-theme) .brand-copy > span,
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme, .quartz-theme) .status {
   font-family: var(--font-ui) !important;
   letter-spacing: 0 !important;
   text-shadow: none !important;
@@ -6749,7 +7183,7 @@ body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .status {
   text-shadow: none !important;
 }
 
-body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .brand strong {
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme, .quartz-theme) .brand strong {
   font-size: 27px !important;
   line-height: 26px !important;
   font-weight: 800 !important;
@@ -6761,8 +7195,8 @@ body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .brand strong
   font-weight: 700 !important;
 }
 
-body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .danmaku-content,
-body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .text {
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme, .quartz-theme) .danmaku-content,
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme, .quartz-theme) .text {
   font-family: "Georgia", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif !important;
   font-size: calc(1em * var(--danmaku-content-scale)) !important;
   letter-spacing: 0.03em !important;
@@ -6775,6 +7209,11 @@ body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .text {
   letter-spacing: 0.04em !important;
 }
 
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme, .quartz-theme, .dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .feed .danmaku-content,
+body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme, .quartz-theme, .dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .feed .text {
+  font-size: calc(1em * var(--danmaku-content-scale)) !important;
+}
+
 body.light-theme .danmaku-username,
 body.light-theme .user,
 body.moss-theme .danmaku-username,
@@ -6782,7 +7221,9 @@ body.moss-theme .user,
 body.blueprint-theme .danmaku-username,
 body.blueprint-theme .user,
 body.glacial-theme .danmaku-username,
-body.glacial-theme .user {
+body.glacial-theme .user,
+body.quartz-theme .danmaku-username,
+body.quartz-theme .user {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei UI", sans-serif !important;
   font-size: calc(1em * var(--danmaku-user-scale)) !important;
   font-weight: 500 !important;
@@ -6809,8 +7250,8 @@ body.bordeaux-theme .user {
   text-shadow: none !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-container,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-badge-container,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-medal {
   height: 17px !important;
   min-height: 17px !important;
   max-height: 17px !important;
@@ -6836,10 +7277,10 @@ body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .fans-medal {
   padding: 1px 5px 2px !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-name,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal-name,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-level,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal-level {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-badge-name,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-medal-name,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-badge-level,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-medal-level {
   height: 14px !important;
   min-height: 14px !important;
   max-height: 14px !important;
@@ -6857,15 +7298,15 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
   white-space: nowrap !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-name,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal-name {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-badge-name,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-medal-name {
   min-width: 0 !important;
   overflow: visible !important;
   text-overflow: clip !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-level,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal-level {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-badge-level,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-medal-level {
   flex: 0 0 auto !important;
   align-self: center !important;
   font-weight: 600 !important;
@@ -6873,8 +7314,8 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
   font-feature-settings: "tnum" !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-badge-name::after,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .fans-medal-name::after {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-badge-name::after,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .fans-medal-name::after {
   content: " ·" !important;
   height: 14px !important;
   display: inline-flex !important;
@@ -7016,6 +7457,18 @@ body.glacial-theme .fans-medal-level {
   color: var(--accent-ice) !important;
 }
 
+body.quartz-theme .fans-badge-name,
+body.quartz-theme .fans-medal-name {
+  color: var(--text-sub) !important;
+}
+
+body.quartz-theme .fans-badge-name::after,
+body.quartz-theme .fans-medal-name::after,
+body.quartz-theme .fans-badge-level,
+body.quartz-theme .fans-medal-level {
+  color: var(--accent-rose) !important;
+}
+
 body.light-theme {
   --tag-danmaku: #4A6B9C;
   --tag-gift: #8A6F35;
@@ -7088,16 +7541,25 @@ body.glacial-theme {
   --status-signal-glow: rgba(74, 123, 176, 0.28);
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .tag {
+body.quartz-theme {
+  --tag-danmaku: #B35C55;
+  --tag-gift: #9A6F61;
+  --tag-superchat: #9A4E58;
+  --tag-guard: #7F6A82;
+  --status-signal: #B35C55;
+  --status-signal-glow: rgba(179, 92, 85, 0.3);
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .tag {
   color: var(--event-tag-color, var(--tag-danmaku)) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .tag::before {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .tag::before {
   background-color: currentColor !important;
   box-shadow: 0 0 6px color-mix(in srgb, currentColor 34%, transparent) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item {
   --event-tag-color: var(--tag-danmaku);
   --event-tag-glow: color-mix(in srgb, var(--event-tag-color) 30%, transparent);
   --event-tag-bg: color-mix(in srgb, var(--event-tag-color) 3.5%, transparent);
@@ -7105,78 +7567,78 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
   --event-tag-shadow: color-mix(in srgb, var(--event-tag-color) 8%, transparent);
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-gift,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.gift {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-gift,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .item.gift {
   --event-tag-color: var(--tag-gift);
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.superchat {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-superchat,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .item.superchat {
   --event-tag-color: var(--tag-superchat);
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-guard,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.guard,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.guard {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-guard,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.guard,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .item.guard {
   --event-tag-color: var(--tag-guard);
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-gift .tag,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.gift .tag {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-gift .tag,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .item.gift .tag {
   color: var(--event-tag-color) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-gift .tag::before,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.gift .tag::before {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-gift .tag::before,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .item.gift .tag::before {
   background-color: var(--event-tag-color) !important;
   box-shadow: 0 0 6px var(--event-tag-glow) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat .tag,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.superchat .tag {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-superchat .tag,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .item.superchat .tag {
   color: var(--event-tag-color) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-guard .tag,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.guard .tag,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.guard .tag {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-guard .tag,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.guard .tag,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .item.guard .tag {
   color: var(--event-tag-color) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-guard .tag::before,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.guard .tag::before,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.guard .tag::before {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-guard .tag::before,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.guard .tag::before,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .item.guard .tag::before {
   background-color: var(--event-tag-color) !important;
   box-shadow: 0 0 6px var(--event-tag-glow) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-badge-dot {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-badge-dot {
   background-color: var(--status-signal) !important;
   box-shadow: 0 0 6px var(--status-signal-glow) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .status-dot {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .status-dot {
   background-color: var(--status-dot-color, var(--status-signal)) !important;
   box-shadow: var(--status-dot-shadow, 0 0 6px var(--status-dot-glow, var(--status-signal-glow))) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-superchat {
   border-left-color: var(--event-tag-color) !important;
   background-color: var(--event-tag-bg) !important;
   box-shadow: none !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat .tag {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-superchat .tag {
   color: var(--event-tag-color) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat .tag::before {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-superchat .tag::before {
   background-color: var(--event-tag-color) !important;
   box-shadow: 0 0 7px var(--event-tag-glow) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed:has(.danmaku-item.is-superchat:hover) .danmaku-item.is-superchat:hover,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed.is-ink-active .danmaku-item.is-superchat.is-focused {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .feed:has(.danmaku-item.is-superchat:hover) .danmaku-item.is-superchat:hover,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .feed.is-ink-active .danmaku-item.is-superchat.is-focused {
   border-left-color: var(--event-tag-color) !important;
   background-color: var(--event-tag-bg-focus) !important;
   box-shadow:
@@ -7184,20 +7646,20 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
     0 1px 2px color-mix(in srgb, var(--event-tag-color) 5%, transparent) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-gift,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-guard,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.guard {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-gift,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.is-guard,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .danmaku-item.guard {
   border-left-color: var(--event-tag-color) !important;
   background-color: color-mix(in srgb, var(--event-tag-color) 2.8%, transparent) !important;
   box-shadow: none !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed:has(.danmaku-item.is-gift:hover) .danmaku-item.is-gift:hover,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed:has(.danmaku-item.is-guard:hover) .danmaku-item.is-guard:hover,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed:has(.danmaku-item.guard:hover) .danmaku-item.guard:hover,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed.is-ink-active .danmaku-item.is-gift.is-focused,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed.is-ink-active .danmaku-item.is-guard.is-focused,
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed.is-ink-active .danmaku-item.guard.is-focused {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .feed:has(.danmaku-item.is-gift:hover) .danmaku-item.is-gift:hover,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .feed:has(.danmaku-item.is-guard:hover) .danmaku-item.is-guard:hover,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .feed:has(.danmaku-item.guard:hover) .danmaku-item.guard:hover,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .feed.is-ink-active .danmaku-item.is-gift.is-focused,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .feed.is-ink-active .danmaku-item.is-guard.is-focused,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .feed.is-ink-active .danmaku-item.guard.is-focused {
   border-left-color: var(--event-tag-color) !important;
   background-color: var(--event-tag-bg-focus) !important;
   box-shadow:
@@ -7205,12 +7667,12 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
     0 1px 2px color-mix(in srgb, var(--event-tag-color) 4%, transparent) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .gift-multiplier {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .gift-multiplier {
   color: var(--tag-gift) !important;
   text-shadow: 0 0 5px color-mix(in srgb, var(--tag-gift) 24%, transparent) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .mega-gift-banner {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .mega-gift-banner {
   background: var(--bg-card) !important;
   border: 1px solid color-mix(in srgb, var(--superchat) 14%, transparent) !important;
   border-left: 3px solid var(--superchat) !important;
@@ -7220,30 +7682,35 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
     inset 0 1px 0 color-mix(in srgb, var(--text-main) 3%, transparent) !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .mega-gift-user {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .mega-gift-user {
   color: var(--text-main) !important;
   font-family: var(--font-ui) !important;
   font-weight: 600 !important;
   letter-spacing: 0.02em !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .mega-gift-action {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .mega-gift-action {
   color: var(--text-sub) !important;
   font-family: var(--font-ui) !important;
   font-weight: 500 !important;
   letter-spacing: 0.02em !important;
 }
 
-body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .mega-gift-progress {
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .mega-gift-progress {
   height: 2px !important;
   background: color-mix(in srgb, var(--superchat) 42%, transparent) !important;
   box-shadow: 0 0 5px color-mix(in srgb, var(--superchat) 24%, transparent) !important;
 }
 
 .theme-dropdown-menu {
-  width: 156px !important;
-  padding: 6px 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, 134px) !important;
+  gap: 2px 6px !important;
+  width: auto !important;
+  min-width: 280px !important;
+  padding: 8px !important;
   box-sizing: border-box !important;
+  border-radius: 2px !important;
 }
 
 .theme-menu-item {
@@ -7253,9 +7720,25 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
   align-items: center !important;
   justify-content: space-between !important;
   gap: 14px !important;
-  padding: 8px 16px !important;
+  padding: 6px 10px !important;
   box-sizing: border-box !important;
   position: relative !important;
+  border-radius: 1px !important;
+}
+
+.theme-menu-item::before,
+.theme-menu-item.is-active::before {
+  content: none !important;
+  display: none !important;
+}
+
+.theme-menu-item.is-active {
+  background: rgba(0, 0, 0, 0.04) !important;
+  font-weight: 600 !important;
+}
+
+body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .theme-menu-item.is-active {
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .theme-name {
@@ -7380,6 +7863,10 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
   outline: 1px solid rgba(255, 255, 255, 0.18) !important;
 }
 
+.theme-menu-item .theme-swatch.swatch-quartz {
+  outline: 1px solid rgba(38, 31, 32, 0.18) !important;
+}
+
 .theme-menu-item .theme-swatch.swatch-light .swatch-half-left { background: #F4F1EB !important; }
 .theme-menu-item .theme-swatch.swatch-light .swatch-half-right { background: #242426 !important; }
 
@@ -7403,6 +7890,9 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
 
 .theme-menu-item .theme-swatch.swatch-bordeaux .swatch-half-left { background: #261418 !important; }
 .theme-menu-item .theme-swatch.swatch-bordeaux .swatch-half-right { background: #B6353E !important; }
+
+.theme-menu-item .theme-swatch.swatch-quartz .swatch-half-left { background: #F4ECE9 !important; }
+.theme-menu-item .theme-swatch.swatch-quartz .swatch-half-right { background: #B35C55 !important; }
 
 @media (max-width: 340px) {
   .connect-panel,
