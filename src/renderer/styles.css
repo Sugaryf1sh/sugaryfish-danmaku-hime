@@ -6771,7 +6771,7 @@ body:is(.light-theme, .moss-theme, .blueprint-theme, .glacial-theme) .text {
 body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .danmaku-content,
 body:is(.dark-theme, .walnut-theme, .leica-theme, .bordeaux-theme) .text {
   font-family: "Georgia", "Noto Serif CJK SC", "Source Han Serif SC", serif !important;
-  font-size: 14px !important;
+  font-size: calc(1em * var(--danmaku-content-scale)) !important;
   letter-spacing: 0.04em !important;
 }
 
