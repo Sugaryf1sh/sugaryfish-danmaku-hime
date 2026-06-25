@@ -81,11 +81,11 @@ body.newtheme-theme {
 主题菜单需保持：
 
 - 触发按钮为 `调`。
-- 下拉菜单用罗马索引，菜单项内部保持 `.theme-name` + `.theme-swatch` 双节点结构。
+- 下拉菜单用罗马索引，菜单项内部保持 `.theme-name` + `.theme-swatch` 双节点结构；`.theme-swatch` 内部必须包含两个 `.swatch-half` 子节点，禁止再用渐变伪装二分色块。
 - 主题顺序固定为亮色组在前、暗色组在后：`Ⅰ 纸墨`、`Ⅱ 青苔`、`Ⅲ 白图`、`Ⅳ 极地`、`Ⅴ 暗耀`、`Ⅵ 胡桃`、`Ⅶ 纪实`、`Ⅷ 波尔多`。
 - 激活状态由 `.is-active` 和左侧微刻度线表达。
-- 右侧 `.theme-swatch` 必须是 12px x 12px 的纯平对角切割正方形晶片，左上为主题底色，右下为主题强调色。
-- `.theme-swatch` 不允许出现开关式滑块、内阴影或脏边；使用 `::before` / `::after` 分别绘制两块纯色三角，色卡本体保持透明、无边框、无阴影。
+- 右侧 `.theme-swatch` 必须通过 `.theme-menu-item .theme-swatch { all: unset !important; }` 先做全属性重置，再重建为 12px x 12px 的纯平 90° 垂直直切正方形晶片。
+- `.theme-swatch` 不允许出现开关式滑块、动态缩放、内阴影、透明度衰减或脏边；色盘必须由两个绝对定位的 `.swatch-half` 物理半块组成，每块 6px x 12px，外框用不占尺寸的 `outline` 表达，严禁使用 `border` 挤压内部色块、`linear-gradient()`、45°/135° 斜切渐变或伪元素三角裁切。
 - `.theme-dropdown-menu` 和 `.theme-menu-item` 的宽度、padding、flex 两端对齐由终端守卫统一控制；新增主题只补 `.swatch-<key>` 色盘，不要回退成纯文本按钮。
 
 ## 6. 设置抽屉
@@ -149,8 +149,9 @@ body.newtheme-theme {
 - 所有主题 `.danmaku-content` / `.text` 的正文行高统一向胡桃主题对齐：`line-height: 1.55 !important`。
 - 亮色组字体向纸墨对齐：`light`、`moss`、`blueprint`、`glacial` 的左上标题和正文使用纸墨的衬线骨架，用户名使用纸墨的 UI 无衬线层级。
 - 暗色组字体向胡桃对齐：`dark`、`walnut`、`leica`、`bordeaux` 的左上标题、用户名、正文和粉丝牌结构都使用胡桃的骨架，只保留各主题自己的颜色变量。
-- 普通弹幕、礼物、醒目留言、舰长标签必须使用独立语义色；`.tag` 文字和 `.tag::before` 圆点读取同一语义色，不能被主题旧规则统一染成单一强调色。
-- 礼物倍数 `.gift-multiplier` 读取 `--tag-gift`；醒目留言强调读取 `--tag-superchat`。
+- 普通弹幕、礼物、醒目留言、舰长标签必须使用独立语义色；事件项先写入 `--event-tag-color`，再由 `.tag` 文字、`.tag::before` 圆点、左侧 `border-left-color` 高亮线、hover/focus 背景统一读取，不能被主题旧规则拆成多个颜色源。
+- `--event-tag-color` 默认读取 `--tag-danmaku`；礼物读取 `--tag-gift`；醒目留言读取 `--tag-superchat`；舰长读取 `--tag-guard`。`--tag-gift` 必须与 `--tag-danmaku` 拉开明确色相或明度差，不允许只做同色系轻微漂移。
+- 礼物倍数 `.gift-multiplier` 读取 `--tag-gift`；醒目留言强调读取 `--tag-superchat`；醒目留言、礼物和舰长的左侧高亮线必须与各自标签文字、圆点同色。
 - 用户名渐隐使用视觉宽度阈值：中文超过 9 个字触发，英文约超过 18 个字符触发，中英混排按宽度折算。
 - `.uid` 必须 `white-space: nowrap`，`.meta` 不允许把用户名和 UID 拆成两行。
 
@@ -229,7 +230,7 @@ git diff --check
 
 - 所有主题均可从右上角菜单切换。
 - `.theme-menu-item.is-active` 状态正确。
-- `.theme-swatch` 颜色、大小、右对齐和 hover/active 放大状态正确。
+- `.theme-swatch` 颜色、大小、右对齐和 hover/active 不缩放、不变形、不出现旧开关轨道或阴影。
 - Light/Dark/已有主题没有被新主题覆盖。
 - 设置抽屉、输入行、弹幕流、粉丝牌、醒目留言、倒计时条、更新横幅都可读。
 - 多行弹幕行距一致，用户名渐隐阈值、UID 不换行、左侧焦点竖线沟槽都正常。

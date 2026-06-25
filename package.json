@@ -1,6 +1,6 @@
 {
   "name": "danmaku-hime",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "B站直播弹幕悬浮窗",
   "main": "src/main/main.js",
   "author": "Sugaryfish",

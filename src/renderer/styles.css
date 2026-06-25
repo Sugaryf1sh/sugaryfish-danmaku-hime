@@ -185,7 +185,7 @@ body.moss-theme {
   --line-soft: rgba(31, 38, 35, 0.06);
   --blue: var(--accent-teal);
   --blue-soft: rgba(74, 107, 93, 0.12);
-  --gift: #6B644A;
+  --gift: #9A6B3F;
   --superchat: #8C655D;
   --guard: #607068;
 }
@@ -240,7 +240,7 @@ body.blueprint-theme {
   --line-soft: rgba(0, 51, 153, 0.06);
   --blue: var(--accent-blue);
   --blue-soft: rgba(0, 82, 204, 0.1);
-  --gift: #4D6D9A;
+  --gift: #8A6B32;
   --superchat: #7D527A;
   --guard: #405D91;
 }
@@ -296,7 +296,7 @@ body.walnut-theme {
   --line-soft: rgba(227, 217, 195, 0.025);
   --blue: var(--accent-amber);
   --blue-soft: rgba(204, 112, 61, 0.1);
-  --gift: #B98255;
+  --gift: #D6A85F;
   --superchat: #C0392B;
   --guard: #A77B4F;
 }
@@ -6287,7 +6287,7 @@ body.glacial-theme {
   --line-soft: rgba(22, 26, 35, 0.03);
   --blue: var(--accent-ice);
   --blue-soft: rgba(74, 123, 176, 0.1);
-  --gift: #5D7898;
+  --gift: #7E6E9E;
   --superchat: #3B5E82;
   --guard: #607789;
 }
@@ -7036,7 +7036,7 @@ body.dark-theme {
 
 body.moss-theme {
   --tag-danmaku: #4A6B5D;
-  --tag-gift: #8A7A4F;
+  --tag-gift: #9A6B3F;
   --tag-superchat: #8C655D;
   --tag-guard: #607068;
   --status-signal: #4A6B5D;
@@ -7045,7 +7045,7 @@ body.moss-theme {
 
 body.blueprint-theme {
   --tag-danmaku: #003399;
-  --tag-gift: #4D6D9A;
+  --tag-gift: #8A6B32;
   --tag-superchat: #7D527A;
   --tag-guard: #405D91;
   --status-signal: #003399;
@@ -7054,7 +7054,7 @@ body.blueprint-theme {
 
 body.walnut-theme {
   --tag-danmaku: #CC703D;
-  --tag-gift: #B98255;
+  --tag-gift: #D6A85F;
   --tag-superchat: #C0392B;
   --tag-guard: #A77B4F;
   --status-signal: #CC703D;
@@ -7081,7 +7081,7 @@ body.bordeaux-theme {
 
 body.glacial-theme {
   --tag-danmaku: #4A7BB0;
-  --tag-gift: #5D7898;
+  --tag-gift: #7E6E9E;
   --tag-superchat: #3B5E82;
   --tag-guard: #607789;
   --status-signal: #4A7BB0;
@@ -7089,7 +7089,7 @@ body.glacial-theme {
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .tag {
-  color: var(--tag-danmaku) !important;
+  color: var(--event-tag-color, var(--tag-danmaku)) !important;
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .tag::before {
@@ -7097,33 +7097,57 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
   box-shadow: 0 0 6px color-mix(in srgb, currentColor 34%, transparent) !important;
 }
 
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item {
+  --event-tag-color: var(--tag-danmaku);
+  --event-tag-glow: color-mix(in srgb, var(--event-tag-color) 30%, transparent);
+  --event-tag-bg: color-mix(in srgb, var(--event-tag-color) 3.5%, transparent);
+  --event-tag-bg-focus: color-mix(in srgb, var(--event-tag-color) 6%, transparent);
+  --event-tag-shadow: color-mix(in srgb, var(--event-tag-color) 8%, transparent);
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-gift,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.gift {
+  --event-tag-color: var(--tag-gift);
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.superchat {
+  --event-tag-color: var(--tag-superchat);
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-guard,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.guard,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.guard {
+  --event-tag-color: var(--tag-guard);
+}
+
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-gift .tag,
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.gift .tag {
-  color: var(--tag-gift) !important;
+  color: var(--event-tag-color) !important;
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-gift .tag::before,
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.gift .tag::before {
-  background-color: var(--tag-gift) !important;
-  box-shadow: 0 0 6px color-mix(in srgb, var(--tag-gift) 30%, transparent) !important;
+  background-color: var(--event-tag-color) !important;
+  box-shadow: 0 0 6px var(--event-tag-glow) !important;
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat .tag,
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.superchat .tag {
-  color: var(--tag-superchat) !important;
+  color: var(--event-tag-color) !important;
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-guard .tag,
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.guard .tag,
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.guard .tag {
-  color: var(--tag-guard) !important;
+  color: var(--event-tag-color) !important;
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-guard .tag::before,
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.guard .tag::before,
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .item.guard .tag::before {
-  background-color: var(--tag-guard) !important;
-  box-shadow: 0 0 6px color-mix(in srgb, var(--tag-guard) 30%, transparent) !important;
+  background-color: var(--event-tag-color) !important;
+  box-shadow: 0 0 6px var(--event-tag-glow) !important;
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-badge-dot {
@@ -7137,27 +7161,48 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat {
-  border-left-color: var(--tag-superchat) !important;
-  background-color: color-mix(in srgb, var(--tag-superchat) 3.5%, transparent) !important;
+  border-left-color: var(--event-tag-color) !important;
+  background-color: var(--event-tag-bg) !important;
   box-shadow: none !important;
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat .tag {
-  color: var(--tag-superchat) !important;
+  color: var(--event-tag-color) !important;
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-superchat .tag::before {
-  background-color: var(--tag-superchat) !important;
-  box-shadow: 0 0 7px color-mix(in srgb, var(--tag-superchat) 28%, transparent) !important;
+  background-color: var(--event-tag-color) !important;
+  box-shadow: 0 0 7px var(--event-tag-glow) !important;
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed:has(.danmaku-item.is-superchat:hover) .danmaku-item.is-superchat:hover,
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed.is-ink-active .danmaku-item.is-superchat.is-focused {
-  border-left-color: var(--tag-superchat) !important;
-  background-color: color-mix(in srgb, var(--tag-superchat) 6%, transparent) !important;
+  border-left-color: var(--event-tag-color) !important;
+  background-color: var(--event-tag-bg-focus) !important;
   box-shadow:
-    0 10px 26px color-mix(in srgb, var(--tag-superchat) 8%, transparent),
-    0 1px 2px color-mix(in srgb, var(--tag-superchat) 5%, transparent) !important;
+    0 10px 26px var(--event-tag-shadow),
+    0 1px 2px color-mix(in srgb, var(--event-tag-color) 5%, transparent) !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-gift,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.is-guard,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .danmaku-item.guard {
+  border-left-color: var(--event-tag-color) !important;
+  background-color: color-mix(in srgb, var(--event-tag-color) 2.8%, transparent) !important;
+  box-shadow: none !important;
+}
+
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed:has(.danmaku-item.is-gift:hover) .danmaku-item.is-gift:hover,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed:has(.danmaku-item.is-guard:hover) .danmaku-item.is-guard:hover,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed:has(.danmaku-item.guard:hover) .danmaku-item.guard:hover,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed.is-ink-active .danmaku-item.is-gift.is-focused,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed.is-ink-active .danmaku-item.is-guard.is-focused,
+body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .feed.is-ink-active .danmaku-item.guard.is-focused {
+  border-left-color: var(--event-tag-color) !important;
+  background-color: var(--event-tag-bg-focus) !important;
+  box-shadow:
+    0 10px 24px var(--event-tag-shadow),
+    0 1px 2px color-mix(in srgb, var(--event-tag-color) 4%, transparent) !important;
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme) .gift-multiplier {
@@ -7208,7 +7253,7 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
   align-items: center !important;
   justify-content: space-between !important;
   gap: 14px !important;
-  padding: 7px 16px !important;
+  padding: 8px 16px !important;
   box-sizing: border-box !important;
   position: relative !important;
 }
@@ -7220,87 +7265,144 @@ body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme,
   white-space: nowrap !important;
 }
 
-.theme-swatch {
+.theme-menu-item .theme-swatch {
+  all: unset !important;
+  display: block !important;
   width: 12px !important;
   height: 12px !important;
-  border-radius: 2px !important;
+  min-width: 12px !important;
+  min-height: 12px !important;
+  max-width: 12px !important;
+  max-height: 12px !important;
   flex: 0 0 12px !important;
+  box-sizing: border-box !important;
+  border: 0 !important;
+  border-radius: 0 !important;
   position: relative !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  vertical-align: middle !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline-offset: 0 !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+.theme-menu-item .theme-swatch .swatch-half {
+  all: unset !important;
+  display: block !important;
+  position: absolute !important;
+  top: 0 !important;
+  width: 6px !important;
+  height: 12px !important;
+  min-width: 6px !important;
+  min-height: 12px !important;
+  max-width: 6px !important;
+  max-height: 12px !important;
+  box-sizing: border-box !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+.theme-menu-item .theme-swatch .swatch-half-left {
+  left: 0 !important;
+}
+
+.theme-menu-item .theme-swatch .swatch-half-right {
+  left: 6px !important;
+}
+
+.theme-menu-item .theme-swatch .swatch-half::before,
+.theme-menu-item .theme-swatch .swatch-half::after {
+  content: none !important;
+  display: none !important;
+}
+
+.theme-swatch,
+.swatch-half {
   box-sizing: border-box !important;
   overflow: hidden !important;
-  background: transparent !important;
-  border: none !important;
   box-shadow: none !important;
-  opacity: 0.85 !important;
-  transition: transform 0.2s ease, opacity 0.2s ease !important;
+  transform: none !important;
 }
 
 .theme-menu-item .theme-swatch::before,
 .theme-menu-item .theme-swatch::after {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 !important;
-  display: block !important;
-  box-shadow: none !important;
-  border: 0 !important;
-  pointer-events: none !important;
-}
-
-.theme-menu-item .theme-swatch::before {
-  background: var(--swatch-bg) !important;
-  clip-path: polygon(0 0, 100% 0, 0 100%) !important;
-}
-
-.theme-menu-item .theme-swatch::after {
-  background: var(--swatch-accent) !important;
-  clip-path: polygon(100% 0, 100% 100%, 0 100%) !important;
+  content: none !important;
+  display: none !important;
 }
 
 .theme-menu-item:hover .theme-swatch,
 .theme-menu-item.is-active .theme-swatch {
-  transform: scale(1.1) !important;
-  opacity: 1 !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
-.swatch-light {
-  --swatch-bg: #F4F1EB;
-  --swatch-accent: #335599;
+.theme-menu-item .theme-swatch.swatch-light {
+  outline: 1px solid rgba(36, 36, 38, 0.28) !important;
 }
 
-.swatch-dark {
-  --swatch-bg: #1A1A1A;
-  --swatch-accent: #00A3FF;
+.theme-menu-item .theme-swatch.swatch-moss {
+  outline: 1px solid rgba(0, 0, 0, 0.18) !important;
 }
 
-.swatch-moss {
-  --swatch-bg: #E2E4D8;
-  --swatch-accent: #5C7A6B;
+.theme-menu-item .theme-swatch.swatch-blueprint {
+  outline: 1px solid rgba(0, 0, 0, 0.18) !important;
 }
 
-.swatch-blueprint {
-  --swatch-bg: #E1E8F0;
-  --swatch-accent: #003399;
+.theme-menu-item .theme-swatch.swatch-glacial {
+  outline: 1px solid rgba(0, 0, 0, 0.16) !important;
 }
 
-.swatch-walnut {
-  --swatch-bg: #1E1715;
-  --swatch-accent: #CC703D;
+.theme-menu-item .theme-swatch.swatch-dark {
+  outline: 1px solid rgba(255, 255, 255, 0.18) !important;
 }
 
-.swatch-leica {
-  --swatch-bg: #151517;
-  --swatch-accent: #FF1A1A;
+.theme-menu-item .theme-swatch.swatch-walnut {
+  outline: 1px solid rgba(255, 255, 255, 0.16) !important;
 }
 
-.swatch-bordeaux {
-  --swatch-bg: #261418;
-  --swatch-accent: #B6353E;
+.theme-menu-item .theme-swatch.swatch-leica {
+  outline: 1px solid rgba(255, 255, 255, 0.22) !important;
 }
 
-.swatch-glacial {
-  --swatch-bg: #F3F5F8;
-  --swatch-accent: #4A7BB0;
+.theme-menu-item .theme-swatch.swatch-bordeaux {
+  outline: 1px solid rgba(255, 255, 255, 0.18) !important;
 }
+
+.theme-menu-item .theme-swatch.swatch-light .swatch-half-left { background: #F4F1EB !important; }
+.theme-menu-item .theme-swatch.swatch-light .swatch-half-right { background: #242426 !important; }
+
+.theme-menu-item .theme-swatch.swatch-moss .swatch-half-left { background: #E2E4D8 !important; }
+.theme-menu-item .theme-swatch.swatch-moss .swatch-half-right { background: #5C7A6B !important; }
+
+.theme-menu-item .theme-swatch.swatch-blueprint .swatch-half-left { background: #E1E8F0 !important; }
+.theme-menu-item .theme-swatch.swatch-blueprint .swatch-half-right { background: #003399 !important; }
+
+.theme-menu-item .theme-swatch.swatch-glacial .swatch-half-left { background: #F3F5F8 !important; }
+.theme-menu-item .theme-swatch.swatch-glacial .swatch-half-right { background: #4A7BB0 !important; }
+
+.theme-menu-item .theme-swatch.swatch-dark .swatch-half-left { background: #1A1A1A !important; }
+.theme-menu-item .theme-swatch.swatch-dark .swatch-half-right { background: #00A3FF !important; }
+
+.theme-menu-item .theme-swatch.swatch-walnut .swatch-half-left { background: #1E1715 !important; }
+.theme-menu-item .theme-swatch.swatch-walnut .swatch-half-right { background: #CC703D !important; }
+
+.theme-menu-item .theme-swatch.swatch-leica .swatch-half-left { background: #151517 !important; }
+.theme-menu-item .theme-swatch.swatch-leica .swatch-half-right { background: #FF1A1A !important; }
+
+.theme-menu-item .theme-swatch.swatch-bordeaux .swatch-half-left { background: #261418 !important; }
+.theme-menu-item .theme-swatch.swatch-bordeaux .swatch-half-right { background: #B6353E !important; }
 
 @media (max-width: 340px) {
   .connect-panel,
