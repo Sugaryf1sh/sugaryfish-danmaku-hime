@@ -7472,82 +7472,109 @@ body.quartz-theme .fans-medal-level {
 body.light-theme {
   --tag-danmaku: #4A6B9C;
   --tag-gift: #8A6F35;
-  --tag-superchat: #8F5C45;
+  --tag-superchat: #9B5C52;
   --tag-guard: #6F637D;
-  --status-signal: #4A6B9C;
-  --status-signal-glow: rgba(74, 107, 156, 0.34);
+  --status-signal: #9B5C52;
+  --status-signal-glow: rgba(155, 92, 82, 0.32);
+  --gift: var(--tag-gift);
+  --superchat: var(--tag-superchat);
+  --guard: var(--tag-guard);
 }
 
 body.dark-theme {
   --tag-danmaku: #7BA0C0;
-  --tag-gift: #B5A06D;
-  --tag-superchat: #C17775;
-  --tag-guard: #9F91B8;
-  --status-signal: #7BA0C0;
-  --status-signal-glow: rgba(123, 160, 192, 0.34);
+  --tag-gift: #C0A46B;
+  --tag-superchat: #D28A80;
+  --tag-guard: #A69AD0;
+  --status-signal: #D28A80;
+  --status-signal-glow: rgba(210, 138, 128, 0.34);
+  --gift: var(--tag-gift);
+  --superchat: var(--tag-superchat);
+  --guard: var(--tag-guard);
 }
 
 body.moss-theme {
   --tag-danmaku: #4A6B5D;
-  --tag-gift: #9A6B3F;
-  --tag-superchat: #8C655D;
-  --tag-guard: #607068;
-  --status-signal: #4A6B5D;
-  --status-signal-glow: rgba(74, 107, 93, 0.28);
+  --tag-gift: #A27A43;
+  --tag-superchat: #8E5F64;
+  --tag-guard: #5F7280;
+  --status-signal: #A06B58;
+  --status-signal-glow: rgba(160, 107, 88, 0.3);
+  --gift: var(--tag-gift);
+  --superchat: var(--tag-superchat);
+  --guard: var(--tag-guard);
 }
 
 body.blueprint-theme {
   --tag-danmaku: #003399;
   --tag-gift: #8A6B32;
-  --tag-superchat: #7D527A;
-  --tag-guard: #405D91;
-  --status-signal: #003399;
-  --status-signal-glow: rgba(0, 51, 153, 0.28);
+  --tag-superchat: #8B4F77;
+  --tag-guard: #466A7F;
+  --status-signal: #A0473D;
+  --status-signal-glow: rgba(160, 71, 61, 0.3);
+  --gift: var(--tag-gift);
+  --superchat: var(--tag-superchat);
+  --guard: var(--tag-guard);
 }
 
 body.walnut-theme {
   --tag-danmaku: #CC703D;
   --tag-gift: #D6A85F;
   --tag-superchat: #C0392B;
-  --tag-guard: #A77B4F;
-  --status-signal: #CC703D;
-  --status-signal-glow: rgba(204, 112, 61, 0.36);
+  --tag-guard: #7F8A68;
+  --status-signal: #B84A32;
+  --status-signal-glow: rgba(184, 74, 50, 0.34);
+  --gift: var(--tag-gift);
+  --superchat: var(--tag-superchat);
+  --guard: var(--tag-guard);
 }
 
 body.leica-theme {
-  --tag-danmaku: #FF1A1A;
-  --tag-gift: #B6B6BE;
+  --tag-danmaku: #C8C8D0;
+  --tag-gift: #C7B27E;
   --tag-superchat: #FF1A1A;
-  --tag-guard: #7B7B84;
-  --status-signal: #FF1A1A;
-  --status-signal-glow: rgba(255, 26, 26, 0.34);
+  --tag-guard: #8E93A1;
+  --status-signal: #F25543;
+  --status-signal-glow: rgba(242, 85, 67, 0.36);
+  --gift: var(--tag-gift);
+  --superchat: var(--tag-superchat);
+  --guard: var(--tag-guard);
 }
 
 body.bordeaux-theme {
-  --tag-danmaku: #B6353E;
-  --tag-gift: #B88A72;
-  --tag-superchat: #B6353E;
-  --tag-guard: #8C5960;
-  --status-signal: #B6353E;
-  --status-signal-glow: rgba(182, 53, 62, 0.34);
+  --tag-danmaku: #A96B72;
+  --tag-gift: #C29A72;
+  --tag-superchat: #C74B55;
+  --tag-guard: #86698E;
+  --status-signal: #D06A58;
+  --status-signal-glow: rgba(208, 106, 88, 0.34);
+  --gift: var(--tag-gift);
+  --superchat: var(--tag-superchat);
+  --guard: var(--tag-guard);
 }
 
 body.glacial-theme {
   --tag-danmaku: #4A7BB0;
-  --tag-gift: #7E6E9E;
-  --tag-superchat: #3B5E82;
-  --tag-guard: #607789;
-  --status-signal: #4A7BB0;
-  --status-signal-glow: rgba(74, 123, 176, 0.28);
+  --tag-gift: #7B78A8;
+  --tag-superchat: #9A6D82;
+  --tag-guard: #5D7785;
+  --status-signal: #6A75B8;
+  --status-signal-glow: rgba(106, 117, 184, 0.28);
+  --gift: var(--tag-gift);
+  --superchat: var(--tag-superchat);
+  --guard: var(--tag-guard);
 }
 
 body.quartz-theme {
   --tag-danmaku: #B35C55;
-  --tag-gift: #9A6F61;
-  --tag-superchat: #9A4E58;
-  --tag-guard: #7F6A82;
-  --status-signal: #B35C55;
-  --status-signal-glow: rgba(179, 92, 85, 0.3);
+  --tag-gift: #A06F55;
+  --tag-superchat: #A84C63;
+  --tag-guard: #7A668D;
+  --status-signal: #B86A78;
+  --status-signal-glow: rgba(184, 106, 120, 0.3);
+  --gift: var(--tag-gift);
+  --superchat: var(--tag-superchat);
+  --guard: var(--tag-guard);
 }
 
 body:is(.light-theme, .dark-theme, .moss-theme, .blueprint-theme, .walnut-theme, .leica-theme, .bordeaux-theme, .glacial-theme, .quartz-theme) .tag {
@@ -7765,6 +7792,10 @@ body,
   user-select: none !important;
   color: currentColor !important;
   opacity: 0.42 !important;
+}
+
+.theme-dropdown-menu .menu-matrix-placeholder.is-hidden {
+  display: none !important;
 }
 
 .menu-matrix-placeholder .placeholder-cross {

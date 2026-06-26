@@ -94,6 +94,8 @@ body.newtheme-theme {
 - 右侧 `.theme-swatch` 必须通过 `.theme-menu-item .theme-swatch { all: unset !important; }` 先做全属性重置，再重建为 12px x 12px 的纯平 90° 垂直直切正方形晶片。
 - `.theme-swatch` 不允许出现开关式滑块、动态缩放、内阴影、透明度衰减或脏边；色盘必须由两个绝对定位的 `.swatch-half` 物理半块组成，每块 6px x 12px，外框用不占尺寸的 `outline` 表达，严禁使用 `border` 挤压内部色块、`linear-gradient()`、45°/135° 斜切渐变或伪元素三角裁切。
 - `.theme-dropdown-menu` 和 `.theme-menu-item` 的网格列宽、padding、flex 两端对齐由终端守卫统一控制；新增主题只补 `.swatch-<key>` 色盘，不要回退成纯文本按钮或单列列表。
+- 右下角补位遵循奇偶规则：当主题总数为奇数时，`.theme-dropdown-menu` 最后一格保留 `.menu-matrix-placeholder`，`placeholder-serial` 文案按当前主题总数迭代，例如 `[ 09 / MATX ]`；当主题总数为偶数时，必须隐藏或移除该补位格，不允许强行留空标记。
+- `.menu-matrix-placeholder` 只负责装饰和补位，不参与 `.theme-menu-item` 点击绑定，也不写 `data-theme`。
 
 ## 6. 设置抽屉
 
@@ -157,7 +159,10 @@ body.newtheme-theme {
 - 亮色组字体向纸墨对齐：`light`、`moss`、`blueprint`、`glacial`、`quartz` 的左上标题和正文使用纸墨的衬线骨架，用户名使用纸墨的 UI 无衬线层级。
 - 暗色组字体向胡桃对齐：`dark`、`walnut`、`leica`、`bordeaux` 的左上标题、用户名、正文和粉丝牌结构都使用胡桃的骨架，只保留各主题自己的颜色变量。
 - 普通弹幕、礼物、醒目留言、舰长标签必须使用独立语义色；事件项先写入 `--event-tag-color`，再由 `.tag` 文字、`.tag::before` 圆点、左侧 `border-left-color` 高亮线、hover/focus 背景统一读取，不能被主题旧规则拆成多个颜色源。
-- `--event-tag-color` 默认读取 `--tag-danmaku`；礼物读取 `--tag-gift`；醒目留言读取 `--tag-superchat`；舰长读取 `--tag-guard`。`--tag-gift` 必须与 `--tag-danmaku` 拉开明确色相或明度差，不允许只做同色系轻微漂移。
+- `--event-tag-color` 默认读取 `--tag-danmaku`；礼物读取 `--tag-gift`；醒目留言读取 `--tag-superchat`；舰长读取 `--tag-guard`。旧规则仍可能读取 `--gift`、`--superchat`、`--guard`，所以新增主题必须把这三项同步到对应 `--tag-*` 变量。
+- 事件特殊色必须“有差别但不突兀”：`--tag-gift` 优先取温润金属、矿物金、陶土或柔和紫灰；`--tag-guard` 优先取冷静护卫色，如石蓝、铅紫、松石灰；`--tag-superchat` 和左上 `--status-signal` 必须比普通弹幕标签更醒目，但不能直接复制主题主强调色，至少在色相或明度上拉开一档。
+- 左上 `.status-dot` 用 `--status-signal` / `--status-signal-glow` 表达主题特色提醒；它可以和 `--tag-superchat` 同属一个强调家族，但应比标签更像“状态灯”，避免跟普通弹幕圆点、礼物圆点、舰长圆点混成同色。
+- `--tag-gift`、`--tag-superchat`、`--tag-guard` 之间也要互相可辨；礼物、醒目留言、舰长的 `.tag` 文字、`.tag::before` 圆点、左侧高亮线必须同色，禁止一项事件内部出现三种颜色。
 - 礼物倍数 `.gift-multiplier` 读取 `--tag-gift`；醒目留言强调读取 `--tag-superchat`；醒目留言、礼物和舰长的左侧高亮线必须与各自标签文字、圆点同色。
 - 用户名渐隐使用视觉宽度阈值：中文超过 9 个字触发，英文约超过 18 个字符触发，中英混排按宽度折算。
 - `.uid` 必须 `white-space: nowrap`，`.meta` 不允许把用户名和 UID 拆成两行。

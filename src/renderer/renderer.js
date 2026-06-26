@@ -89,6 +89,8 @@ const els = {
   themeSelectorWrapper: document.querySelector(".theme-selector-wrapper"),
   themeToggle: document.getElementById("themeToggle"),
   themeMenuItems: document.querySelectorAll(".theme-menu-item"),
+  themeMatrixPlaceholder: document.querySelector(".menu-matrix-placeholder"),
+  themeMatrixPlaceholderSerial: document.querySelector(".menu-matrix-placeholder .placeholder-serial"),
   minimizeBtn: document.getElementById("minimizeBtn"),
   hideBtn: document.getElementById("hideBtn")
 };
@@ -98,6 +100,7 @@ init();
 async function init() {
   state.settings = await api.getSettings();
   applySettings(state.settings);
+  syncThemeMatrixPlaceholder();
   updateRuntimeDashboard();
   state.uptimeTimer = setInterval(updateRuntimeDashboard, 60000);
   bindEvents();
@@ -731,6 +734,18 @@ function closeThemeDropdown() {
 
 function isValidTheme(theme) {
   return Object.prototype.hasOwnProperty.call(THEME_LABELS, theme);
+}
+
+function syncThemeMatrixPlaceholder() {
+  if (!els.themeMatrixPlaceholder) {
+    return;
+  }
+  const themeCount = [...els.themeMenuItems].filter((item) => item.dataset.theme).length;
+  const shouldShowPlaceholder = themeCount % 2 === 1;
+  els.themeMatrixPlaceholder.classList.toggle("is-hidden", !shouldShowPlaceholder);
+  if (els.themeMatrixPlaceholderSerial) {
+    els.themeMatrixPlaceholderSerial.textContent = `[ ${String(themeCount).padStart(2, "0")} / MATX ]`;
+  }
 }
 
 function updateToggleMark(toggle, active) {
