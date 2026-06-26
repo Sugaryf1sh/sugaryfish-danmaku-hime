@@ -1,19 +1,23 @@
 {
-    "version":  "1.4.6",
-    "tag":  "v1.4.6",
-    "title":  "Sugaryfish的弹幕姬 1.4.6",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.4.6",
+    "version":  "1.5.0",
+    "tag":  "v1.5.0",
+    "title":  "Sugaryfish的弹幕姬 1.5.0",
+    "releaseDate":  "2026-06-26",
+    "publishedAt":  "2026-06-26",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.5.0",
     "features":  [
-                     "为礼物、醒目留言、舰长和左上状态点补齐分主题强调色规则。",
-                     "调整多套主题的事件标签色，让文字、圆点、左侧高亮线保持统一且更易区分。",
-                     "同步旧事件变量与新语义变量，避免礼物倍数、标签和高亮线取色不一致。",
-                     "更新主题新增流程：下拉菜单主题数为奇数时显示右下角矩阵水印，偶数时自动隐藏。"
+                     "新增第九套浅色主题「瑰砂」，补齐主题菜单、色卡、清理队列和主题新增模板流程。",
+                     "重构顶部观众舱为环岛浮舱，加入右侧「更多」扩展舱，并修复亮色主题舱体材质、扩展舱对齐和观众名裁切问题。",
+                     "新增底部入场提示舱，入场事件不再进入主弹幕流，支持卡片式切换、最短停留和分主题色彩。",
+                     "优化观众进入、在线观众同步和离场移除逻辑，修复匿名入场、重复刷新、消失抖动和沉浸模式自动进入问题。",
+                     "统一礼物、舰长、醒目留言、入场提示、观众舱和左上状态点的分主题强调色规则。",
+                     "强化弹幕滚动层、穿透态滑轨、顶部红点圆心和观众舱几何对齐，减少布局压缩和视觉穿帮。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.4.6\n\n- 为礼物、醒目留言、舰长和左上状态点补齐分主题强调色规则。\n- 调整多套主题的事件标签色，让文字、圆点、左侧高亮线保持统一且更易区分。\n- 同步旧事件变量与新语义变量，避免礼物倍数、标签和高亮线取色不一致。\n- 更新主题新增流程：下拉菜单主题数为奇数时显示右下角矩阵水印，偶数时自动隐藏。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.5.0\n\n- 新增第九套浅色主题「瑰砂」，补齐主题菜单、色卡、清理队列和主题新增模板流程。\n- 重构顶部观众舱为环岛浮舱，加入右侧「更多」扩展舱，并修复亮色主题舱体材质、扩展舱对齐和观众名裁切问题。\n- 新增底部入场提示舱，入场事件不再进入主弹幕流，支持卡片式切换、最短停留和分主题色彩。\n- 优化观众进入、在线观众同步和离场移除逻辑，修复匿名入场、重复刷新、消失抖动和沉浸模式自动进入问题。\n- 统一礼物、舰长、醒目留言、入场提示、观众舱和左上状态点的分主题强调色规则。\n- 强化弹幕滚动层、穿透态滑轨、顶部红点圆心和观众舱几何对齐，减少布局压缩和视觉穿帮。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.4.6.zip",
-                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.4.6/updates/Sugaryfish-Danmaku-Hime-App-1.4.6.zip",
-                    "sha256":  "4c55968d9d08516b7b26b5a190448e132ed12ab69a308ca502ba79ff7288f184"
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.5.0.zip",
+                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.5.0/updates/Sugaryfish-Danmaku-Hime-App-1.5.0.zip",
+                    "sha256":  "2fe8dc60a56c30693ebb851f412f70895c0bc2a1aee3420a301c6e2af158ea23"
                 }
 }

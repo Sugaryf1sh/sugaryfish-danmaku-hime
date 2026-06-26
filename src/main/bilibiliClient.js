@@ -13,6 +13,8 @@ const OP_HEARTBEAT_REPLY = 3;
 const OP_MESSAGE = 5;
 const OP_AUTH = 7;
 const OP_AUTH_REPLY = 8;
+const ONLINE_PRESENCE_LIMIT = 11;
+const ONLINE_PRESENCE_PAGE_SIZE = 10;
 const WBI_MIXIN_KEY_ENC_TAB = [
   46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35,
   27, 43, 5, 49, 33, 9, 42, 19, 29, 28, 14, 39, 12, 38, 41, 13,
@@ -30,11 +32,14 @@ class BilibiliDanmakuClient extends EventEmitter {
     this.realRoomId = null;
     this.heartbeatTimer = null;
     this.popularityTimer = null;
+    this.presenceTimer = null;
     this.reconnectTimer = null;
     this.shouldReconnect = false;
     this.reconnectAttempts = 0;
     this.cookie = "";
     this.uid = 0;
+    this.anchorUid = 0;
+    this.presencePollInFlight = false;
     this.roomEmotes = new Map();
     this.emotePackageIndex = new Map();
     this.emotePackagePromises = new Map();
@@ -43,8 +48,11 @@ class BilibiliDanmakuClient extends EventEmitter {
   async connect(roomId, options = {}) {
     this.disconnect(false);
     this.roomId = String(roomId || "").trim();
+    this.realRoomId = null;
     this.cookie = buildCookie(options.sessdata);
     this.uid = 0;
+    this.anchorUid = 0;
+    this.presencePollInFlight = false;
     this.roomEmotes = new Map();
     this.emotePackageIndex = new Map();
     this.emotePackagePromises = new Map();
@@ -61,10 +69,14 @@ class BilibiliDanmakuClient extends EventEmitter {
     this.shouldReconnect = false;
     clearInterval(this.heartbeatTimer);
     clearInterval(this.popularityTimer);
+    clearInterval(this.presenceTimer);
     clearTimeout(this.reconnectTimer);
     this.heartbeatTimer = null;
     this.popularityTimer = null;
+    this.presenceTimer = null;
+    this.presencePollInFlight = false;
     this.reconnectTimer = null;
+    this.emit("presence", []);
 
     if (this.ws) {
       const ws = this.ws;
@@ -124,8 +136,11 @@ class BilibiliDanmakuClient extends EventEmitter {
       this.ws.on("close", () => {
         clearInterval(this.heartbeatTimer);
         clearInterval(this.popularityTimer);
+        clearInterval(this.presenceTimer);
         this.heartbeatTimer = null;
         this.popularityTimer = null;
+        this.presenceTimer = null;
+        this.presencePollInFlight = false;
         if (this.shouldReconnect) {
           this.scheduleReconnect();
         } else {
@@ -198,6 +213,41 @@ class BilibiliDanmakuClient extends EventEmitter {
     this.popularityTimer = setInterval(refresh, 15000);
   }
 
+  startPresencePolling() {
+    clearInterval(this.presenceTimer);
+    this.presenceTimer = null;
+    this.presencePollInFlight = false;
+
+    const refresh = async () => {
+      if (!this.realRoomId || !this.shouldReconnect || this.presencePollInFlight) {
+        return;
+      }
+
+      const pollingRoomId = this.realRoomId;
+      this.presencePollInFlight = true;
+      try {
+        if (!this.anchorUid) {
+          const roomInfo = await getRoomInfo(pollingRoomId, this.cookie);
+          this.anchorUid = Number(roomInfo?.uid || 0);
+        }
+        if (!this.anchorUid) {
+          return;
+        }
+        const viewers = await getOnlinePresence(pollingRoomId, this.anchorUid, this.cookie);
+        if (this.shouldReconnect && this.realRoomId === pollingRoomId) {
+          this.emit("presence", viewers);
+        }
+      } catch {
+        // Presence is a soft HUD affordance. Never let a rank API miss disturb danmaku.
+      } finally {
+        this.presencePollInFlight = false;
+      }
+    };
+
+    refresh();
+    this.presenceTimer = setInterval(refresh, 1000);
+  }
+
   sendPacket(operation, payload) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       return;
@@ -221,6 +271,7 @@ class BilibiliDanmakuClient extends EventEmitter {
       if (operation === OP_AUTH_REPLY) {
         this.emit("status", { state: "connected", text: `已连接 ${this.realRoomId}` });
         this.startPopularityPolling();
+        this.startPresencePolling();
         continue;
       }
 
@@ -327,14 +378,50 @@ async function getDanmuInfo(realRoomId, cookie = "") {
 }
 
 async function getRoomPopularity(realRoomId, cookie = "") {
+  const roomInfo = await getRoomInfo(realRoomId, cookie);
+  const online = Number(roomInfo?.online);
+  return Number.isFinite(online) ? online : null;
+}
+
+async function getRoomInfo(realRoomId, cookie = "") {
   const url = `${API_BASE}/room/v1/Room/get_info?room_id=${encodeURIComponent(realRoomId)}`;
   const payload = await fetchJson(url, { cookie });
   if (payload.code !== 0 || !payload.data) {
-    throw new Error(payload.message || "直播间人气获取失败");
+    throw new Error(payload.message || "直播间信息获取失败");
   }
+  return payload.data;
+}
 
-  const online = Number(payload.data.online);
-  return Number.isFinite(online) ? online : null;
+async function getOnlinePresence(realRoomId, anchorUid, cookie = "") {
+  const firstPage = await getOnlinePresencePage(realRoomId, anchorUid, 1, cookie);
+  let viewers = normalizePresenceItems(firstPage);
+  if (viewers.length < ONLINE_PRESENCE_LIMIT) {
+    try {
+      const secondPage = await getOnlinePresencePage(realRoomId, anchorUid, 2, cookie);
+      viewers = dedupePresenceItems(viewers.concat(normalizePresenceItems(secondPage)));
+    } catch {
+      // The first page is still enough to keep the compact ribbon alive.
+    }
+  }
+  return viewers.slice(0, ONLINE_PRESENCE_LIMIT);
+}
+
+async function getOnlinePresencePage(realRoomId, anchorUid, page, cookie = "") {
+  const query = new URLSearchParams({
+    room_id: String(realRoomId),
+    ruid: String(anchorUid),
+    type: "online_rank",
+    switch: "contribution_rank",
+    page: String(page),
+    page_size: String(ONLINE_PRESENCE_PAGE_SIZE),
+    web_location: "444.8"
+  });
+  const url = `${API_BASE}/xlive/general-interface/v1/rank/queryContributionRank?${query.toString()}`;
+  const payload = await fetchJson(url, { cookie });
+  if (payload.code !== 0 || !payload.data) {
+    throw new Error(payload.message || "在线观众榜获取失败");
+  }
+  return payload.data;
 }
 
 async function getEmoticonResources(realRoomId, cookie = "") {
@@ -735,6 +822,27 @@ function normalizeEvent(raw, roomEmotes = new Map()) {
     };
   }
 
+  if (command === "INTERACT_WORD" || command === "INTERACT_WORD_V2") {
+    const data = raw.data || {};
+    const msgType = Number(data.msg_type || data.msgType || 0);
+    if (msgType && msgType !== 1) {
+      return null;
+    }
+    const protobufUser = extractInteractWordProtobufUser(data.pb);
+    const user = pickEntryUserName(data, protobufUser);
+    const uid = pickEntryUid(data, protobufUser);
+    return {
+      id: makeId(),
+      type: "entry",
+      tag: "进入",
+      time: now,
+      user: user || "匿名",
+      uid,
+      text: "进入直播间",
+      medal: extractFansMedal(raw)
+    };
+  }
+
   if (command === "SEND_GIFT") {
     const data = raw.data || {};
     const giftCount = Number(data.num || 1);
@@ -870,8 +978,342 @@ function normalizeFansMedal(value) {
   return null;
 }
 
+function pickEntryUserName(data, protobufUser = {}) {
+  return firstCleanText([
+    protobufUser.name,
+    data.uname,
+    data.username,
+    data.name,
+    data.user?.uname,
+    data.user?.username,
+    data.user?.name,
+    data.user_info?.uname,
+    data.user_info?.username,
+    data.user_info?.name,
+    data.uinfo?.base?.name,
+    data.uinfo?.base?.uname,
+    data.uinfo?.name,
+    data.uinfo?.uname
+  ]);
+}
+
+function pickEntryUid(data, protobufUser = {}) {
+  const candidates = [
+    protobufUser.uid,
+    data.uid,
+    data.user_id,
+    data.user?.uid,
+    data.user?.id,
+    data.user_info?.uid,
+    data.user_info?.id,
+    data.uinfo?.uid,
+    data.uinfo?.mid,
+    data.uinfo?.base?.uid,
+    data.uinfo?.base?.mid
+  ];
+
+  for (const candidate of candidates) {
+    if (isLikelyBilibiliUid(candidate)) {
+      return firstCleanText([candidate]);
+    }
+  }
+  return "";
+}
+
+function extractInteractWordProtobufUser(value) {
+  const buffer = decodeBase64Buffer(value);
+  if (!buffer?.length) {
+    return {};
+  }
+
+  const topLevel = readProtobufFields(buffer);
+  const topLevelName = topLevel.fields.find((field) => field.number === 2 && isValidEntryName(field.text))?.text;
+  const topLevelUid = topLevel.fields.find((field) => field.number === 1 && isLikelyBilibiliUid(field.value))?.value;
+  const scanned = scanProtobufUserFields(buffer);
+
+  return {
+    name: topLevelName || scanned.name || "",
+    uid: topLevelUid || scanned.uid || ""
+  };
+}
+
+function decodeBase64Buffer(value) {
+  if (!value || typeof value !== "string") {
+    return null;
+  }
+  const text = value.trim();
+  if (!text || text.length > 20000 || !/^[A-Za-z0-9+/=_-]+$/.test(text)) {
+    return null;
+  }
+  try {
+    return Buffer.from(text.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+  } catch {
+    return null;
+  }
+}
+
+function scanProtobufUserFields(buffer, depth = 0, seen = new Set()) {
+  if (!Buffer.isBuffer(buffer) || !buffer.length || depth > 4 || seen.has(buffer)) {
+    return {};
+  }
+  seen.add(buffer);
+
+  const parsed = readProtobufFields(buffer);
+  let name = "";
+  let uid = "";
+
+  for (const field of parsed.fields) {
+    if (!uid && isLikelyBilibiliUid(field.value)) {
+      uid = field.value;
+    }
+    if (!name && isValidEntryName(field.text)) {
+      name = field.text;
+    }
+    if (name && uid) {
+      return { name, uid };
+    }
+  }
+
+  for (const field of parsed.fields) {
+    if (!field.bytes || !looksLikeProtobuf(field.bytes)) {
+      continue;
+    }
+    const nested = scanProtobufUserFields(field.bytes, depth + 1, seen);
+    if (!name && nested.name) {
+      name = nested.name;
+    }
+    if (!uid && nested.uid) {
+      uid = nested.uid;
+    }
+    if (name && uid) {
+      return { name, uid };
+    }
+  }
+
+  return { name, uid };
+}
+
+function readProtobufFields(buffer) {
+  const fields = [];
+  let offset = 0;
+
+  const readVarint = () => {
+    let result = 0n;
+    let shift = 0n;
+    const start = offset;
+    while (offset < buffer.length && shift <= 63n) {
+      const byte = buffer[offset++];
+      result |= BigInt(byte & 0x7f) << shift;
+      if ((byte & 0x80) === 0) {
+        return { ok: true, value: result };
+      }
+      shift += 7n;
+    }
+    offset = start;
+    return { ok: false, value: 0n };
+  };
+
+  while (offset < buffer.length) {
+    const key = readVarint();
+    if (!key.ok || key.value === 0n) {
+      break;
+    }
+    const number = Number(key.value >> 3n);
+    const wireType = Number(key.value & 0x07n);
+    if (!Number.isFinite(number) || number <= 0) {
+      break;
+    }
+
+    if (wireType === 0) {
+      const value = readVarint();
+      if (!value.ok) {
+        break;
+      }
+      fields.push({ number, wireType, value: value.value.toString() });
+      continue;
+    }
+
+    if (wireType === 2) {
+      const length = readVarint();
+      if (!length.ok) {
+        break;
+      }
+      const size = Number(length.value);
+      if (!Number.isFinite(size) || size < 0 || offset + size > buffer.length) {
+        break;
+      }
+      const bytes = buffer.subarray(offset, offset + size);
+      offset += size;
+      fields.push({
+        number,
+        wireType,
+        bytes,
+        text: decodeUtf8Field(bytes)
+      });
+      continue;
+    }
+
+    if (wireType === 1) {
+      offset += 8;
+      continue;
+    }
+
+    if (wireType === 5) {
+      offset += 4;
+      continue;
+    }
+
+    break;
+  }
+
+  return { fields };
+}
+
+function decodeUtf8Field(bytes) {
+  if (!bytes?.length || bytes.length > 256 || bytes.includes(0)) {
+    return "";
+  }
+  const text = bytes.toString("utf8").trim();
+  if (!text || text.includes("\uFFFD") || /[\x00-\x08\x0e-\x1f\x7f]/.test(text)) {
+    return "";
+  }
+  return text;
+}
+
+function looksLikeProtobuf(bytes) {
+  if (!bytes?.length || bytes.length < 2 || bytes.length > 4096) {
+    return false;
+  }
+  const parsed = readProtobufFields(bytes);
+  return parsed.fields.length > 0;
+}
+
+function isLikelyBilibiliUid(value) {
+  const text = firstCleanText([value]);
+  if (!/^\d{4,12}$/.test(text)) {
+    return false;
+  }
+  const number = Number(text);
+  return Number.isSafeInteger(number) && number > 1000;
+}
+
+function isValidEntryName(value) {
+  const text = cleanMedalText(value);
+  if (!text || text.length > 32) {
+    return false;
+  }
+  if (/^https?:\/\//i.test(text) || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(text)) {
+    return false;
+  }
+  if (/进入直播间|近期与你互动|活跃过|关注了直播间/.test(text)) {
+    return false;
+  }
+  if (/^\d+$/.test(text)) {
+    return false;
+  }
+  return /[\p{L}\p{N}_\-\u3000-\u9fff]/u.test(text);
+}
+
+function firstCleanText(values) {
+  for (const value of values) {
+    const text = cleanMedalText(value);
+    if (text && text !== "匿名") {
+      return text;
+    }
+  }
+  return "";
+}
+
 function cleanMedalText(value) {
   return String(value || "").trim();
+}
+
+function normalizePresenceItems(data) {
+  const items = [
+    ...asArray(data?.item),
+    ...asArray(data?.list),
+    ...asArray(data?.rank),
+    ...asArray(data?.online_rank_item),
+    ...asArray(data?.online_rank_list)
+  ];
+  const seen = new Set();
+  const viewers = [];
+
+  for (const item of items) {
+    const viewer = normalizePresenceItem(item);
+    if (!viewer || seen.has(viewer.uid)) {
+      continue;
+    }
+    seen.add(viewer.uid);
+    viewers.push(viewer);
+    if (viewers.length >= ONLINE_PRESENCE_LIMIT) {
+      break;
+    }
+  }
+
+  return viewers;
+}
+
+function dedupePresenceItems(items) {
+  const seen = new Set();
+  const viewers = [];
+  for (const viewer of items) {
+    if (!viewer || seen.has(viewer.uid)) {
+      continue;
+    }
+    seen.add(viewer.uid);
+    viewers.push(viewer);
+    if (viewers.length >= ONLINE_PRESENCE_LIMIT) {
+      break;
+    }
+  }
+  return viewers;
+}
+
+function normalizePresenceItem(item) {
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+  const base = item.uinfo?.base || {};
+  const origin = base.origin_info || {};
+  const risk = base.risk_ctrl_info || {};
+  const uid = firstCleanText([
+    item.uid,
+    item.mid,
+    item.user_id,
+    item.user?.uid,
+    item.user_info?.uid,
+    item.uinfo?.uid,
+    base.uid
+  ]);
+  if (!/^\d{2,}$/.test(uid)) {
+    return null;
+  }
+  const name = firstCleanText([
+    item.name,
+    item.uname,
+    item.username,
+    item.user?.name,
+    item.user?.uname,
+    item.user_info?.uname,
+    base.name,
+    origin.name,
+    risk.name
+  ]) || `UID ${uid}`;
+  return {
+    uid,
+    name,
+    avatar: normalizeImageUrl(firstCleanText([
+      item.face,
+      item.avatar,
+      item.user?.face,
+      item.user_info?.face,
+      base.face,
+      origin.face,
+      risk.face
+    ])),
+    rank: Number(item.rank || item.ranking || 0) || 0
+  };
 }
 
 function toPositiveInteger(value) {

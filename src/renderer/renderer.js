@@ -2,6 +2,17 @@ const api = window.danmakuApp;
 const MEGA_GIFT_THRESHOLD = 100;
 const MEGA_GIFT_DURATION = 12000;
 const MEGA_GIFT_LEAVE_DELAY = 11500;
+const ENTRANCE_TICKER_DURATION = 6000;
+const ENTRANCE_TICKER_MIN_VISIBLE = 3000;
+const ENTRANCE_TICKER_SWITCH_DURATION = 340;
+const ENTRY_ITEM_MAX_TTL = 8000;
+const ENTRY_ITEM_MIN_TTL = 4000;
+const ENTRY_RATE_WINDOW = 12000;
+const ENTRY_ITEM_PULL_DURATION = 680;
+const ENTRY_ITEM_FADE_DURATION = ENTRY_ITEM_PULL_DURATION + 120;
+const PRESENCE_LIMIT = 11;
+const PRESENCE_PRIMARY_LIMIT = 5;
+const PRESENCE_HANGAR_LIMIT = 6;
 const UPDATE_IDLE_TEXT = "检查更新";
 const UPDATE_LATEST_TEXT = "已是最新版本";
 const THEME_CLASSES = ["light-theme", "moss-theme", "blueprint-theme", "glacial-theme", "dark-theme", "walnut-theme", "leica-theme", "bordeaux-theme", "quartz-theme"];
@@ -24,6 +35,8 @@ const state = {
   popularityText: "",
   popularityRaw: 0,
   popularityTrend: "",
+  presenceItems: [],
+  entryTimestamps: [],
   popularityTrendTimer: null,
   statusFlashTimer: null,
   statusPulseTimer: null,
@@ -33,9 +46,17 @@ const state = {
   updateNoticeRestoreClickThrough: null,
   clickThroughWakeTimer: null,
   clickThroughNoticeShown: false,
+  entranceTickerTimer: null,
+  entranceTickerFrame: null,
+  entranceTickerHoldTimer: null,
+  entranceTickerSwitchTimer: null,
+  entranceTickerVisibleSince: 0,
+  currentEntranceTickerKey: "",
+  pendingEntranceTickerItem: null,
   startTime: Date.now(),
   uptimeTimer: null,
   hudDimTimer: null,
+  isPointerInsideApp: false,
   messageCount: 0,
   updateButtonText: UPDATE_IDLE_TEXT,
   isFeedHovered: false,
@@ -50,7 +71,7 @@ const els = {
   statusText: document.getElementById("statusText"),
   appContainer: document.querySelector(".app-container"),
   headerSection: document.querySelector(".header-section"),
-  statusDot: document.querySelector(".status-dot"),
+  statusDot: document.querySelector(".primary-status-dot"),
   statusModeTip: document.getElementById("statusModeTip"),
   roomInput: document.getElementById("roomInput"),
   connectForm: document.getElementById("connectForm"),
@@ -83,6 +104,15 @@ const els = {
   updateProgress: document.getElementById("updateProgress"),
   updateProgressBar: document.getElementById("updateProgressBar"),
   megaGiftZone: document.getElementById("megaGiftZone"),
+  presenceRibbon: document.getElementById("presenceRibbon"),
+  presenceContainer: document.querySelector(".audience-monitor-container"),
+  presenceTrack: document.getElementById("presenceTrack"),
+  presenceExpandTrigger: document.getElementById("presenceExpandTrigger"),
+  presenceHangar: document.getElementById("presenceHangar"),
+  presenceHangarGrid: document.getElementById("presenceHangarGrid"),
+  entranceTicker: document.getElementById("entranceTicker"),
+  tickerCard: document.getElementById("tickerCard"),
+  tickerUsername: document.getElementById("tickerUsername"),
   feed: document.getElementById("feed"),
   runTime: document.getElementById("run-time"),
   msgCount: document.getElementById("msg-count"),
@@ -91,6 +121,7 @@ const els = {
   themeMenuItems: document.querySelectorAll(".theme-menu-item"),
   themeMatrixPlaceholder: document.querySelector(".menu-matrix-placeholder"),
   themeMatrixPlaceholderSerial: document.querySelector(".menu-matrix-placeholder .placeholder-serial"),
+  appUpdateDateText: document.getElementById("appUpdateDateText"),
   minimizeBtn: document.getElementById("minimizeBtn"),
   hideBtn: document.getElementById("hideBtn")
 };
@@ -110,8 +141,11 @@ async function init() {
 }
 
 function bindEvents() {
-  document.body.addEventListener("mouseenter", handleHudWake);
-  document.body.addEventListener("mouseleave", scheduleHudDim);
+  document.body.addEventListener("mouseenter", handleHudPointerEnter);
+  document.body.addEventListener("mouseleave", handleHudPointerLeave);
+  document.documentElement.addEventListener("pointerleave", handleHudPointerLeave);
+  window.addEventListener("mouseout", handleHudWindowMouseOut);
+  window.addEventListener("blur", handleHudWindowBlur);
   document.addEventListener("pointermove", handleHudPointerMove);
   document.addEventListener("mousemove", handleHudPointerMove);
   els.feed.addEventListener("mouseenter", handleFeedHoverStart);
@@ -259,10 +293,13 @@ function bindIpc() {
     syncConnectionUi(connectedUi);
     if (status.state === "connected") {
       document.body.classList.add("is-settings-collapsed");
+      armHudDimAfterConnection();
     }
     if (["disconnected", "error"].includes(status.state)) {
       els.connectBtn.disabled = false;
       document.body.classList.remove("is-settings-collapsed");
+      state.presenceItems = [];
+      renderPresenceRibbon();
     }
     updateSettingsToggleText();
     if (status.state === "connected") {
@@ -288,7 +325,17 @@ function bindIpc() {
     renderHeaderStatus();
   });
 
+  api.onPresence?.((items) => {
+    const nextItems = normalizePresencePayload(items);
+    state.presenceItems = nextItems;
+    renderPresenceRibbon();
+  });
+
   api.onEvent((event) => {
+    if (isEntryEvent(event)) {
+      renderBottomEntranceTicker(event);
+      return;
+    }
     appendItem(event);
   });
 
@@ -556,13 +603,16 @@ function handleUpdateStatus(status = {}) {
 }
 
 async function loadAppInfo() {
-  if (!api.getAppInfo || !els.appVersionText) {
+  if (!api.getAppInfo) {
     return;
   }
   try {
     const info = await api.getAppInfo();
-    if (info?.version) {
+    if (info?.version && els.appVersionText) {
       els.appVersionText.textContent = `v${info.version}`;
+    }
+    if (info?.releaseDate && els.appUpdateDateText) {
+      els.appUpdateDateText.textContent = info.releaseDate;
     }
   } catch {
     // Version display is decorative; package.json remains the source of truth.
@@ -760,6 +810,9 @@ function updateToggleMark(toggle, active) {
 function syncConnectionUi(connectedUi) {
   document.body.classList.toggle("is-connected", connectedUi);
   els.disconnectBtn.hidden = !connectedUi;
+  if (!connectedUi) {
+    clearBottomEntranceTicker();
+  }
 }
 
 function updateSettingsToggleText() {
@@ -934,6 +987,152 @@ function buildEmoteMap(emotes) {
   return map;
 }
 
+function normalizePresencePayload(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  const seen = new Set();
+  const viewers = [];
+  for (const item of items) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+    const uid = String(item.uid || "").trim();
+    const name = String(item.name || "").trim();
+    if (!uid || seen.has(uid)) {
+      continue;
+    }
+    seen.add(uid);
+    viewers.push({
+      uid,
+      name: name || `UID ${uid}`,
+      avatar: isSafeImageUrl(item.avatar) ? item.avatar : "",
+      rank: Number(item.rank) || viewers.length + 1
+    });
+    if (viewers.length >= PRESENCE_LIMIT) {
+      break;
+    }
+  }
+  return viewers;
+}
+
+function renderPresenceRibbon() {
+  if (!els.presenceRibbon || !els.presenceTrack) {
+    return;
+  }
+  const items = state.presenceItems.slice(0, PRESENCE_LIMIT);
+  const primaryItems = items.slice(0, PRESENCE_PRIMARY_LIMIT);
+  const hangarItems = items.slice(PRESENCE_PRIMARY_LIMIT, PRESENCE_PRIMARY_LIMIT + PRESENCE_HANGAR_LIMIT);
+  const hasHangar = items.length > PRESENCE_PRIMARY_LIMIT;
+  els.presenceRibbon.classList.toggle("has-presence", items.length > 0);
+  els.presenceContainer?.classList.toggle("has-presence", items.length > 0);
+  els.presenceRibbon.classList.toggle("has-hangar", hasHangar);
+  els.presenceRibbon.style.setProperty("--presence-count", String(Math.min(items.length, PRESENCE_LIMIT)));
+  els.presenceRibbon.style.setProperty("--presence-hangar-count", String(hangarItems.length));
+  els.presenceRibbon.style.setProperty("--presence-hangar-real-count", String(hangarItems.length));
+  els.presenceRibbon.setAttribute("aria-hidden", items.length ? "false" : "true");
+  els.presenceExpandTrigger?.toggleAttribute("hidden", !hasHangar);
+  els.presenceHangar?.setAttribute("aria-hidden", hasHangar ? "false" : "true");
+  renderPresenceCollection(els.presenceTrack, primaryItems, "primary");
+  if (els.presenceHangarGrid) {
+    renderPresenceCollection(els.presenceHangarGrid, hasHangar ? hangarItems : [], "hangar");
+  }
+}
+
+function renderPresenceCollection(container, items, scope) {
+  if (!container) {
+    return;
+  }
+  const existing = new Map();
+  Array.from(container.children).forEach((child) => {
+    if (child instanceof HTMLElement && child.dataset.uid) {
+      existing.set(child.dataset.uid, child);
+    }
+  });
+  const ordered = items.map((item, index) => {
+    const chip = existing.get(item.uid) || createPresenceChip(item);
+    syncPresenceChip(chip, item, index, scope);
+    existing.delete(item.uid);
+    return chip;
+  });
+  existing.forEach((chip) => chip.remove());
+  ordered.forEach((chip, index) => {
+    const current = Array.from(container.children)
+      .filter((child) => child instanceof HTMLElement && child.dataset.uid)[index];
+    if (chip.parentElement !== container || chip !== current) {
+      container.insertBefore(chip, current || null);
+    }
+  });
+}
+
+function createPresenceChip(item) {
+  const chip = document.createElement("div");
+  chip.className = "viewer-chip";
+
+  const avatar = document.createElement("span");
+  avatar.className = "viewer-avatar";
+
+  const label = document.createElement("span");
+  label.className = "viewer-mini-name";
+
+  chip.append(avatar, label);
+  return chip;
+}
+
+function syncPresenceChip(chip, item, index, scope = "primary") {
+  chip.dataset.uid = item.uid;
+  chip.dataset.avatar = item.avatar || "";
+  chip.dataset.scope = scope;
+  chip.title = `${item.name} · UID:${item.uid}`;
+  chip.style.setProperty("--presence-index", String(index));
+
+  const avatar = chip.querySelector(".viewer-avatar");
+  const label = chip.querySelector(".viewer-mini-name");
+  if (label) {
+    label.textContent = item.name;
+  }
+  if (avatar instanceof HTMLElement) {
+    syncPresenceAvatar(avatar, item);
+  }
+}
+
+function syncPresenceAvatar(avatar, item) {
+  const nextAvatar = item.avatar || "";
+  if (avatar.dataset.avatar === nextAvatar && avatar.dataset.fallbackFor === item.uid) {
+    return;
+  }
+  avatar.dataset.avatar = nextAvatar;
+  avatar.dataset.fallbackFor = item.uid;
+  avatar.classList.toggle("is-fallback", !nextAvatar);
+  avatar.replaceChildren();
+  if (!nextAvatar) {
+    avatar.textContent = getPresenceFallbackGlyph(item.name, item.uid);
+    return;
+  }
+  const image = document.createElement("img");
+  image.src = nextAvatar;
+  image.alt = "";
+  image.decoding = "async";
+  image.loading = "lazy";
+  image.referrerPolicy = "no-referrer";
+  image.draggable = false;
+  image.addEventListener("error", () => {
+    avatar.textContent = getPresenceFallbackGlyph(item.name, item.uid);
+    avatar.classList.add("is-fallback");
+    avatar.dataset.avatar = "";
+    image.remove();
+  }, { once: true });
+  avatar.append(image);
+}
+
+function getPresenceFallbackGlyph(name, uid) {
+  const text = String(name || uid || "U").trim();
+  const segments = typeof Intl !== "undefined" && Intl.Segmenter
+    ? Array.from(new Intl.Segmenter("zh-CN", { granularity: "grapheme" }).segment(text), (item) => item.segment)
+    : Array.from(text);
+  return (segments.find((segment) => /\S/.test(segment)) || "U").slice(0, 2).toUpperCase();
+}
+
 function isSafeEmoteMarker(value) {
   const marker = String(value || "").trim();
   if (!marker || marker.length > 40 || /[\r\n]/.test(marker)) {
@@ -1016,7 +1215,147 @@ function createFansMedalElement(medal) {
   return element;
 }
 
+function isEntryEvent(item) {
+  const type = String(item?.type || "").toLowerCase();
+  const rawType = String(item?.rawType || item?.cmd || "").toUpperCase();
+  return type === "entry" || type === "enter" || rawType === "WELCOME";
+}
+
+function renderBottomEntranceTicker(item) {
+  if (!els.entranceTicker || !els.tickerUsername) {
+    return;
+  }
+
+  const nextItem = normalizeEntranceTickerItem(item);
+  if (nextItem.key && nextItem.key === state.currentEntranceTickerKey) {
+    return;
+  }
+
+  const isActive = els.entranceTicker.classList.contains("is-active");
+  const visibleFor = Date.now() - state.entranceTickerVisibleSince;
+  if (isActive && visibleFor < ENTRANCE_TICKER_MIN_VISIBLE) {
+    state.pendingEntranceTickerItem = nextItem;
+    window.clearTimeout(state.entranceTickerHoldTimer);
+    state.entranceTickerHoldTimer = window.setTimeout(() => {
+      state.entranceTickerHoldTimer = null;
+      const pendingItem = state.pendingEntranceTickerItem;
+      state.pendingEntranceTickerItem = null;
+      if (pendingItem) {
+        showBottomEntranceTicker(pendingItem);
+      }
+    }, ENTRANCE_TICKER_MIN_VISIBLE - visibleFor);
+    return;
+  }
+
+  showBottomEntranceTicker(nextItem);
+}
+
+function normalizeEntranceTickerItem(item) {
+  const username = String(item?.username || item?.user || item?.uname || "匿名").trim() || "匿名";
+  const rawUid = String(item?.uid || item?.userId || item?.user_id || item?.mid || "").trim();
+  return {
+    username,
+    key: rawUid || `name:${username}`
+  };
+}
+
+function showBottomEntranceTicker(item, { animateSwitch = true } = {}) {
+  if (!els.entranceTicker || !els.tickerUsername) {
+    return;
+  }
+
+  const tickerItem = item?.username ? item : normalizeEntranceTickerItem(item);
+  if (tickerItem.key && tickerItem.key === state.currentEntranceTickerKey) {
+    return;
+  }
+
+  state.pendingEntranceTickerItem = null;
+  window.clearTimeout(state.entranceTickerTimer);
+  window.clearTimeout(state.entranceTickerHoldTimer);
+  window.clearTimeout(state.entranceTickerSwitchTimer);
+  window.cancelAnimationFrame(state.entranceTickerFrame);
+  const shouldSwitch = animateSwitch && els.entranceTicker.classList.contains("is-active");
+  if (shouldSwitch) {
+    els.entranceTicker.classList.add("is-switching-out");
+    els.entranceTicker.setAttribute("aria-hidden", "true");
+    state.entranceTickerSwitchTimer = window.setTimeout(() => {
+      state.entranceTickerSwitchTimer = null;
+      commitBottomEntranceTicker(tickerItem);
+    }, ENTRANCE_TICKER_SWITCH_DURATION);
+    return;
+  }
+
+  commitBottomEntranceTicker(tickerItem);
+}
+
+function commitBottomEntranceTicker(item) {
+  if (!els.entranceTicker || !els.tickerUsername) {
+    return;
+  }
+
+  window.clearTimeout(state.entranceTickerTimer);
+  window.clearTimeout(state.entranceTickerHoldTimer);
+  window.clearTimeout(state.entranceTickerSwitchTimer);
+  window.cancelAnimationFrame(state.entranceTickerFrame);
+  els.entranceTicker.classList.remove("is-active");
+  els.entranceTicker.classList.remove("is-switching-out");
+  els.entranceTicker.setAttribute("aria-hidden", "true");
+  state.entranceTickerFrame = requestAnimationFrame(() => {
+    els.tickerUsername.textContent = item.username;
+    els.entranceTicker.classList.add("is-active");
+    els.entranceTicker.setAttribute("aria-hidden", "false");
+    state.entranceTickerVisibleSince = Date.now();
+    state.currentEntranceTickerKey = item.key;
+    state.entranceTickerTimer = window.setTimeout(() => {
+      const pendingItem = state.pendingEntranceTickerItem;
+      state.pendingEntranceTickerItem = null;
+      if (pendingItem) {
+        showBottomEntranceTicker(pendingItem);
+        return;
+      }
+      hideBottomEntranceTicker();
+    }, ENTRANCE_TICKER_DURATION);
+  });
+}
+
+function hideBottomEntranceTicker() {
+  window.clearTimeout(state.entranceTickerTimer);
+  window.clearTimeout(state.entranceTickerHoldTimer);
+  window.clearTimeout(state.entranceTickerSwitchTimer);
+  window.cancelAnimationFrame(state.entranceTickerFrame);
+  state.entranceTickerTimer = null;
+  state.entranceTickerHoldTimer = null;
+  state.entranceTickerSwitchTimer = null;
+  state.entranceTickerFrame = null;
+  state.entranceTickerVisibleSince = 0;
+  state.currentEntranceTickerKey = "";
+  els.entranceTicker?.classList.remove("is-active");
+  els.entranceTicker?.classList.remove("is-switching-out");
+  els.entranceTicker?.setAttribute("aria-hidden", "true");
+}
+
+function clearBottomEntranceTicker() {
+  window.clearTimeout(state.entranceTickerTimer);
+  window.clearTimeout(state.entranceTickerHoldTimer);
+  window.clearTimeout(state.entranceTickerSwitchTimer);
+  window.cancelAnimationFrame(state.entranceTickerFrame);
+  state.entranceTickerTimer = null;
+  state.entranceTickerHoldTimer = null;
+  state.entranceTickerSwitchTimer = null;
+  state.entranceTickerFrame = null;
+  state.entranceTickerVisibleSince = 0;
+  state.currentEntranceTickerKey = "";
+  state.pendingEntranceTickerItem = null;
+  els.entranceTicker?.classList.remove("is-active");
+  els.entranceTicker?.classList.remove("is-switching-out");
+  els.entranceTicker?.setAttribute("aria-hidden", "true");
+}
+
 function appendItem(item) {
+  if (isEntryEvent(item)) {
+    renderBottomEntranceTicker(item);
+    return;
+  }
   maybeShowMegaGiftBanner(item);
   const shouldAutoScroll = shouldAutoScrollFeed();
   state.isMutatingFeed = true;
@@ -1044,7 +1383,7 @@ function appendItem(item) {
   tag.textContent = item.tag || "弹幕";
   labelStack.append(tag);
 
-  const medal = createFansMedalElement(item.medal);
+  const medal = itemType === "entry" ? null : createFansMedalElement(item.medal);
   if (medal) {
     labelStack.append(medal);
   }
@@ -1093,6 +1432,12 @@ function appendItem(item) {
     multiplier.textContent = `x${Math.max(1, Number(item.giftCount || 1))}`;
     meta.append(user);
     content.append(meta, text, multiplier);
+  } else if (itemType === "entry") {
+    content.classList.add("entry-content");
+    text.textContent = "";
+    appendContentRuns(text, item.text || "进入直播间");
+    meta.replaceChildren(user);
+    content.append(meta, text);
   } else {
     content.append(meta, text);
   }
@@ -1104,12 +1449,81 @@ function appendItem(item) {
   requestAnimationFrame(() => {
     li.classList.add("has-entered");
   });
-
-  while (els.feed.children.length > state.settings.maxItems) {
-    els.feed.firstElementChild?.remove();
+  if (itemType === "entry") {
+    scheduleEntryItemRemoval(li, item.id, getAdaptiveEntryTtl());
   }
 
+  trimFeedDomToLimit(state.settings.maxItems);
+
   finalizeAppendedItem(shouldAutoScroll);
+}
+
+function getAdaptiveEntryTtl() {
+  const now = Date.now();
+  state.entryTimestamps = state.entryTimestamps
+    .filter((time) => now - time <= ENTRY_RATE_WINDOW)
+    .concat(now);
+  const pressure = Math.max(0, Math.min(1, (state.entryTimestamps.length - 2) / 10));
+  return Math.round(ENTRY_ITEM_MAX_TTL - ((ENTRY_ITEM_MAX_TTL - ENTRY_ITEM_MIN_TTL) * pressure));
+}
+
+function scheduleEntryItemRemoval(itemElement, itemId, ttl = ENTRY_ITEM_MAX_TTL) {
+  window.setTimeout(() => {
+    if (!itemElement.isConnected) {
+      removeStateItemById(itemId);
+      return;
+    }
+    expireEntryItem(itemElement, itemId);
+  }, Math.max(ENTRY_ITEM_MIN_TTL, Math.min(ENTRY_ITEM_MAX_TTL, Number(ttl) || ENTRY_ITEM_MAX_TTL)));
+}
+
+function expireEntryItem(itemElement, itemId) {
+  if (!(itemElement instanceof HTMLElement) || itemElement.dataset.expiring === "1") {
+    return;
+  }
+  itemElement.dataset.expiring = "1";
+  itemElement.style.setProperty("--entry-held-height", `${itemElement.offsetHeight}px`);
+  itemElement.classList.add("is-expiring");
+  window.setTimeout(() => {
+    itemElement.classList.add("is-collapsing");
+  }, ENTRY_ITEM_PULL_DURATION);
+  window.setTimeout(() => {
+    const wasAtBottom = isFeedAtBottom();
+    const previousScrollHeight = els.feed.scrollHeight;
+    const previousScrollTop = els.feed.scrollTop;
+    itemElement.remove();
+    const scrollDelta = previousScrollHeight - els.feed.scrollHeight;
+    if (wasAtBottom) {
+      scrollFeedToBottom("auto");
+    } else if (scrollDelta > 0) {
+      els.feed.scrollTop = Math.max(0, previousScrollTop - scrollDelta);
+    }
+    removeStateItemById(itemId);
+    if (!state.isFeedHovered) {
+      updateFeedScrollState({ userInitiated: false });
+    }
+  }, ENTRY_ITEM_FADE_DURATION);
+}
+
+function removeFeedItemElement(itemElement) {
+  if (!(itemElement instanceof HTMLElement)) {
+    itemElement?.remove();
+    return;
+  }
+  const itemId = itemElement.dataset.id;
+  if (itemElement.classList.contains("is-entry")) {
+    expireEntryItem(itemElement, itemId);
+    return;
+  }
+  itemElement.remove();
+  removeStateItemById(itemId);
+}
+
+function removeStateItemById(itemId) {
+  if (!itemId) {
+    return;
+  }
+  state.items = state.items.filter((item) => item.id !== itemId);
 }
 
 function tryStackGiftCombo(item) {
@@ -1190,6 +1604,9 @@ function buildCopyText(item, itemType) {
   }
   if (itemType === "superchat") {
     return `${item.text || ""}${item.price ? ` ¥${item.price}` : ""}`.trim();
+  }
+  if (itemType === "entry") {
+    return `${item.user || "匿名"} ${item.text || "进入直播间"}`.trim();
   }
   return String(item.text || "").trim();
 }
@@ -1280,9 +1697,17 @@ function trimItems() {
   if (state.items.length > max) {
     state.items = state.items.slice(-max);
   }
-  while (els.feed.children.length > max) {
-    els.feed.firstElementChild?.remove();
+  trimFeedDomToLimit(max);
+}
+
+function trimFeedDomToLimit(max) {
+  const overflow = Math.max(0, els.feed.children.length - Number(max || 0));
+  if (!overflow) {
+    return;
   }
+  Array.from(els.feed.children)
+    .slice(0, overflow)
+    .forEach((item) => removeFeedItemElement(item));
 }
 
 function isFeedAtBottom() {
@@ -1402,6 +1827,30 @@ function handleFeedHoverEnd() {
   state.newMessagesWhileLocked = 0;
 }
 
+function handleHudPointerEnter() {
+  state.isPointerInsideApp = true;
+  handleHudWake();
+}
+
+function handleHudPointerLeave() {
+  state.isPointerInsideApp = false;
+  scheduleHudDim();
+}
+
+function handleHudWindowMouseOut(event) {
+  if (event.relatedTarget || event.toElement) {
+    return;
+  }
+  handleHudPointerLeave();
+}
+
+function handleHudWindowBlur() {
+  if (!state.connected) {
+    return;
+  }
+  handleHudPointerLeave();
+}
+
 function handleHudWake() {
   if (isClickThroughMode()) {
     return;
@@ -1414,10 +1863,16 @@ function handleHudWake() {
   els.appContainer?.classList.remove("is-hud-dimmed");
 }
 
-function scheduleHudDim() {
+function scheduleHudDim(delay = 5000) {
+  if (!state.connected) {
+    return;
+  }
   clearTimeout(state.hudDimTimer);
   state.hudDimTimer = setTimeout(() => {
     state.hudDimTimer = null;
+    if (!state.connected) {
+      return;
+    }
     if (state.updateNoticeInteractionActive) {
       return;
     }
@@ -1427,7 +1882,24 @@ function scheduleHudDim() {
       state.clickThroughNoticeShown = false;
       updateSetting("clickThrough", true);
     }
-  }, 5000);
+  }, delay);
+}
+
+function armHudDimAfterConnection() {
+  if (!state.connected || isClickThroughMode()) {
+    return;
+  }
+  const pointerInside = Boolean(
+    document.body.matches(":hover")
+    || document.documentElement.matches(":hover")
+    || els.appContainer?.matches(":hover")
+  );
+  state.isPointerInsideApp = pointerInside;
+  if (pointerInside) {
+    handleHudWake();
+    return;
+  }
+  scheduleHudDim(1200);
 }
 
 function updateHudCollapseOffset() {
@@ -1549,7 +2021,12 @@ function handleHudPointerMove(event) {
     && event.clientY >= rect.top
     && event.clientY <= rect.bottom;
   if (insideApp) {
+    state.isPointerInsideApp = true;
     handleHudWake();
+    return;
+  }
+  if (state.isPointerInsideApp) {
+    handleHudPointerLeave();
   }
 }
 

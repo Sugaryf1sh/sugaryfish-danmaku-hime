@@ -23,7 +23,7 @@
         <div class="header-section-inner">
           <header class="titlebar">
             <div class="brand">
-              <span class="mark status-dot"></span>
+              <span class="mark status-dot primary-status-dot" aria-hidden="true"></span>
               <div class="brand-copy header-title">
                 <strong>弹幕姬</strong>
                 <span id="statusText" class="status">未连接</span>
@@ -43,7 +43,7 @@
                   <dl class="help-meta">
                     <div><dt>项目</dt><dd><a href="https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime" data-external-url="https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime">GitHub</a></dd></div>
                     <div><dt>版本</dt><dd id="appVersionText">v--</dd></div>
-                    <div><dt>更新</dt><dd>2026-06-22</dd></div>
+                    <div><dt>更新</dt><dd id="appUpdateDateText">----</dd></div>
                     <div><dt>联系</dt><dd>QQ 782654910</dd></div>
                   </dl>
                   <button class="help-update" id="updateBtn" type="button" title="检查更新">检查更新</button>
@@ -215,7 +215,26 @@
       </section>
       <div class="mega-gift-zone" id="megaGiftZone"></div>
       <section class="feed-wrap">
-        <ol id="feed" class="feed" aria-live="polite"></ol>
+        <div class="audience-monitor-container header-top-container">
+          <span class="mark status-dot global-window-satellite" aria-hidden="true"></span>
+          <div id="presenceRibbon" class="audience-monitor-ribbon" aria-hidden="true">
+            <div class="audience-scroll-track" id="presenceTrack"></div>
+            <button class="audience-expand-trigger" id="presenceExpandTrigger" type="button" aria-label="展开观众矩阵">
+              <span class="trigger-text" aria-hidden="true">更多</span>
+            </button>
+            <div class="audience-expanded-hangar" id="presenceHangar" aria-hidden="true">
+              <div class="hangar-grid" id="presenceHangarGrid"></div>
+            </div>
+          </div>
+        </div>
+        <ol id="feed" class="feed danmaku-list-container" aria-live="polite"></ol>
+        <div class="bottom-entrance-ticker" id="entranceTicker" aria-live="polite" aria-hidden="true">
+          <span class="ticker-card" id="tickerCard">
+            <span class="ticker-prefix">▫ ENTRY</span>
+            <span class="ticker-username" id="tickerUsername">用户名</span>
+            <span class="ticker-suffix">进入直播间</span>
+          </span>
+        </div>
         <div id="emptyState" class="empty-state placeholder-hint">
           输入直播间号，获取 SESSDATA 并连接后，弹幕会实时出现在这里。
         </div>

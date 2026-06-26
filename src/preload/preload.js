@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld("danmakuApp", {
   onStatus: (callback) => listen("danmaku:status", callback),
   onEvent: (callback) => listen("danmaku:event", callback),
   onPopularity: (callback) => listen("danmaku:popularity", callback),
+  onPresence: (callback) => listen("danmaku:presence", callback),
   onUpdateStatus: (callback) => listen("update:status", callback)
 });
 

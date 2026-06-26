@@ -222,6 +222,10 @@ function bindClientEvents() {
   client.on("popularity", (value) => {
     mainWindow?.webContents.send("danmaku:popularity", value);
   });
+
+  client.on("presence", (items) => {
+    mainWindow?.webContents.send("danmaku:presence", items);
+  });
 }
 
 function registerShortcuts() {
@@ -350,7 +354,8 @@ function stopAlwaysOnTopRestoreGuard() {
 ipcMain.handle("settings:get", () => settings);
 ipcMain.handle("settings:update", (_event, patch) => setSettings(patch));
 ipcMain.handle("app:get-info", () => ({
-  version: app.getVersion()
+  version: app.getVersion(),
+  releaseDate: getAppReleaseDate()
 }));
 ipcMain.handle("update:check", async () => {
   try {
@@ -898,6 +903,7 @@ function normalizeManifestRelease(data, sourceUrl) {
     package: appPackage,
     installer,
     sourceUrl,
+    releaseDate: data.releaseDate || data.release_date || "",
     publishedAt: data.publishedAt || data.published_at || ""
   };
 }
@@ -1001,6 +1007,7 @@ function normalizeGitHubRelease(data) {
     package: appPackage,
     installer,
     sourceUrl: data.html_url || "GitHub Release",
+    releaseDate: data.published_at ? String(data.published_at).slice(0, 10) : "",
     publishedAt: data.published_at || ""
   };
 }
@@ -1660,6 +1667,20 @@ function getWindowsPowerShellPath() {
   return fs.existsSync(powershellPath) ? powershellPath : "powershell.exe";
 }
 
+function getAppReleaseDate() {
+  try {
+    const packagePath = path.join(app.getAppPath(), "package.json");
+    const appPackage = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+    const releaseDate = String(appPackage.releaseDate || "").trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(releaseDate)) {
+      return releaseDate;
+    }
+  } catch {
+    // Development builds may not have a packaged releaseDate yet.
+  }
+  return new Date().toISOString().slice(0, 10);
+}
+
 function writePendingUpdateNotesFile(file, release) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(buildPendingUpdateNotesPayload(release), null, 2));
@@ -1676,6 +1697,7 @@ function buildPendingUpdateNotesPayload(release) {
     notes: release.notes,
     features: release.features,
     releaseUrl: release.releaseUrl,
+    releaseDate: release.releaseDate,
     publishedAt: release.publishedAt,
     shownAt: new Date().toISOString()
   };

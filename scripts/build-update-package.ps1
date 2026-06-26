@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $PackageJson = Get-Content -LiteralPath (Join-Path $Root "package.json") -Raw | ConvertFrom-Json
 $Version = [string]$PackageJson.version
+$ReleaseDate = (Get-Date).ToString("yyyy-MM-dd")
 $ProductName = "Sugaryfish$([char]0x7684)$([char]0x5F39)$([char]0x5E55)$([char]0x59EC)"
 $AppDir = Join-Path $Root "release\$ProductName-win32-x64\resources\app"
 $UpdatesDir = Join-Path $Root "updates"
@@ -23,6 +24,12 @@ try {
   $StageApp = Join-Path $Stage "app"
   [System.IO.Directory]::CreateDirectory($StageApp) | Out-Null
   Copy-Item -Path (Join-Path $AppDir "*") -Destination $StageApp -Recurse -Force
+  $StagePackagePath = Join-Path $StageApp "package.json"
+  $StagePackage = Get-Content -LiteralPath $StagePackagePath -Raw | ConvertFrom-Json
+  $StagePackage | Add-Member -NotePropertyName releaseDate -NotePropertyValue $ReleaseDate -Force
+  $StagePackageJson = $StagePackage | ConvertTo-Json -Depth 6
+  $Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+  [System.IO.File]::WriteAllText($StagePackagePath, $StagePackageJson, $Utf8NoBom)
   Compress-Archive -LiteralPath $StageApp -DestinationPath $PackagePath -CompressionLevel Optimal -Force
 } finally {
   Remove-Item -LiteralPath $Stage -Recurse -Force -ErrorAction SilentlyContinue
@@ -52,6 +59,8 @@ $Manifest = [ordered]@{
   version = $Version
   tag = "v$Version"
   title = "$ProductName $Version"
+  releaseDate = $ReleaseDate
+  publishedAt = $ReleaseDate
   releaseUrl = "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v$Version"
   features = @($Features)
   notes = $Notes.Trim()
@@ -64,7 +73,6 @@ $Manifest = [ordered]@{
 }
 
 $ManifestJson = $Manifest | ConvertTo-Json -Depth 6
-$Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 [System.IO.File]::WriteAllText($ManifestPath, $ManifestJson, $Utf8NoBom)
 Write-Host $PackagePath
 Write-Host $Hash

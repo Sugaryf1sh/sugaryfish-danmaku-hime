@@ -4,6 +4,7 @@ const { execFileSync } = require("child_process");
 
 const root = path.resolve(__dirname, "..");
 const packageInfo = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+const releaseDate = new Date().toISOString().slice(0, 10);
 const releaseRoot = path.join(root, "release");
 const productName = "Sugaryfish的弹幕姬";
 const outDir = path.join(releaseRoot, `${productName}-win32-x64`);
@@ -60,6 +61,7 @@ writeJson(path.join(appDir, "package.json"), {
   name: "danmaku-hime",
   productName,
   version: packageInfo.version,
+  releaseDate,
   description: "B站直播弹幕悬浮窗",
   main: "src/main/main.js",
   private: true,
