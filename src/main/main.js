@@ -67,6 +67,8 @@ app.whenReady().then(() => {
   app.setName(APP_NAME);
   app.setAppUserModelId("com.sugaryfish.danmaku-hime");
   settings = loadSettings();
+  rememberPendingUpdateFailure();
+  clearObsoleteUpdateFailureMarker(app.getVersion());
   createWindow();
   createTray();
   bindClientEvents();
@@ -571,7 +573,7 @@ async function runStartupAutoUpdateCheck() {
       }
     }
 
-    const result = await checkForUpdates({ silent: true, prompt: true });
+    const result = await checkForUpdates({ silent: true, prompt: true, automatic: true });
     if (isStartupAutoUpdateSatisfied(result)) {
       startupAutoUpdateSatisfied = true;
       return;
@@ -599,38 +601,48 @@ function isStartupAutoUpdateSatisfied(result) {
   if (updateDownloadInProgress) {
     return true;
   }
-  return ["no-update", "available", "skipped", "installing"].includes(result?.status);
+  return ["no-update", "available", "skipped", "suppressed", "installing"].includes(result?.status);
 }
 
-async function checkForUpdates({ silent, prompt }) {
+async function checkForUpdates({ silent, prompt, automatic = false }) {
   if (updateCheckPromise) {
     return updateCheckPromise;
   }
 
-  updateCheckPromise = doCheckForUpdates({ silent, prompt }).finally(() => {
+  updateCheckPromise = doCheckForUpdates({ silent, prompt, automatic }).finally(() => {
     updateCheckPromise = null;
   });
 
   return updateCheckPromise;
 }
 
-async function doCheckForUpdates({ silent, prompt }) {
+async function doCheckForUpdates({ silent, prompt, automatic }) {
   if (!silent) {
     beginUpdateInteractionMode();
     notifyUpdateStatus({ state: "checking" });
   }
 
+  let release = null;
   try {
     await applyUpdateProxyFromEnvironment();
-    const release = await loadLatestUpdateInfo();
+    release = await loadLatestUpdateInfo();
     const currentVersion = app.getVersion();
 
     if (!release || !isVersionGreater(release.version, currentVersion)) {
+      clearObsoleteUpdateFailureMarker(currentVersion);
       if (!silent) {
         notifyUpdateStatus({ state: "idle" });
         endUpdateInteractionMode();
       }
       return { status: "no-update", currentVersion, latestVersion: release?.version || currentVersion };
+    }
+
+    if (automatic && shouldSuppressAutomaticUpdateForRelease(release, currentVersion)) {
+      return {
+        status: "suppressed",
+        release,
+        message: `v${settings.updateFailureVersion} 更新曾经失败，自动提示已暂停。`
+      };
     }
 
     if (prompt) {
@@ -655,6 +667,9 @@ async function doCheckForUpdates({ silent, prompt }) {
     return { status: "installing", release };
   } catch (error) {
     const message = buildUpdateErrorMessage(error);
+    if (release?.version) {
+      markUpdateFailureVersion(release.version, message);
+    }
     endUpdateInteractionMode();
     if (!silent) {
       notifyUpdateStatus({ state: "error", message });
@@ -1708,10 +1723,75 @@ function consumePendingUpdateNotes() {
     const file = getPendingUpdateNotesPath();
     const payload = JSON.parse(fs.readFileSync(file, "utf8"));
     fs.rmSync(file, { force: true });
+    if (payload?.failed && payload.version) {
+      markUpdateFailureVersion(payload.version, payload.message || "更新没有完成");
+    }
     return payload;
   } catch {
     return null;
   }
+}
+
+function rememberPendingUpdateFailure() {
+  try {
+    const file = getPendingUpdateNotesPath();
+    const payload = JSON.parse(fs.readFileSync(file, "utf8"));
+    if (payload?.failed && payload.version) {
+      markUpdateFailureVersion(payload.version, payload.message || "更新没有完成");
+    }
+  } catch {
+    // Pending update notes are optional.
+  }
+}
+
+function shouldSuppressAutomaticUpdateForRelease(release, currentVersion) {
+  const failedVersion = normalizeVersion(settings.updateFailureVersion || "");
+  const releaseVersion = normalizeVersion(release?.version || "");
+  if (!failedVersion || !releaseVersion) {
+    return false;
+  }
+
+  if (compareVersions(failedVersion, currentVersion) <= 0) {
+    clearUpdateFailureMarker();
+    return false;
+  }
+
+  if (compareVersions(releaseVersion, failedVersion) > 0) {
+    clearUpdateFailureMarker();
+    return false;
+  }
+
+  return true;
+}
+
+function markUpdateFailureVersion(version, message = "") {
+  const failedVersion = normalizeVersion(version);
+  if (!failedVersion) {
+    return;
+  }
+  setSettings({
+    updateFailureVersion: failedVersion,
+    updateFailureAt: new Date().toISOString(),
+    updateFailureMessage: String(message || "").slice(0, 1000)
+  });
+}
+
+function clearObsoleteUpdateFailureMarker(currentVersion) {
+  const failedVersion = normalizeVersion(settings.updateFailureVersion || "");
+  if (failedVersion && compareVersions(failedVersion, currentVersion) <= 0) {
+    clearUpdateFailureMarker();
+  }
+}
+
+function clearUpdateFailureMarker() {
+  if (!settings.updateFailureVersion && !settings.updateFailureAt && !settings.updateFailureMessage) {
+    return;
+  }
+  setSettings({
+    updateFailureVersion: "",
+    updateFailureAt: "",
+    updateFailureMessage: ""
+  });
 }
 
 function getPendingUpdateNotesPath() {
@@ -1766,7 +1846,10 @@ function sanitizeSettings(value) {
     fontSize: clampNumber(value.fontSize, 12, 24, DEFAULT_SETTINGS.fontSize),
     maxItems: clampNumber(value.maxItems, 20, 200, DEFAULT_SETTINGS.maxItems),
     sessdata: String(value.sessdata || "").trim(),
-    theme: ["light", "moss", "blueprint", "glacial", "dark", "walnut", "leica", "bordeaux", "quartz"].includes(value.theme) ? value.theme : "light"
+    theme: ["light", "moss", "blueprint", "glacial", "dark", "walnut", "leica", "bordeaux", "quartz"].includes(value.theme) ? value.theme : "light",
+    updateFailureVersion: normalizeVersion(value.updateFailureVersion || ""),
+    updateFailureAt: String(value.updateFailureAt || ""),
+    updateFailureMessage: String(value.updateFailureMessage || "").slice(0, 1000)
   };
 }
 

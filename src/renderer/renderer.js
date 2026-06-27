@@ -496,6 +496,8 @@ async function handleUpdateCheck() {
       keepResultText = true;
     } else if (result?.status === "skipped") {
       flashStatus("已稍后更新", 1600);
+    } else if (result?.status === "suppressed") {
+      flashStatus(result.message || "该版本曾更新失败，已暂停自动提示", 2400);
     } else if (result?.status === "error") {
       flashStatus(formatUpdateError(result.message), 3200);
     }

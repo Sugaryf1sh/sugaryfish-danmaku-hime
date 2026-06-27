@@ -13,6 +13,65 @@ $PackagePath = Join-Path $UpdatesDir $PackageName
 $ManifestPath = Join-Path $UpdatesDir "latest.json"
 $NotesPath = Join-Path $Root "RELEASE_NOTES_$Version.md"
 
+function Assert-UpdatePackageMetadata {
+  param(
+    [string]$ZipPath,
+    [string]$ExpectedVersion,
+    [string]$ExpectedReleaseDate
+  )
+
+  $VerifyStage = Join-Path $env:TEMP ("sugaryfish-update-verify-" + [guid]::NewGuid().ToString("N"))
+  try {
+    [System.IO.Directory]::CreateDirectory($VerifyStage) | Out-Null
+    Expand-Archive -LiteralPath $ZipPath -DestinationPath $VerifyStage -Force
+
+    $PackageFile = Join-Path $VerifyStage "app\package.json"
+    if (!(Test-Path -LiteralPath $PackageFile)) {
+      throw "Update package is missing app/package.json"
+    }
+
+    $Package = Get-Content -LiteralPath $PackageFile -Raw | ConvertFrom-Json
+    $ActualVersion = [string]$Package.version
+    $ActualReleaseDate = [string]$Package.releaseDate
+
+    if ($ActualVersion -ne $ExpectedVersion) {
+      throw "Update package version mismatch: expected $ExpectedVersion, got $ActualVersion"
+    }
+    if ($ActualReleaseDate -ne $ExpectedReleaseDate) {
+      throw "Update package releaseDate mismatch: expected $ExpectedReleaseDate, got $ActualReleaseDate"
+    }
+  } finally {
+    Remove-Item -LiteralPath $VerifyStage -Recurse -Force -ErrorAction SilentlyContinue
+  }
+}
+
+function Assert-ManifestMetadata {
+  param(
+    [string]$ManifestFile,
+    [string]$ExpectedVersion,
+    [string]$ExpectedPackageSha256
+  )
+
+  try {
+    $Manifest = [System.IO.File]::ReadAllText($ManifestFile, [System.Text.Encoding]::UTF8) | ConvertFrom-Json
+    $ActualVersion = [string]$Manifest.version
+    $ActualPackageSha256 = [string]$Manifest.package.sha256
+    $ActualTitle = [string]$Manifest.title
+
+    if ($ActualVersion -ne $ExpectedVersion) {
+      throw "Manifest version mismatch: expected $ExpectedVersion, got $ActualVersion"
+    }
+    if ($ActualPackageSha256 -ne $ExpectedPackageSha256) {
+      throw "Manifest package sha256 mismatch: expected $ExpectedPackageSha256, got $ActualPackageSha256"
+    }
+    if (!$ActualTitle.Contains($ProductName)) {
+      throw "Manifest title encoding check failed: $ActualTitle"
+    }
+  } catch {
+    throw "Manifest validation failed: $($_.Exception.Message)"
+  }
+}
+
 if (!(Test-Path -LiteralPath $AppDir)) {
   throw "Portable app directory not found: $AppDir. Run `corepack pnpm run package:win` first."
 }
@@ -29,6 +88,8 @@ try {
 } finally {
   Remove-Item -LiteralPath $Stage -Recurse -Force -ErrorAction SilentlyContinue
 }
+
+Assert-UpdatePackageMetadata -ZipPath $PackagePath -ExpectedVersion $Version -ExpectedReleaseDate $ReleaseDate
 
 $Sha256 = [System.Security.Cryptography.SHA256]::Create()
 $Stream = [System.IO.File]::OpenRead($PackagePath)
@@ -69,5 +130,6 @@ $Manifest = [ordered]@{
 
 $ManifestJson = $Manifest | ConvertTo-Json -Depth 6
 [System.IO.File]::WriteAllText($ManifestPath, $ManifestJson, $Utf8NoBom)
+Assert-ManifestMetadata -ManifestFile $ManifestPath -ExpectedVersion $Version -ExpectedPackageSha256 $Hash
 Write-Host $PackagePath
 Write-Host $Hash

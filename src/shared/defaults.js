@@ -8,7 +8,10 @@ const DEFAULT_SETTINGS = {
   fontSize: 15,
   maxItems: 80,
   sessdata: "",
-  theme: "light"
+  theme: "light",
+  updateFailureVersion: "",
+  updateFailureAt: "",
+  updateFailureMessage: ""
 };
 
 module.exports = {
