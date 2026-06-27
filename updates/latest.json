@@ -2,8 +2,8 @@
     "version":  "1.5.0",
     "tag":  "v1.5.0",
     "title":  "Sugaryfish的弹幕姬 1.5.0",
-    "releaseDate":  "2026-06-26",
-    "publishedAt":  "2026-06-26",
+    "releaseDate":  "2026-06-27",
+    "publishedAt":  "2026-06-27",
     "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.5.0",
     "features":  [
                      "新增第九套浅色主题「瑰砂」，补齐主题菜单、色卡、清理队列和主题新增模板流程。",
@@ -13,11 +13,11 @@
                      "统一礼物、舰长、醒目留言、入场提示、观众舱和左上状态点的分主题强调色规则。",
                      "强化弹幕滚动层、穿透态滑轨、顶部红点圆心和观众舱几何对齐，减少布局压缩和视觉穿帮。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.5.0\n\n- 新增第九套浅色主题「瑰砂」，补齐主题菜单、色卡、清理队列和主题新增模板流程。\n- 重构顶部观众舱为环岛浮舱，加入右侧「更多」扩展舱，并修复亮色主题舱体材质、扩展舱对齐和观众名裁切问题。\n- 新增底部入场提示舱，入场事件不再进入主弹幕流，支持卡片式切换、最短停留和分主题色彩。\n- 优化观众进入、在线观众同步和离场移除逻辑，修复匿名入场、重复刷新、消失抖动和沉浸模式自动进入问题。\n- 统一礼物、舰长、醒目留言、入场提示、观众舱和左上状态点的分主题强调色规则。\n- 强化弹幕滚动层、穿透态滑轨、顶部红点圆心和观众舱几何对齐，减少布局压缩和视觉穿帮。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.5.0\n\n- 新增第九套浅色主题「瑰砂」，补齐主题菜单、色卡、清理队列和主题新增模板流程。\n- 重构顶部观众舱为环岛浮舱，加入右侧「更多」扩展舱，并修复亮色主题舱体材质、扩展舱对齐和观众名裁切问题。\n- 新增底部入场提示舱，入场事件不再进入主弹幕流，支持卡片式切换、最短停留和分主题色彩。\n- 优化观众进入、在线观众同步和离场移除逻辑，修复匿名入场、重复刷新、消失抖动和沉浸模式自动进入问题。\n- 统一礼物、舰长、醒目留言、入场提示、观众舱和左上状态点的分主题强调色规则。\n- 强化弹幕滚动层、穿透态滑轨、顶部红点圆心和观众舱几何对齐，减少布局压缩和视觉穿帮。\n\nUpdate package SHA256: `329cc55f27445be3f99843401c5bb7b2c05eaf5e5cf76f4e5bb942a647109c2a`",
     "package":  {
                     "type":  "app-dir-zip",
                     "name":  "Sugaryfish-Danmaku-Hime-App-1.5.0.zip",
-                    "url":  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.5.0/updates/Sugaryfish-Danmaku-Hime-App-1.5.0.zip",
-                    "sha256":  "2fe8dc60a56c30693ebb851f412f70895c0bc2a1aee3420a301c6e2af158ea23"
+                    "url":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/download/v1.5.0/Sugaryfish-Danmaku-Hime-App-1.5.0.zip",
+                    "sha256":  "329cc55f27445be3f99843401c5bb7b2c05eaf5e5cf76f4e5bb942a647109c2a"
                 }
 }

@@ -42,7 +42,9 @@ function copyDir(src, dest, filter = () => true) {
 
 function writeJson(file, value) {
   mkdir(path.dirname(file));
-  fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+  const json = JSON.stringify(value, null, 2)
+    .replace(/[^\x00-\x7F]/g, (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`);
+  fs.writeFileSync(file, `${json}\n`, "utf8");
 }
 
 if (!fs.existsSync(electronDist)) {
