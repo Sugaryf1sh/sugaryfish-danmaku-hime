@@ -1,27 +1,25 @@
 {
-    "version":  "1.5.2",
-    "tag":  "v1.5.2",
-    "title":  "Sugaryfish的弹幕姬 1.5.2",
+    "version":  "1.5.3",
+    "tag":  "v1.5.3",
+    "title":  "Sugaryfish的弹幕姬 1.5.3",
     "releaseDate":  "2026-07-27",
     "publishedAt":  "2026-07-27",
-    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.5.2",
+    "releaseUrl":  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/tag/v1.5.3",
     "features":  [
-                     "修复部分电脑后台或 OBS 捕捉时弹幕刷新被 Chromium 降频，出现“点一下才跳出新弹幕”的问题。",
-                     "移除设置区的弹幕条数调节，原位置改为 OBS 捕捉模式开关。",
-                     "优化 OBS 捕捉模式：关闭捕捉不友好的半透明纹理、模糊和阴影，减少画面发灰。",
-                     "优化自动更新下载源：更新包主链路改为 jsDelivr CDN，并加入 fastly、gcore、raw 和 GitHub Release 备用源，降低国内无代理网络卡在 1% 的概率。"
+                     "修复 OBS 模式下透明度滑杆不生效的问题：OBS 模式现在保留背景透明度，只关闭捕捉不友好的纹理、阴影和模糊效果。",
+                     "延续 1.5.2 的国内更新优化：更新包主链路使用固定版本 jsDelivr CDN，并保留 fastly、gcore、raw 和 GitHub Release 备用源。"
                  ],
-    "notes":  "# Sugaryfish 的弹幕姬 1.5.2\n\n- 修复部分电脑后台或 OBS 捕捉时弹幕刷新被 Chromium 降频，出现“点一下才跳出新弹幕”的问题。\n- 移除设置区的弹幕条数调节，原位置改为 OBS 捕捉模式开关。\n- 优化 OBS 捕捉模式：关闭捕捉不友好的半透明纹理、模糊和阴影，减少画面发灰。\n- 优化自动更新下载源：更新包主链路改为 jsDelivr CDN，并加入 fastly、gcore、raw 和 GitHub Release 备用源，降低国内无代理网络卡在 1% 的概率。",
+    "notes":  "# Sugaryfish 的弹幕姬 1.5.3\n\n- 修复 OBS 模式下透明度滑杆不生效的问题：OBS 模式现在保留背景透明度，只关闭捕捉不友好的纹理、阴影和模糊效果。\n- 延续 1.5.2 的国内更新优化：更新包主链路使用固定版本 jsDelivr CDN，并保留 fastly、gcore、raw 和 GitHub Release 备用源。",
     "package":  {
                     "type":  "app-dir-zip",
-                    "name":  "Sugaryfish-Danmaku-Hime-App-1.5.2.zip",
-                    "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v1.5.2/updates/Sugaryfish-Danmaku-Hime-App-1.5.2.zip",
+                    "name":  "Sugaryfish-Danmaku-Hime-App-1.5.3.zip",
+                    "url":  "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v1.5.3/updates/Sugaryfish-Danmaku-Hime-App-1.5.3.zip",
                     "fallbackUrls":  [
-                                         "https://fastly.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v1.5.2/updates/Sugaryfish-Danmaku-Hime-App-1.5.2.zip",
-                                         "https://gcore.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v1.5.2/updates/Sugaryfish-Danmaku-Hime-App-1.5.2.zip",
-                                         "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.5.2/updates/Sugaryfish-Danmaku-Hime-App-1.5.2.zip",
-                                         "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/download/v1.5.2/Sugaryfish-Danmaku-Hime-App-1.5.2.zip"
+                                         "https://fastly.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v1.5.3/updates/Sugaryfish-Danmaku-Hime-App-1.5.3.zip",
+                                         "https://gcore.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v1.5.3/updates/Sugaryfish-Danmaku-Hime-App-1.5.3.zip",
+                                         "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v1.5.3/updates/Sugaryfish-Danmaku-Hime-App-1.5.3.zip",
+                                         "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/download/v1.5.3/Sugaryfish-Danmaku-Hime-App-1.5.3.zip"
                                      ],
-                    "sha256":  "bb6fa2b5276716b94c41db900d8ad8bf8789ceec53137b8f6eea75591bbcbac9"
+                    "sha256":  "31fd72b1103224950efefccae0fd39d0a749446b97f3ea079b3f4aab21c0a640"
                 }
 }
