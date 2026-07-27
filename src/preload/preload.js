@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld("danmakuApp", {
   consumeUpdateNotes: () => ipcRenderer.invoke("update:consume-notes"),
   openExternal: (url) => ipcRenderer.invoke("shell:open-external", url),
   writeClipboardText: (text) => ipcRenderer.invoke("clipboard:write-text", text),
-  connect: (roomId) => ipcRenderer.invoke("danmaku:connect", roomId),
+  connect: (roomId, options) => ipcRenderer.invoke("danmaku:connect", roomId, options),
   disconnect: () => ipcRenderer.invoke("danmaku:disconnect"),
   minimize: () => ipcRenderer.invoke("window:minimize"),
   hide: () => ipcRenderer.invoke("window:hide"),

@@ -12,6 +12,13 @@ $PackageName = "Sugaryfish-Danmaku-Hime-App-$Version.zip"
 $PackagePath = Join-Path $UpdatesDir $PackageName
 $ManifestPath = Join-Path $UpdatesDir "latest.json"
 $NotesPath = Join-Path $Root "RELEASE_NOTES_$Version.md"
+$PackageCdnUrl = "https://cdn.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v$Version/updates/$PackageName"
+$PackageFallbackUrls = @(
+  "https://fastly.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v$Version/updates/$PackageName",
+  "https://gcore.jsdelivr.net/gh/Sugaryf1sh/sugaryfish-danmaku-hime@v$Version/updates/$PackageName",
+  "https://raw.githubusercontent.com/Sugaryf1sh/sugaryfish-danmaku-hime/v$Version/updates/$PackageName",
+  "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/download/v$Version/$PackageName"
+)
 
 function Assert-UpdatePackageMetadata {
   param(
@@ -123,7 +130,8 @@ $Manifest = [ordered]@{
   package = [ordered]@{
     type = "app-dir-zip"
     name = $PackageName
-    url = "https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime/releases/download/v$Version/$PackageName"
+    url = $PackageCdnUrl
+    fallbackUrls = @($PackageFallbackUrls)
     sha256 = $Hash
   }
 }

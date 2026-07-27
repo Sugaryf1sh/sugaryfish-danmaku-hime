@@ -21,7 +21,7 @@ const UPDATE_MANIFEST_URLS = [
 ];
 const UPDATE_TIMEOUT_MS = 12000;
 const UPDATE_DOWNLOAD_TIMEOUT_MS = 10 * 60 * 1000;
-const UPDATE_DOWNLOAD_STALL_MS = 45000;
+const UPDATE_DOWNLOAD_STALL_MS = 15000;
 const STARTUP_AUTO_UPDATE_DELAY_MS = 10000;
 const STARTUP_AUTO_UPDATE_MAX_RETRY_MS = 120000;
 const UPDATE_MIRROR_PREFIXES = [
@@ -29,6 +29,7 @@ const UPDATE_MIRROR_PREFIXES = [
   "https://ghfast.top/",
   "https://ghproxy.net/"
 ];
+const UPDATE_CDN_HOSTS = ["cdn.jsdelivr.net", "fastly.jsdelivr.net", "gcore.jsdelivr.net"];
 
 let mainWindow = null;
 let sessdataLoginWindow = null;
@@ -36,6 +37,7 @@ let sessdataFetchPromise = null;
 let updateCheckPromise = null;
 let updateDownloadInProgress = false;
 let updateInteractionRestoreClickThrough = null;
+let activeConnectionAuthMode = "guest";
 let startupAutoUpdateTimer = null;
 let startupAutoUpdateRunning = false;
 let startupAutoUpdateSatisfied = false;
@@ -100,7 +102,8 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, "../preload/preload.js"),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      backgroundThrottling: false
     }
   });
 
@@ -201,6 +204,12 @@ function updateTrayMenu() {
       checked: settings.locked,
       click: (menuItem) => setSettings({ locked: menuItem.checked })
     },
+    {
+      label: "OBS 模式",
+      type: "checkbox",
+      checked: settings.obsMode,
+      click: (menuItem) => setSettings({ obsMode: menuItem.checked })
+    },
     { type: "separator" },
     {
       label: "退出",
@@ -214,6 +223,22 @@ function updateTrayMenu() {
 
 function bindClientEvents() {
   client.on("status", (status) => {
+    if (status?.state === "connected") {
+      setSettings({
+        authMode: activeConnectionAuthMode,
+        ...(activeConnectionAuthMode === "login" ? {
+          sessdataStatus: "valid",
+          sessdataValidatedAt: new Date().toISOString()
+        } : {
+          sessdataStatus: settings.sessdata ? settings.sessdataStatus : "guest"
+        })
+      });
+    } else if (status?.state === "error" && activeConnectionAuthMode === "login" && isCredentialError(status.text)) {
+      setSettings({
+        sessdataStatus: "invalid",
+        authMode: "guest"
+      });
+    }
     mainWindow?.webContents.send("danmaku:status", status);
   });
 
@@ -381,13 +406,23 @@ ipcMain.handle("clipboard:write-text", (_event, text) => {
 });
 
 ipcMain.handle("sessdata:fetch", async () => {
-  const sessdata = await fetchSessdataFromBilibiliLogin();
-  setSettings({ sessdata });
+  const result = await fetchSessdataFromBilibiliLogin();
+  setSettings({
+    sessdata: result.value,
+    authMode: "login",
+    sessdataStatus: "valid",
+    sessdataValidatedAt: new Date().toISOString(),
+    sessdataExpiresAt: result.expiresAt || ""
+  });
   return { ok: true };
 });
 
-ipcMain.handle("danmaku:connect", async (_event, roomId) => {
-  await client.connect(roomId, { sessdata: settings.sessdata });
+ipcMain.handle("danmaku:connect", async (_event, roomId, options = {}) => {
+  const requestedMode = options?.mode === "guest" ? "guest" : "auto";
+  const useSessdata = requestedMode !== "guest" && Boolean(settings.sessdata);
+  activeConnectionAuthMode = useSessdata ? "login" : "guest";
+  setSettings({ authMode: activeConnectionAuthMode });
+  await client.connect(roomId, { sessdata: useSessdata ? settings.sessdata : "" });
   setSettings({ roomId: String(roomId || "").trim() });
   return { ok: true };
 });
@@ -484,7 +519,10 @@ function fetchSessdataFromBilibiliLogin() {
       const cookies = await loginWindow.webContents.session.cookies.get({ name: "SESSDATA" });
       const cookie = chooseSessdataCookie(cookies);
       if (cookie?.value) {
-        finish(null, cookie.value);
+        finish(null, {
+          value: cookie.value,
+          expiresAt: cookie.expirationDate ? new Date(Number(cookie.expirationDate) * 1000).toISOString() : ""
+        });
       }
     };
 
@@ -526,6 +564,10 @@ function chooseSessdataCookie(cookies) {
       return domain.endsWith("bilibili.com") && (!expires || expires > now);
     })
     .sort((a, b) => Number(b.expirationDate || 0) - Number(a.expirationDate || 0))[0];
+}
+
+function isCredentialError(message) {
+  return /(未登录|登录已失效|账号未登录|SESSDATA|cookie|凭据|鉴权|权限)/i.test(String(message || ""));
 }
 
 function chromeLikeUserAgent() {
@@ -946,8 +988,16 @@ function normalizeUpdateAsset(asset, fallbackName) {
     type: asset.type || inferUpdateAssetType(url),
     name: asset.name || basenameFromUrl(url) || fallbackName,
     url,
+    fallbackUrls: normalizeUrlList(asset.fallbackUrls || asset.fallback_urls || asset.mirrors),
     sha256: normalizeSha256(asset.sha256 || asset.digest || "")
   };
+}
+
+function normalizeUrlList(value) {
+  const list = Array.isArray(value) ? value : String(value || "").split(/[;,]/);
+  return list
+    .map((url) => String(url || "").trim())
+    .filter(Boolean);
 }
 
 function basenameFromUrl(value) {
@@ -1159,7 +1209,7 @@ async function downloadAndApplyUpdate(release) {
     const packagePath = path.join(updaterDir, safeFilename(release.package.name || `Sugaryfish的弹幕姬-App-${release.version}.zip`));
     const downloaded = await downloadFileWithFallback(release.package.url, packagePath, (progress, sourceLabel, receivedBytes = 0) => {
       notifyUpdateStatus({ state: "downloading", release, progress, sourceLabel, receivedBytes });
-    }, release.package.sha256);
+    }, release.package.sha256, release.package.fallbackUrls);
 
     const actualSha = await sha256File(downloaded);
     if (actualSha !== release.package.sha256) {
@@ -1202,8 +1252,8 @@ function isPathInside(child, parent) {
   return Boolean(relative) && !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
-async function downloadFileWithFallback(url, destination, onProgress, expectedSha256 = "") {
-  const candidates = buildDownloadCandidates(url);
+async function downloadFileWithFallback(url, destination, onProgress, expectedSha256 = "", fallbackUrls = []) {
+  const candidates = buildDownloadCandidates(url, fallbackUrls);
   const errors = [];
 
   for (const candidate of candidates) {
@@ -1228,11 +1278,19 @@ async function downloadFileWithFallback(url, destination, onProgress, expectedSh
   throw new Error(`下载更新失败，已尝试 ${candidates.map((candidate) => candidate.label).join("、")}。${errors.slice(-2).join("；")}`);
 }
 
-function buildDownloadCandidates(url) {
+function buildDownloadCandidates(url, fallbackUrls = []) {
   const candidates = [];
   const customPrefix = String(process.env.DANMAKU_UPDATE_PROXY_PREFIX || "").trim();
   if (customPrefix) {
     candidates.push({ label: "自定义加速", url: joinMirrorPrefix(customPrefix, url) });
+  }
+
+  for (const fallbackUrl of fallbackUrls) {
+    candidates.push({ label: isJsDelivrUrl(fallbackUrl) ? "CDN" : "备用源", url: fallbackUrl });
+  }
+
+  for (const cdnUrl of buildReleaseAssetCdnAlternates(url)) {
+    candidates.push({ label: "CDN", url: cdnUrl });
   }
 
   if (isJsDelivrUrl(url)) {
@@ -1279,10 +1337,10 @@ function buildJsDelivrAlternates(url) {
   try {
     const parsed = new URL(url);
     const host = parsed.hostname.toLowerCase();
-    if (!["cdn.jsdelivr.net", "fastly.jsdelivr.net", "gcore.jsdelivr.net"].includes(host)) {
+    if (!UPDATE_CDN_HOSTS.includes(host)) {
       return [];
     }
-    return ["cdn.jsdelivr.net", "fastly.jsdelivr.net", "gcore.jsdelivr.net"]
+    return UPDATE_CDN_HOSTS
       .filter((candidateHost) => candidateHost !== host)
       .map((candidateHost) => {
         const next = new URL(parsed.toString());
@@ -1297,17 +1355,48 @@ function buildJsDelivrAlternates(url) {
 function isJsDelivrUrl(url) {
   try {
     const host = new URL(url).hostname.toLowerCase();
-    return ["cdn.jsdelivr.net", "fastly.jsdelivr.net", "gcore.jsdelivr.net"].includes(host);
+    return UPDATE_CDN_HOSTS.includes(host);
   } catch {
     return false;
   }
+}
+
+function buildReleaseAssetCdnAlternates(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.toLowerCase() !== "github.com") {
+      return [];
+    }
+    const pattern = new RegExp(`^/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}/releases/download/([^/]+)/([^/]+)$`, "i");
+    const match = parsed.pathname.match(pattern);
+    if (!match) {
+      return [];
+    }
+    const ref = decodeURIComponent(match[1]);
+    const fileName = decodeURIComponent(match[2]);
+    if (!/^Sugaryfish-Danmaku-Hime-App-.+\.zip$/i.test(fileName)) {
+      return [];
+    }
+    return buildRepoUpdatePackageUrls(fileName, ref);
+  } catch {
+    return [];
+  }
+}
+
+function buildRepoUpdatePackageUrls(fileName, ref = "main") {
+  const encodedFileName = encodeURIComponent(fileName);
+  const encodedRef = encodeURIComponent(ref || "main");
+  return [
+    ...UPDATE_CDN_HOSTS.map((host) => `https://${host}/gh/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}@${encodedRef}/updates/${encodedFileName}`),
+    `https://raw.githubusercontent.com/${UPDATE_REPO_OWNER}/${UPDATE_REPO_NAME}/${encodedRef}/updates/${encodedFileName}`
+  ];
 }
 
 function buildGitHubRawAlternates(url) {
   try {
     const parsed = new URL(url);
     const host = parsed.hostname.toLowerCase();
-    if (!["cdn.jsdelivr.net", "fastly.jsdelivr.net", "gcore.jsdelivr.net"].includes(host)) {
+    if (!UPDATE_CDN_HOSTS.includes(host)) {
       return [];
     }
 
@@ -1836,6 +1925,12 @@ function saveSettings(nextSettings) {
 }
 
 function sanitizeSettings(value) {
+  const sessdata = String(value.sessdata || "").trim();
+  const authMode = value.authMode === "login" && sessdata ? "login" : "guest";
+  const allowedSessdataStatuses = ["guest", "valid", "invalid", "unverified"];
+  const sessdataStatus = sessdata
+    ? (allowedSessdataStatuses.includes(value.sessdataStatus) && value.sessdataStatus !== "guest" ? value.sessdataStatus : "unverified")
+    : "guest";
   return {
     roomId: String(value.roomId || ""),
     alwaysOnTop: Boolean(value.alwaysOnTop),
@@ -1845,12 +1940,26 @@ function sanitizeSettings(value) {
     opacity: clampNumber(value.opacity, 35, 100, DEFAULT_SETTINGS.opacity),
     fontSize: clampNumber(value.fontSize, 12, 24, DEFAULT_SETTINGS.fontSize),
     maxItems: clampNumber(value.maxItems, 20, 200, DEFAULT_SETTINGS.maxItems),
-    sessdata: String(value.sessdata || "").trim(),
+    obsMode: Boolean(value.obsMode),
+    sessdata,
+    authMode,
+    sessdataStatus,
+    sessdataValidatedAt: normalizeIsoDate(value.sessdataValidatedAt),
+    sessdataExpiresAt: normalizeIsoDate(value.sessdataExpiresAt),
     theme: ["light", "moss", "blueprint", "glacial", "dark", "walnut", "leica", "bordeaux", "quartz"].includes(value.theme) ? value.theme : "light",
     updateFailureVersion: normalizeVersion(value.updateFailureVersion || ""),
     updateFailureAt: String(value.updateFailureAt || ""),
     updateFailureMessage: String(value.updateFailureMessage || "").slice(0, 1000)
   };
+}
+
+function normalizeIsoDate(value) {
+  const text = String(value || "").trim();
+  if (!text) {
+    return "";
+  }
+  const time = Date.parse(text);
+  return Number.isFinite(time) ? new Date(time).toISOString() : "";
 }
 
 function clampNumber(value, min, max, fallback) {

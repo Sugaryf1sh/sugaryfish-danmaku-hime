@@ -1106,7 +1106,8 @@ body.dark-theme .status-dot {
   transform-origin: center center !important;
 }
 
-.status-mode-tip {
+.status-mode-tip,
+.auth-status-tip {
   position: fixed;
   left: 17px;
   top: 58px;
@@ -1131,7 +1132,18 @@ body.dark-theme .status-dot {
   white-space: nowrap;
 }
 
-.status-mode-tip.is-visible {
+.auth-status-tip {
+  left: 0;
+  top: 0;
+  max-width: min(220px, calc(100vw - 24px));
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.status-mode-tip.is-visible,
+.auth-status-tip.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -1142,7 +1154,9 @@ body.is-click-through .status-mode-tip,
 }
 
 body.light-theme .status-mode-tip,
-body.dark-theme .status-mode-tip {
+body.dark-theme .status-mode-tip,
+body.light-theme .auth-status-tip,
+body.dark-theme .auth-status-tip {
   color: var(--help-title) !important;
   font-family: var(--font-ui) !important;
   letter-spacing: 0.06em !important;
@@ -1984,7 +1998,7 @@ body.dark-theme .help-update:hover {
   z-index: 10;
   isolation: isolate;
   display: grid;
-  gap: 12px;
+  gap: 8px;
   padding: 18px var(--right-edge) 18px var(--connect-left);
   border-bottom: 0;
 }
@@ -2064,6 +2078,7 @@ body.dark-theme .help-update:hover {
 }
 
 .room-form > input,
+.room-form > .room-field,
 .login-row > .secret-field {
   grid-column: 2;
 }
@@ -2181,11 +2196,28 @@ body.dark-theme .help-update:hover {
   justify-content: flex-end;
   align-items: center;
   color: var(--blue);
+  opacity: 0.86;
   padding: 0;
   text-align: right;
   line-height: 1;
   text-shadow: none;
-  transition: color 140ms ease, text-shadow 140ms ease;
+  transition: color 140ms ease, opacity 140ms ease, text-shadow 140ms ease;
+}
+
+.room-form button.is-active {
+  color: var(--ink);
+  opacity: 1;
+}
+
+.room-form #guestConnectBtn {
+  color: var(--ink-soft);
+  opacity: 0.72;
+}
+
+.room-form #guestConnectBtn:hover,
+.room-form #guestConnectBtn.is-active {
+  color: var(--ink);
+  opacity: 0.9;
 }
 
 .login-actions > button {
@@ -2198,7 +2230,7 @@ body.dark-theme .help-update:hover {
   justify-content: flex-end;
   align-items: center;
   padding: 0;
-  color: var(--accent-red);
+  color: var(--ink-soft);
   opacity: 0.72;
   text-align: right;
   line-height: 1;
@@ -2207,13 +2239,13 @@ body.dark-theme .help-update:hover {
 }
 
 .login-actions > button:hover {
-  color: var(--accent-red);
-  opacity: 1;
+  color: var(--ink);
+  opacity: 0.9;
 }
 
 .login-actions > .sessdata-fetch {
   color: var(--blue);
-  opacity: 0.78;
+  opacity: 0.86;
 }
 
 .login-actions > .sessdata-fetch:hover {
@@ -2226,6 +2258,7 @@ body.dark-theme .help-update:hover {
   opacity: 0.45;
 }
 
+.room-field,
 .secret-field {
   position: relative;
   min-width: 0;
@@ -2234,6 +2267,7 @@ body.dark-theme .help-update:hover {
   align-items: center;
 }
 
+.room-status-mask,
 .secret-mask {
   position: absolute;
   inset: 0;
@@ -2256,14 +2290,35 @@ body.dark-theme .help-update:hover {
   text-align: left;
 }
 
+.room-form .room-status-mask {
+  display: block;
+  justify-self: stretch;
+  justify-content: flex-start;
+  align-items: stretch;
+  inline-size: 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  color: var(--ink);
+  opacity: 1;
+  text-align: left;
+}
+
+.room-status-mask span,
 .secret-mask span {
   display: inline-block;
   max-width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
+.room-status-mask,
+.room-status-mask span {
+  color: var(--ink);
+}
+
+.room-field.is-editing .room-status-mask,
 .secret-field.is-editing .secret-mask {
   display: none;
 }
@@ -2272,6 +2327,7 @@ body.dark-theme .help-update:hover {
   color: var(--placeholder-color);
 }
 
+.room-field:not(.is-editing) input,
 .secret-field:not(.is-editing) input {
   color: transparent;
   caret-color: transparent;
@@ -2295,8 +2351,8 @@ body.dark-theme .help-update:hover {
 
 .login-actions > button:hover,
 .toggle.danger:hover {
-  color: var(--accent-red);
-  opacity: 1;
+  color: var(--ink);
+  opacity: 0.9;
 }
 
 .login-actions > .sessdata-fetch:hover {
@@ -2311,11 +2367,17 @@ body.dark-theme .toggle.update-check:hover {
 
 body.dark-theme .login-actions > button:hover,
 body.dark-theme .toggle.danger:hover {
-  text-shadow: var(--text-glow-red);
+  text-shadow: none;
 }
 
 body.dark-theme .login-actions > .sessdata-fetch:hover {
   text-shadow: var(--text-glow-blue);
+}
+
+body.dark-theme .room-form #guestConnectBtn:hover,
+body.dark-theme .room-form #guestConnectBtn.is-active,
+body.dark-theme .room-form button.is-active {
+  text-shadow: none;
 }
 
 .toolbar {
@@ -2460,6 +2522,15 @@ body.dark-theme .settings-panel::after {
 .setting-param-row .setting-param-group {
   grid-row: auto;
   grid-column: auto;
+}
+
+.setting-obs-param .obs-mode-toggle {
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .setting-control {
@@ -6075,6 +6146,7 @@ body.walnut-theme .input-row .input-value-display {
 }
 
 .room-form.input-row > .input-value-display,
+.room-form.input-row > .room-field,
 .login-row.input-row .secret-field {
   flex: 0 1 var(--slot-col) !important;
   width: var(--slot-col) !important;
@@ -6082,6 +6154,7 @@ body.walnut-theme .input-row .input-value-display {
   min-width: 0 !important;
 }
 
+.room-form.input-row .room-field .input-value-display,
 .login-row.input-row .secret-field .input-value-display {
   width: min(var(--slot-col), 100%) !important;
   max-width: var(--slot-col) !important;
@@ -6144,6 +6217,7 @@ body.dark-theme .input-row .input-value-display {
 }
 
 .room-form.input-row > .input-value-display,
+.room-form.input-row > .room-field,
 .login-row.input-row .secret-field {
   grid-column: 2 !important;
   justify-self: start !important;
@@ -6152,11 +6226,13 @@ body.dark-theme .input-row .input-value-display {
   min-width: 0 !important;
 }
 
+.room-form.input-row .room-field,
 .login-row.input-row .secret-field {
   margin-left: 0 !important;
   margin-right: 0 !important;
 }
 
+.room-form.input-row .room-field .input-value-display,
 .login-row.input-row .secret-field .input-value-display {
   width: 100% !important;
   max-width: 100% !important;
@@ -6166,9 +6242,21 @@ body.dark-theme .input-row .input-value-display {
 }
 
 #roomInput.input-value-display,
+.room-status-mask,
+.room-status-mask span,
+.room-form .room-status-mask,
+.room-form .room-status-mask span,
 .secret-mask,
 .secret-mask span {
   text-align: left !important;
+}
+
+.room-status-mask .input-value-display {
+  display: inline-block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .input-actions-block {
@@ -9308,6 +9396,74 @@ body .app-container.is-hud-dimmed .danmaku-list-container::-webkit-scrollbar-thu
 body .app-container.is-hud-dimmed .feed.danmaku-list-container::-webkit-scrollbar-thumb:hover,
 body .app-container.is-hud-dimmed .danmaku-list-container::-webkit-scrollbar-thumb:hover {
   background: transparent !important;
+}
+
+body .connect-panel .room-form.input-row #connectBtn,
+body .connect-panel .room-form.input-row #guestConnectBtn,
+body .connect-panel .login-row.input-row #fetchSessdataBtn.sessdata-fetch {
+  color: var(--ink) !important;
+  opacity: 0.86 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  text-shadow: none !important;
+}
+
+body .connect-panel .login-row.input-row #clearSessdataBtn.sessdata-clear {
+  color: var(--ink) !important;
+  opacity: 0.58 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  text-shadow: none !important;
+}
+
+body .connect-panel .room-form.input-row #connectBtn:hover,
+body .connect-panel .room-form.input-row #guestConnectBtn:hover,
+body .connect-panel .room-form.input-row #guestConnectBtn.is-active,
+body .connect-panel .login-row.input-row #fetchSessdataBtn.sessdata-fetch:hover {
+  color: var(--ink) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+body .connect-panel .login-row.input-row #clearSessdataBtn.sessdata-clear:hover {
+  color: var(--ink) !important;
+  opacity: 0.82 !important;
+  text-shadow: none !important;
+}
+
+body .connect-panel .room-field:not(.is-editing) #roomInput.input-value-display {
+  border-bottom-color: var(--line-soft) !important;
+}
+
+body .connect-panel .room-status-mask .input-value-display {
+  border-bottom-color: transparent !important;
+}
+
+body.is-obs-mode .app-container,
+body.is-obs-mode .shell {
+  --bg-opacity: 1 !important;
+  background-color: rgba(var(--bg-main-rgb), 1) !important;
+  background-image: none !important;
+  background-blend-mode: normal !important;
+  box-shadow: none !important;
+}
+
+body.is-obs-mode .settings-panel,
+body.is-obs-mode .settings-panel-inner,
+body.is-obs-mode .audience-monitor-ribbon,
+body.is-obs-mode .audience-expanded-hangar,
+body.is-obs-mode .mega-gift-banner,
+body.is-obs-mode .bottom-entrance-ticker .ticker-card {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+body.is-obs-mode .danmaku-item,
+body.is-obs-mode .danmaku-main-block,
+body.is-obs-mode .danmaku-content,
+body.is-obs-mode .danmaku-username,
+body.is-obs-mode .uid {
+  text-shadow: none !important;
 }
 
 @media (max-width: 340px) {

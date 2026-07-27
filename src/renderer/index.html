@@ -19,6 +19,7 @@
         <button class="update-banner-close" id="updateBannerClose" type="button" aria-label="关闭更新说明">×</button>
       </div>
       <span class="status-mode-tip" id="statusModeTip" aria-live="polite"></span>
+      <span class="auth-status-tip" id="authStatusTip" aria-live="polite"></span>
       <section class="header-section">
         <div class="header-section-inner">
           <header class="titlebar">
@@ -39,6 +40,7 @@
                   <p><span>01</span>点击 SESSDATA 右侧“获取”。</p>
                   <p><span>02</span>在弹出的 B 站窗口完成登录。</p>
                   <p><span>03</span>窗口会自动读取并保存 SESSDATA，无需手动复制 Cookie。</p>
+                  <p><span>注</span>游客可看公开弹幕；填写 SESSDATA 可看到完整 ID 和表情。</p>
                   <div class="help-divider"></div>
                   <dl class="help-meta">
                     <div><dt>项目</dt><dd><a href="https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime" data-external-url="https://github.com/Sugaryf1sh/sugaryfish-danmaku-hime">GitHub</a></dd></div>
@@ -135,8 +137,14 @@
           <section class="connect-panel">
             <form id="connectForm" class="room-form input-row">
               <label for="roomInput">直播间</label>
-              <input id="roomInput" class="input-value-display" name="roomId" inputmode="numeric" autocomplete="off" placeholder="输入房间号">
+              <div class="room-field" id="roomField">
+                <input id="roomInput" class="input-value-display" name="roomId" inputmode="numeric" autocomplete="off" placeholder="输入房间号">
+                <button class="room-status-mask" id="roomStatusMask" type="button">
+                  <span id="authStatusSummary" class="input-value-display">游客模式</span>
+                </button>
+              </div>
               <div class="input-actions-block">
+                <button id="guestConnectBtn" type="button" title="仅游客连接">游客</button>
                 <button id="connectBtn" type="submit">连接</button>
               </div>
             </form>
@@ -199,14 +207,10 @@
                     </div>
                   </label>
                 </div>
-                <div class="setting-param-group setting-max-param param-item">
-                  <label class="setting-control">
-                    <span class="setting-label param-label">条数</span>
-                    <output class="param-value" id="maxValue">80</output>
-                    <div class="range-line">
-                      <input id="maxRange" type="range" min="20" max="200" step="10">
-                    </div>
-                  </label>
+                <div class="setting-param-group setting-obs-param param-item">
+                  <button class="toggle setting-switch obs-mode-toggle" id="obsModeToggle" type="button" title="OBS 捕捉友好模式">
+                    <span class="toggle-label">OBS</span><kbd class="shortcut-key shortcut-hint">Capture</kbd>
+                  </button>
                 </div>
               </div>
             </div>
@@ -236,7 +240,7 @@
           </span>
         </div>
         <div id="emptyState" class="empty-state placeholder-hint">
-          输入直播间号，获取 SESSDATA 并连接后，弹幕会实时出现在这里。
+          输入直播间号后连接，公开弹幕会显示在这里。游客可直接看弹幕，填写 SESSDATA 可看到完整 ID 和表情。
         </div>
       </section>
       <div class="maker-watermark footer-container">

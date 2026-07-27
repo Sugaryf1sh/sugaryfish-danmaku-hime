@@ -73,8 +73,13 @@ const els = {
   headerSection: document.querySelector(".header-section"),
   statusDot: document.querySelector(".primary-status-dot"),
   statusModeTip: document.getElementById("statusModeTip"),
+  authStatusTip: document.getElementById("authStatusTip"),
+  roomField: document.getElementById("roomField"),
   roomInput: document.getElementById("roomInput"),
+  roomStatusMask: document.getElementById("roomStatusMask"),
+  authStatusSummary: document.getElementById("authStatusSummary"),
   connectForm: document.getElementById("connectForm"),
+  guestConnectBtn: document.getElementById("guestConnectBtn"),
   connectBtn: document.getElementById("connectBtn"),
   disconnectBtn: document.getElementById("disconnectBtn"),
   settingsToggle: document.getElementById("settingsToggle"),
@@ -82,12 +87,11 @@ const els = {
   throughToggle: document.getElementById("throughToggle"),
   lockToggle: document.getElementById("lockToggle"),
   copyToggle: document.getElementById("copyToggle"),
+  obsModeToggle: document.getElementById("obsModeToggle"),
   opacityRange: document.getElementById("opacityRange"),
   fontRange: document.getElementById("fontRange"),
-  maxRange: document.getElementById("maxRange"),
   opacityValue: document.getElementById("opacityValue"),
   fontValue: document.getElementById("fontValue"),
-  maxValue: document.getElementById("maxValue"),
   sessdataField: document.getElementById("sessdataField"),
   sessdataInput: document.getElementById("sessdataInput"),
   sessdataMask: document.getElementById("sessdataMask"),
@@ -176,29 +180,38 @@ function bindEvents() {
   els.feed.addEventListener("scroll", () => {
     updateFeedScrollState();
   });
+  els.roomStatusMask.addEventListener("click", beginRoomEdit);
+  els.roomStatusMask.addEventListener("mouseenter", showAuthStatusTip);
+  els.roomStatusMask.addEventListener("mousemove", showAuthStatusTip);
+  els.roomStatusMask.addEventListener("mouseleave", hideAuthStatusTip);
+  els.roomStatusMask.addEventListener("focus", showAuthStatusTip);
+  els.roomStatusMask.addEventListener("blur", hideAuthStatusTip);
+  els.roomInput.addEventListener("focus", beginRoomEdit);
+  els.roomInput.addEventListener("blur", endRoomEdit);
+  els.roomInput.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" && event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    if (event.key === "Enter") {
+      els.connectForm.requestSubmit();
+      return;
+    }
+    els.roomInput.blur();
+  });
 
   els.connectForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const roomId = els.roomInput.value.trim();
-    if (!roomId) {
-      setStatus("请输入直播间号");
-      return;
-    }
-
-    setStatus("正在连接");
-    els.connectBtn.disabled = true;
-    try {
-      await api.connect(roomId);
-    } catch (error) {
-      setStatus(error.message || "连接失败");
-      els.connectBtn.disabled = false;
-    }
+    await handleConnect("login");
   });
+
+  els.guestConnectBtn.addEventListener("click", () => handleConnect("guest"));
 
   els.disconnectBtn.addEventListener("click", async () => {
     await api.disconnect();
     state.connected = false;
     els.connectBtn.disabled = false;
+    els.guestConnectBtn.disabled = false;
     document.body.classList.remove("is-settings-collapsed");
     syncConnectionUi(false);
     setStatus("已断开");
@@ -213,17 +226,16 @@ function bindEvents() {
   els.throughToggle.addEventListener("click", () => updateSetting("clickThrough", !state.settings.clickThrough));
   els.lockToggle.addEventListener("click", () => updateSetting("locked", !state.settings.locked));
   els.copyToggle.addEventListener("click", () => updateSetting("copyOnTagClick", !state.settings.copyOnTagClick));
+  els.obsModeToggle.addEventListener("click", () => updateSetting("obsMode", !state.settings.obsMode));
   els.opacityRange.addEventListener("input", () => {
     applyBackgroundOpacity(Number(els.opacityRange.value));
     updateSetting("opacity", Number(els.opacityRange.value));
   });
   els.fontRange.addEventListener("input", () => updateSetting("fontSize", Number(els.fontRange.value)));
-  els.maxRange.addEventListener("input", () => updateSetting("maxItems", Number(els.maxRange.value)));
   bindScrubbableNumber(els.opacityValue, "opacity", els.opacityRange, 35, 100, 1, (value) => `${value}%`);
   bindScrubbableNumber(els.fontValue, "fontSize", els.fontRange, 12, 24, 1, String);
-  bindScrubbableNumber(els.maxValue, "maxItems", els.maxRange, 20, 200, 10, String);
   els.sessdataMask.addEventListener("click", beginSessdataEdit);
-  els.sessdataInput.addEventListener("change", () => updateSetting("sessdata", els.sessdataInput.value.trim()));
+  els.sessdataInput.addEventListener("change", handleSessdataInputChange);
   els.sessdataInput.addEventListener("blur", endSessdataEdit);
   els.sessdataInput.addEventListener("keydown", (event) => {
     if (event.key !== "Escape" && event.key !== "Enter") {
@@ -245,7 +257,13 @@ function bindEvents() {
   els.updateBannerClose.addEventListener("click", hideUpdateBanner);
   els.clearSessdataBtn.addEventListener("click", () => {
     endSessdataEdit();
-    updateSetting("sessdata", "");
+    updateSettingsPatch({
+      sessdata: "",
+      authMode: "guest",
+      sessdataStatus: "guest",
+      sessdataValidatedAt: "",
+      sessdataExpiresAt: ""
+    });
   });
   els.themeToggle.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -290,6 +308,7 @@ function bindIpc() {
     const connectedUi = status.state === "connected" || status.state === "reconnecting";
     state.connected = status.state === "connected";
     els.connectBtn.disabled = ["connecting", "connected", "reconnecting"].includes(status.state);
+    els.guestConnectBtn.disabled = els.connectBtn.disabled;
     syncConnectionUi(connectedUi);
     if (status.state === "connected") {
       document.body.classList.add("is-settings-collapsed");
@@ -297,6 +316,7 @@ function bindIpc() {
     }
     if (["disconnected", "error"].includes(status.state)) {
       els.connectBtn.disabled = false;
+      els.guestConnectBtn.disabled = false;
       document.body.classList.remove("is-settings-collapsed");
       state.presenceItems = [];
       renderPresenceRibbon();
@@ -349,6 +369,14 @@ async function updateSetting(key, value, options = {}) {
     state.updateNoticeRestoreClickThrough = null;
   }
   state.settings = await api.updateSettings({ [key]: value });
+  applySettings(state.settings);
+}
+
+async function updateSettingsPatch(patch, options = {}) {
+  if (Object.prototype.hasOwnProperty.call(patch, "clickThrough") && !options.system && state.updateNoticeInteractionActive) {
+    state.updateNoticeRestoreClickThrough = null;
+  }
+  state.settings = await api.updateSettings(patch);
   applySettings(state.settings);
 }
 
@@ -411,12 +439,12 @@ function applySettings(settings) {
   els.roomInput.value = settings.roomId || els.roomInput.value || "";
   els.opacityRange.value = settings.opacity;
   els.fontRange.value = settings.fontSize;
-  els.maxRange.value = settings.maxItems;
   els.opacityValue.textContent = `${settings.opacity}%`;
   els.fontValue.textContent = settings.fontSize;
-  els.maxValue.textContent = settings.maxItems;
   els.sessdataInput.value = settings.sessdata || "";
   renderSessdataSummary(settings.sessdata || "");
+  renderAuthStatus(settings);
+  syncAuthModeButtons(settings);
   applyTheme(settings.theme);
   els.topToggle.classList.toggle("active", Boolean(settings.alwaysOnTop));
   updateToggleMark(els.topToggle, settings.alwaysOnTop);
@@ -426,9 +454,12 @@ function applySettings(settings) {
   updateToggleMark(els.lockToggle, settings.locked);
   els.copyToggle.classList.toggle("active", Boolean(settings.copyOnTagClick));
   updateToggleMark(els.copyToggle, settings.copyOnTagClick);
+  els.obsModeToggle.classList.toggle("active", Boolean(settings.obsMode));
+  updateToggleMark(els.obsModeToggle, settings.obsMode);
   document.body.classList.toggle("is-locked", Boolean(settings.locked));
   document.body.classList.toggle("is-click-through", Boolean(settings.clickThrough));
   document.body.classList.toggle("is-tag-copy-enabled", Boolean(settings.copyOnTagClick));
+  document.body.classList.toggle("is-obs-mode", Boolean(settings.obsMode));
   document.body.classList.toggle("is-opaque", Number(settings.opacity) >= 100);
   applyBackgroundOpacity(settings.opacity);
   updateCopyHintTitles(Boolean(settings.copyOnTagClick));
@@ -442,6 +473,17 @@ function applySettings(settings) {
 function applyBackgroundOpacity(value) {
   const opacityValue = Math.max(0.35, Math.min(1, Number(value) / 100));
   els.appContainer?.style.setProperty("--bg-opacity", String(opacityValue));
+}
+
+function beginRoomEdit() {
+  hideAuthStatusTip();
+  els.roomField.classList.add("is-editing");
+  els.roomInput.focus();
+  els.roomInput.select();
+}
+
+function endRoomEdit() {
+  els.roomField.classList.remove("is-editing");
 }
 
 function beginSessdataEdit() {
@@ -458,6 +500,134 @@ function renderSessdataSummary(value) {
   const hasSecret = Boolean(value);
   els.sessdataField.classList.toggle("has-secret", hasSecret);
   els.sessdataSummary.textContent = hasSecret ? "已保存" : "未填写";
+}
+
+async function handleSessdataInputChange() {
+  const sessdata = els.sessdataInput.value.trim();
+  await updateSettingsPatch({
+    sessdata,
+    authMode: sessdata ? "login" : "guest",
+    sessdataStatus: sessdata ? "unverified" : "guest",
+    sessdataValidatedAt: "",
+    sessdataExpiresAt: ""
+  });
+}
+
+async function handleConnect(mode) {
+  const roomId = els.roomInput.value.trim();
+  const useGuest = mode === "guest";
+  const nextAuthMode = useGuest ? "guest" : (state.settings?.sessdata ? "login" : "guest");
+  await updateSetting("authMode", nextAuthMode);
+
+  if (!roomId) {
+    setStatus("请输入直播间号");
+    return;
+  }
+
+  setStatus(useGuest ? "正在游客连接" : "正在连接");
+  els.connectBtn.disabled = true;
+  els.guestConnectBtn.disabled = true;
+  try {
+    await api.connect(roomId, { mode: useGuest ? "guest" : "auto" });
+  } catch (error) {
+    setStatus(error.message || "连接失败");
+    els.connectBtn.disabled = false;
+    els.guestConnectBtn.disabled = false;
+  }
+}
+
+function renderAuthStatus(settings = {}) {
+  if (!els.authStatusSummary || !els.roomStatusMask) {
+    return;
+  }
+  const hasSecret = Boolean(settings.sessdata);
+  const mode = settings.authMode === "login" && hasSecret ? "login" : "guest";
+  const status = hasSecret ? settings.sessdataStatus : "guest";
+  const expiresAt = Date.parse(settings.sessdataExpiresAt || "");
+  const expired = hasSecret && Number.isFinite(expiresAt) && expiresAt <= Date.now();
+  const effectiveStatus = expired ? "invalid" : status;
+  const isGuestMode = mode !== "login";
+  const labels = {
+    guest: "游客身份",
+    valid: isGuestMode ? "游客身份" : "SESSDATA 可用",
+    invalid: "SESSDATA 失效",
+    unverified: "待验证"
+  };
+  const currentLabels = {
+    guest: "当前：游客身份",
+    valid: isGuestMode ? "当前：游客身份" : "当前：SESSDATA",
+    invalid: "当前：SESSDATA 失效",
+    unverified: "当前：等待验证"
+  };
+  const verificationLabels = {
+    guest: "验证：不需要",
+    valid: formatAuthValidationTime(settings.sessdataValidatedAt).replace(/^最近验证：/, "验证："),
+    invalid: "验证：未通过",
+    unverified: "验证：未验证"
+  };
+  const notes = {
+    guest: hasSecret ? "说明：不使用 SESSDATA" : "说明：未使用 SESSDATA",
+    valid: isGuestMode ? "说明：已保存 SESSDATA" : "说明：完整 ID / 表情",
+    invalid: "说明：需要重新获取",
+    unverified: "说明：连接后确认"
+  };
+
+  els.roomField.dataset.status = effectiveStatus;
+  els.roomField.dataset.mode = mode;
+  els.authStatusSummary.textContent = labels[effectiveStatus] || "待验证";
+  els.roomStatusMask.removeAttribute("title");
+  els.roomStatusMask.dataset.tip = [
+    currentLabels[effectiveStatus] || "当前：待验证",
+    verificationLabels[effectiveStatus] || "验证：未验证",
+    notes[effectiveStatus] || "说明：连接后确认"
+  ].join("\n");
+  if (els.authStatusTip?.classList.contains("is-visible")) {
+    els.authStatusTip.textContent = els.roomStatusMask.dataset.tip;
+  }
+}
+
+function showAuthStatusTip() {
+  if (!els.authStatusTip || !els.roomStatusMask || els.roomField.classList.contains("is-editing")) {
+    return;
+  }
+  const rect = els.roomStatusMask.getBoundingClientRect();
+  els.authStatusTip.textContent = els.roomStatusMask.dataset.tip || "点击编辑直播间号";
+  els.authStatusTip.classList.add("is-visible");
+  const tipRect = els.authStatusTip.getBoundingClientRect();
+  const margin = 8;
+  const left = Math.max(margin, Math.min(rect.left, window.innerWidth - tipRect.width - margin));
+  const bottomTop = rect.bottom + 8;
+  const top = bottomTop + tipRect.height + margin > window.innerHeight
+    ? Math.max(margin, rect.top - tipRect.height - 8)
+    : bottomTop;
+  els.authStatusTip.style.left = `${Math.round(left)}px`;
+  els.authStatusTip.style.top = `${Math.round(top)}px`;
+}
+
+function hideAuthStatusTip() {
+  els.authStatusTip?.classList.remove("is-visible");
+}
+
+function syncAuthModeButtons(settings = {}) {
+  const activeMode = settings.authMode === "login" && settings.sessdata ? "login" : "guest";
+  els.guestConnectBtn?.classList.toggle("is-active", activeMode === "guest");
+  els.connectBtn?.classList.toggle("is-active", activeMode === "login");
+  els.guestConnectBtn?.setAttribute("aria-pressed", String(activeMode === "guest"));
+  els.connectBtn?.setAttribute("aria-pressed", String(activeMode === "login"));
+}
+
+function formatAuthValidationTime(value) {
+  const time = Date.parse(value || "");
+  if (!Number.isFinite(time)) {
+    return "最近验证：未验证";
+  }
+  const formatter = new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+  return `最近验证：${formatter.format(new Date(time))}`;
 }
 
 async function handleSessdataFetch() {
